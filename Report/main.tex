@@ -1,0 +1,402 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[backend=biber, notetype=foot+end]{biblatex}
+\addbibresource{bibliography.bib}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{makecell}
+\usepackage{float}
+\usepackage[parfill]{parskip} 
+
+\begin{document}
+%TC:ignore
+\begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
+    \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness here
+
+    \center % Centre everything on the page
+
+    %------------------------------------------------
+    %	Headings
+    %------------------------------------------------
+
+    \textsc{\Large Electronics and Computer Science}\\[0.5cm] % Major heading such as course name
+
+    \textsc{\large Faculty of Physical Sciences and Engineering}\\[0.5cm] % Minor heading such as course title
+
+    \textsc{\LARGE University Of Southampton}\\[1.5cm] % Main heading such as the name of your university/college
+
+    \begin{center}
+        \large
+        \textit{Author}\\
+        \textsc{Felix Whitefield} % Your name
+    \end{center}
+    {\large \today} % Date, change the \today to a set date if you want to be precise
+
+    \vfill
+
+    %------------------------------------------------
+    %	Title
+    %------------------------------------------------
+
+    \HRule\\[0.4cm]
+
+    {\huge\bfseries Using CRDTs to Create a File Synchronization System}\\[0.4cm] % Title of your document
+
+    \HRule\\[1cm]
+
+    %------------------------------------------------
+    %	Author(s)
+    %------------------------------------------------
+
+
+    \vfill
+
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft}
+            \large
+            \textit{Project Supervisor}\\
+            Doctor \textsc{Corina Cirstea} % Your name
+        \end{flushleft}
+    \end{minipage}
+    ~
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushright}
+            \large
+            \textit{Second Examiner}\\
+            Doctor \textsc{Shoaib Ehsan} % Supervisor's name
+        \end{flushright}
+    \end{minipage}
+
+    % If you don't want a supervisor, uncomment the two lines below and comment the code above
+    %{\large\textit{Author}}\\
+    %John \textsc{Smith} % Your name
+
+    %------------------------------------------------
+    %	Date
+    %------------------------------------------------
+
+    \vfill\vfill\vfill\vfill % Position the date 3/4 down the remaining page
+
+    A project progress report submitted for the award of BSc Computer Science.
+
+    % {\large\today} % Date, change the \today to a set date if you want to be precise
+
+    %------------------------------------------------
+    %	Logo
+    %------------------------------------------------
+
+    %\vfill\vfill
+    %\includegraphics[width=0.2\textwidth]{placeholder.jpg}\\[1cm] % Include a department/university logo - this will require the graphicx package
+
+    %----------------------------------------------------------------------------------------
+
+    \vfill % Push the date up 1/4 of the remaining page
+
+\end{titlepage}
+%TC:endignore
+
+
+\newpage
+%TC:ignore
+% ------------------------------------- Abstract -------------------------------------------
+\begin{center}
+    \textsc{\large Abstract}
+\end{center}
+
+This report is an attempt to use new developments in tree CRDTs with highly available move operations to create a file synchronisation system that will resolve all directory conflicts without human interaction; and will not exhibit 'buggy' behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these systems in a real-world scenario. So far, this paper has reviewed the existing literature and has analysed the concurrency issues facing current systems. As well as detailing two algorithms which have been proposed that state to have solutions to the problem of creating a highly available move operation. \par
+The remaining work includes creating a more refined design of the system and then implementing the separate parts to create a cohesive application. Once implemented, the system will be tested for reliability and performance. This testing will inform the final evaluation of system, where it will be compared to existing solutions.
+
+
+%TC:endignore
+
+% ------------------------------------- Abstract -------------------------------------------
+
+\newpage
+
+% STATEMENT OF ORIGINALITY ------------------------------------------------------------
+%TC:ignore
+\begin{center}
+    \textsc{\LARGE Statement of Originality} \\ [1cm]
+\end{center}
+I have read and understood the ECS Academic Integrity\footnote{http://ecs.gg/ai} information and the University’s
+Academic Integrity Guidance for Students\footnote{https://www.southampton.ac.uk/quality/assessment/academic\_integrity.page}.
+\\[0.3cm]
+I am aware that failure to act in accordance with the Regulations Governing Academic Integrity\footnote{http://www.calendar.soton.ac.uk/sectionIV/academic-integrity-regs.html}
+may lead to the imposition of penalties which, for the most serious cases, may include
+termination of programme.
+\\[0.3cm]
+I consent to the University copying and distributing any or all of my work in any form and
+using third parties (who may be based outside the EU/EEA) to verify whether my work
+contains plagiarised material, and for quality assurance purposes.
+\\[0.5cm]
+
+\begin{itemize}
+    \item I have acknowledged all sources, and identified any content taken from elsewhere.
+    \item I have not used any resources produced by anyone else.
+    \item I did all the work myself, or with my allocated group, and have not helped anyone else.
+    \item The material in the report is genuine, and I have included all my data/code/designs.
+    \item I have not submitted any part of this work for another assessment.
+    \item My work did not involve human participants, their cells or data, or animals
+\end{itemize}
+
+% STATEMENT OF ORIGINALITY ------------------------------------------------------------
+
+
+\newpage
+\tableofcontents
+%TC:endignore
+
+\newpage
+\section{Introduction}
+
+\subsection{Problem}
+Distributed computing systems are becoming more popular for two main reasons, availability and scalability. Distributed storage systems that have replicas need a way to merge the replicas, however, conflicts can arise when merging concurrent operations. Current software such as Google Drive and Dropbox exhibit bugs in their concurrency control when the file system is concurrently updated on different computers. This can cause different issues, such as duplication, roll-backs and unintended actions. These issues are not helpful to a user and can hinder their productivity. Also, current systems which use a client-server architecture can feel 'slow' due to the latency added by communicating with a server.
+
+\subsection{Goal}
+The goal of this project is to implement and test the viability of using new advancements in tree Conflict-Free Replicated Data Types (CRDTs) within a file synchronization system to solve directory conflicts. CRDTs are data types that can be concurrently updated on different nodes (without any coordination), will automatically resolve any differences within the data and are eventually consistent \cite{10.1007/978-3-642-24550-3_29}.  This project aims to test the reliability (whether the system correctly resolves conflicts) and performance of the implementation. The results of these tests can be used to inform future uses of these CRDTs and should demonstrate the trade-offs of using them. The system should be able to tolerate network failures and offline usage. The implementation will be peer-to-peer, meaning that each node will be equally privileged. Another focus of this project will be on testing the throughput of the new CRDTs as, while CRDTs have naturally low latency, their conflict resolution can cause lower throughput. \par
+Tree structures are used in many scenarios, so the code for this project could be re-used where a tree structure with a highly available move operation is wanted.
+
+\subsection{Scope}
+The scope of this project will be limited to implementing CRDTs to resolve directory conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualize how the system would scale. Optimisations will be implemented if time allows.
+File conflicts will not be a focus of this project, however, they could be brought into the scope if time allows.
+
+\newpage
+\section{Literature Review}
+This research will focus on understanding current file synchronisation systems and their drawbacks; the trade-offs that come with distributed systems and their consistency models; and CRDTs and their recent developments in highly available move operations.
+
+\subsection{Review of Existing Software}
+The two main network architectures of file synchronization systems are client-server and peer-to-peer. Below I will discuss both, along with their respective drawbacks.
+
+% File synchronisation software usually comes in two variants; either a system with a central server that handles the file sharing, or a peer-to-peer system. Each system has its own benefits and drawbacks, as described below.
+
+\subsubsection{Client-server Systems}
+A vast majority of file synchronisation systems come in the form of file storage and synchronisation systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{https://www.google.co.uk/intl/en-GB/drive/}, OneDrive\footnote{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage} and Dropbox\footnote{https://www.dropbox.com/features/sync}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
+
+This has the drawback of increased latency as all requests have to go through and be processed by the central server. If many people use the service, then the strain on the server from file transfers would be high and could increase the latency further. These systems also rely on the user trusting the provider to keep their files safe. \par
+
+As the web evolves there is more talk about Web3\cite{WhatIsWeb3}, which has foundations in decentralisation.
+\subsubsection{Peer-to-peer Systems}
+There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While BitTorrent is widely used, one of the main drawbacks of the BitTorrent protocol is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement, however, it has some limitations and drawbacks, such as:
+\begin{itemize}
+    \item Renaming a folder will not rename the folder on other devices \footnote{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}.
+    \item Renaming a file will cause other devices to believe it is deleted, and move the file into an archive folder. Then when the peer detects the renamed file, it will check the archive folder for a file with the same hash, and put it back with a new name\footnote{https://help.resilio.com/hc/en-us/articles/209606526-What-happens-when-file-is-renamed}.
+          \begin{itemize}
+              \item If the file is renamed and then changed, the hashes will not be the same and therefore will require the transmission of the whole file contents.
+          \end{itemize}
+\end{itemize}  \par
+One drawback of peer-to-peer file sharing systems is that it for the sharing to occur, at least two nodes need to be online at the same time. In comparison to a client-server architecture, where the server is always available. Also, in practice, peer-to-peer networks require some form of centralisation for the initial connection, as you cannot multicast on the web.
+
+\subsection{Distributed Systems}
+\subsubsection{The CAP Theorem}
+In any distributed system that has a persistent state, such as a file system, there is a trade-off between Consistency, Availability and Partition Tolerance.
+This is set out in the CAP Theorem, which was first introduced by Brewer in 2000\cite{CAPTheorem}. In this talk, Brewer stated that a distributed system could only select 2 of the 3 properties. A formal proof for the CAP theorem was provided by Gilbert and Lynch in 2002\cite{10.1145/564585.564601}, they formally defined 3 properties as follows:
+\begin{itemize}
+    \item \textbf{Consistency} A total order on all operations must exist such that each operation looks as if it was completed at a single instance. An equivalence being requiring requests of a distributed shared memory act as if they were executing on a single node, responding to operations one at a time.
+    \item \textbf{Availability} Every request received by a non-failing node must result in a response.  This means any algorithm used by the service must eventually terminate.
+    \item \textbf{Partition Tolerance} The network is allowed to lose arbitrarily many messages sent from one node to another. This can either be all the messages (full partition) or only a portion of the messages (temporary partition).
+\end{itemize}
+While this paper proved the CAP Theorem, further research into the area revealed that the initial CAP Theorem was too simplified. As, in reality, it is more of a trade-off between Availability and Consistency, instead of having to choose between the two. In a later paper by Brewer, "CAP Twelve Years Later: How the "Rules" Have Changed"\cite{6133253}, he explains how instead of having to choose 2 of 3 properties, different trade-offs can be made. He also explains how partitions are rare, and therefore usually Consistency or Availability would not need to be sacrificed. Only needing to make sacrifices when partitions are present. Some designers of distributed systems have misunderstood the CAP theorem and have built systems with unnecessary limitations at all times, whereas limitations are only needed in the event of failures \cite{6133253}. \par
+Because the CAP Theorem is somewhat limited, a new theorem was created which takes into account new factors which better reflect the trade-offs placed on distributed systems.
+
+\subsubsection{The PACELC Theorem}
+The PACELC Theorem was created as an extension to the CAP theorem to fill the areas in which the CAP theorem does not take into account. This theorem, therefore, creates a more complete picture of the trade-offs within distributed systems. \par
+PACELC incorporates the CAP Theorem, with the first part, PAC, meaning if there is a partition (P) the distributed system would have to choose between availability (A) or Consistency (C). And the extra part, ELC, means else (E) when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the ELC part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system.
+
+\subsection{Consistency Models}
+\subsubsection{Strong and Eventual Consistency}
+Most distributed data systems today are either:
+\begin{itemize}
+    \item \textbf{Strongly Consistent} Any subsequent read after a write will return the most recent value.
+    \item \textbf{Eventually Consistent} The latest data will eventually become available, if no new updates are made.
+\end{itemize}
+Many systems today are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html} and even MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which is by default strongly consistent) will become eventually consistent when reading from secondary members. As the need for low latency increases, eventual consistency becomes more desirable over strong consistency. \par
+
+\subsubsection{Strong Eventual Consistency}
+Strong Eventual Consistency (SEC) takes eventual consistency even further by guaranteeing that two nodes which receive the same updates (regardless of order) will be in the same state. In eventually consistent systems, the nodes would have to communicate to resolve conflicts by consensus or roll-back. Whereas in strong eventually consistent systems the conflicts are resolved in a deterministic manner on each node (without the need for communication). \par
+SEC was proposed in 2011\cite{10.1007/978-3-642-24550-3_29} to describe Conflict-free Replicated Data Types (CRDTs). It was defined as:
+\begin{itemize}
+    \item \textbf{Strong Eventual Consistency} Eventually consistent, as well as conforming to: any two replicas that have received the same updates will have the same state.
+\end{itemize}
+
+\subsection{Conflict-free Replicated Data Types}
+CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
+One useful application for CRDTs is their ability for offline use \cite{10.1145/3359591.3359737}. If an application is built using CRDTs, it can feel more responsive as updates to the state can be made locally first without the system having to wait on replies from remove servers. \par
+There are two main types of CRDTs, state-based and operation-based.
+
+
+\subsubsection{State-Based (CvRDTs)}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8cm]{state.jpg}
+    \caption{State-based CRDT replication. Reproduced from \cite{10.1007/978-3-642-24550-3_29}}
+    \label{fig:statebased}
+\end{figure}
+
+State-based CRDTs, or otherwise called Convergent Replicated Data Types (CvRDTs), send their full state to other replicas where they are merged by a function to form a new state. The merge function must be associative, commutative and idempotent \cite{10.1007/978-3-642-24550-3_29}. CvRDTs can use lots of bandwidth because as the state grows in size, they will still have to send the whole state. However, because they send their full state, if the transmission of a state is 'missed' it does not break the system as the next state transmission will contain all previous 'missed' updates to the state. Also, CvRDTs can make use of gossip protocols (as shown in Figure \ref{fig:statebased}) which helps reduces network usage. \par
+
+Delta State CRDTs are a form of state-based CRDTs that only send the changed, or the delta, part of the state. This allows for the messages sent between replicas to be smaller and work across unreliable networks \cite{Almeida_2018}. They, therefore, have the best of both operation and state-based CRDTs.
+
+
+\subsubsection{Operation-Based (CmRDTs)}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=8 cm]{operation.jpg}
+    \caption{Operation-based CRDT replication. Reproduced from \cite{10.1007/978-3-642-24550-3_29}}
+    \label{fig:operation}
+\end{figure}
+
+Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send the update operation to other replicas. Each operation or update is a pair consisting of a \textit{prepare} method and a \textit{effect} method, where the \textit{prepare} method is only executed at the local replica\cite{10.1007/978-3-642-24550-3_29}. The operations also have to be commutative, but not idempotent. Because of the lack of idempotence, there are more requirements on transmission between replicas as they have to ensure each operation is sent to each replica only once (This can be seen in Figure \ref{fig:operation}). \par
+As Operation-based CRDTs have a weak definition, pure operation-based CRDTs have been proposed\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect that state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations and therefore they take up less space than normal operation-based CRDTs.
+
+\subsubsection{CRDTs and File Systems}
+
+A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. The hard part of creating a tree-structured CRDT is making a move operation that is \textit{highly available} (does not require locking, consensus or creates duplicates). \par
+
+This can be shown by ElmerFS (A file system created using CRDTs), where concurrent moves can create a cycle \cite{10.1145/3465332.3470872}. Najafadeh et al. \cite{Najafzadeh0E18} proposes a similar system which instead locks on move operations to ensure cycles are not created. These papers show how hard creating a highly available move operation is, however recent work has shown that it is possible \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}, \cite{https://doi.org/10.48550/arxiv.1805.04263}. \par
+
+\subsubsection{Algorithms With a Highly Available Move}
+Currently there two main proposed algorithms that allow a highly available move operation:
+\begin{itemize}
+    \item
+          \textbf{Kleppmann et al. \cite{9563274}} proposes an algorithm that represents the tree as a set of parent-child relationships. A move operation is performed by removing the node from wherever it is in the tree and moving it to its new location. This operation can also be used for adding and removing nodes, the former by creating a new node under the specified parent and the latter by moving the node under a "trash" node. It also stores a \textit{log} of all previous operations, which allows the algorithm to implement a move operation. The algorithm can use the \textit{log} to ensure that all operations are applied in the correct order by undoing and reapplying operations (as proposed in \cite{https://doi.org/10.48550/arxiv.1805.04263}). It deals with cycles by ensuring that if any operations were to create a cycle, it would be ignored however they are still added to the \textit{log}. In general, the algorithm will prefer the latest operation that does not cause a conflict. The only conflict which the algorithm does not resolve is child nodes with the same parent having the same name.
+
+    \item
+          \textbf{Nair et al. \cite{https://doi.org/10.48550/arxiv.2103.04828}} proposes \textit{Maram}, a "light-weight" tree CRDT with a highly available move operation that represents the tree a set of nodes and child-to-parent relations. Instead of storing an in-order log of operations, this algorithm relies on a causal delivery layer which guarantees
+          a happened-before relation. Maram splits move operations into \textit{down-moves} (the node is moved away from the root) and \textit{up-moves} (the node is moved towards to root or to the same distance). The conflict resolution is as follows: in concurrent up-moves, they are safe (so no conflict resolution required); in a concurrent up-move and down-move, the up-move wins; in concurrent down-moves, the move with the highest priority wins (the priority is deterministic, and specific to each application).
+
+\end{itemize}
+Table \ref{table:differences} shows a comparison between the two algorithms:
+
+\begin{table}[ht]
+    \renewcommand{\arraystretch}{1.5}
+    \caption{Comparison of Algorithms} % title of Table
+    \centering % used for centering table
+    \begin{tabular}{c c c} % centered columns (4 columns)
+        \hline\hline %inserts double horizontal lines
+                       & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
+        %heading
+        \hline % inserts single horizontal line
+        Delivery Layer & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency \\ \textit{High Cost}}  \\ % inserting body of the table
+        Operations     & \makecell{Total Order                                                                                                   \\ \textit{High Cost}} & \makecell{Partial Order \\ \textit{Low Cost}}
+
+        \\ [1ex] % [1ex] adds vertical space
+        \hline %inserts single line
+    \end{tabular}
+    \label{table:differences} % is used to refer this table in the text
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=10cm]{Response.jpg}
+    \caption{Response time for different conflict rates (0-20\%). Reproduced from \cite{https://doi.org/10.48550/arxiv.2103.04828}}
+    \label{fig:responsetime}
+\end{figure}
+
+Figure \ref{fig:responsetime} shows differences in response times between different algorithms. Kleppmann's algorithm \cite{9563274} can be regarded as a UDR Tree, and therefore we can see that it has a slightly lower response time than Maram \cite{https://doi.org/10.48550/arxiv.2103.04828}. Figure \ref{fig:responsetime} also shows how a lower response time can be achieved by using non-locking algorithms.
+
+
+This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project.
+
+
+\newpage
+\section{Design}
+
+\subsection{Requirements}
+The main focus of this paper is to create a file synchronisation system using new research into tree CRDTs with highly available move operations \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}. As such, the requirements will be as follows:
+\begin{itemize}
+    \item Operations on the file tree structure (such as creating, moving and removing files or directories) will be replicated across nodes, and conflicts between concurrent operations will be resolved without locking or a consensus.
+    \item Replicas will communicate with other replicas over a peer-to-peer network.
+    \item Files should be correctly replicated across all nodes (Concurrent updates on file content will not be merged as this is out of the scope)
+    \item The system should have measurably lower latency compared to client-server systems.
+\end{itemize}
+
+\subsection{Proposed Final Design}
+The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
+\begin{itemize}
+    \item \textbf{File System} This layer will be responsible for the interaction with the file system. It will need to be able to:
+          \begin{itemize}
+              \item Watch the file system for changes and send alerts when changes happen
+              \item Read files when requested (For sending to other replicas)
+              \item Write / Update files when requested (For files sent by other replicas)
+          \end{itemize}
+    \item \textbf{CRDT} This layer will be in charge of conflict resolution. It will need to handle the following general list of concurrent operations which may cause conflicts:
+          \begin{itemize}
+              \item  Two \textit{Move} operations
+              \item  A \textit{Move} and an \textit{Add} operation
+              \item  A \textit{Move} and a \textit{Remove} operation
+              \item  Two \textit{Add} operations
+          \end{itemize}
+    \item \textbf{Network} This layer will be in charge of network communications. It will need to be able to:
+          \begin{itemize}
+              \item Connect to the peer-to-peer network
+              \item Send and receive file data
+              \item Send and receive operations
+          \end{itemize}
+\end{itemize}
+
+\subsection{Justification of Design}
+The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par
+
+
+
+\section{Project Management}
+
+\subsection{Account of Work to date}
+The current work has been around reviewing relevant literature and creating an initial design from this research. The research has been into current systems for file synchronisation, and their drawbacks. As well as into distributed systems and consistency models. Most importantly, detailed research has been completed into CRDTs and ones applicable to this paper's proposed system. From this research, an initial design has been created outlining the main aspects of the proposed system.
+
+\subsection{Plan of remaining work}
+The design will be refined and more detailed. From this design, the CRDT layer will be implemented by first selecting an algorithm and then coding it. Then, the Network layer, where the peer-to-peer networking will be coded first, followed by operation transmission and finally file data transmission. Then, the File System layer, where the watcher (which watches the file system for changes) will be coded and then reading and writing to file content. Development of these layers may overlap, but it will follow the general structure listed. \par
+Once all components have been coded, the system will have its reliability and performance tested, which will inform the evaluation. The evaluation then needs to be written and will contain the outcome of the project.
+
+\subsection{Estimate of Support Required}
+The performance testing may require the use of rented servers, to test latency.
+
+\subsection{Gantt Chart}
+
+\subsubsection{Completed Work}
+\includegraphics[width=16cm]{completed.jpg}
+
+
+\subsubsection{Remaining Work}
+\begin{center}
+    \includegraphics[width=16cm]{remaining.jpg}
+\end{center}
+
+
+\subsection{Risk Assessment}
+
+\begin{itemize}
+    \item \textbf{(P) Probability} 1 - low, 5 - high
+    \item \textbf{(S) Severity}  1 - low, 5 - high
+    \item \textbf{(RE) Risk Exposure} Probability * Severity
+\end{itemize}
+
+\begin{table}[ht]
+    \renewcommand{\arraystretch}{1.3}
+    \caption{Risk Assessment} % title of Table
+    \centering % used for centering table
+    \begin{tabular}{|p{3cm} | p{0.4cm} | p{0.4cm} | p{0.6cm} | p{8cm}|} % centered columns (4 columns)
+        \hline\hline %inserts double horizontal lines
+        \textbf{Risk}               & \textbf{P} & \textbf{S} & \textbf{RE} & \textbf{Mitigation}                                                                                              \\ [0.5ex] % inserts table
+        %heading
+        \hline % inserts single horizontal line
+        Loss of Report              & 2          & 5          & 10          & Back-up on computer, laptop and OneDrive                                                                         \\ \hline % inserting body of the table
+        Loss of Code                & 1          & 5          & 5           & Back-up on computer, laptop, OneDrive and GitHub                                                                 \\ \hline
+        Underestimating Tasks       & 3          & 3          & 9           & Plan for extra time in case tasks require it, as well as making informed estimates for time needed for each task \\ \hline
+        Health Issues               & 2          & 4          & 8           & Allow for spare time, and possible removal of parts of project. Attempt to not become sick.                      \\ \hline
+        Implementation Difficulties & 3          & 4          & 12          & Create a clear plan of work to do, and take time to understand the design. Can seek help if needed.              \\ \hline
+        Change in Scope             & 2          & 4          & 8           & Complete implementation early to allow for changes to the scope.
+        \\ \hline %inserts single line
+    \end{tabular}
+    \label{table:risk} % is used to refer this table in the text
+\end{table}
+
+
+\clearpage
+%TC:ignore
+\printbibliography
+%TC:endignore
+\end{document}
+
