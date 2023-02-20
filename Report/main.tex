@@ -247,8 +247,9 @@ Delta State CRDTs are a form of state-based CRDTs that only send the changed, or
     \label{fig:operation}
 \end{figure}
 
-Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send the update operation to other replicas. Each operation or update is a pair consisting of a \textit{prepare} method and a \textit{effect} method, where the \textit{prepare} method is only executed at the local replica\cite{10.1007/978-3-642-24550-3_29}. The operations also have to be commutative, but not idempotent. Because of the lack of idempotence, there are more requirements on transmission between replicas as they have to ensure each operation is sent to each replica only once (This can be seen in Figure \ref{fig:operation}). \par
-As Operation-based CRDTs have a weak definition, pure operation-based CRDTs have been proposed\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect that state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations and therefore they take up less space than normal operation-based CRDTs.
+Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send the update operation to other replicas. Each operation or update is a pair consisting of a \textit{prepare} method and an \textit{effect} method. The \textit{prepare} method is executed at the local replica and produces a message representing the operation, and the \textit{effect} method applies this operation at all replicas\cite{10.1007/978-3-642-24550-3_29}. The operations also have to be commutative, but not idempotent. Because of the lack of idempotence, there are more requirements on transmission between replicas as they have to ensure each operation is sent to each replica only once (This can be seen in Figure \ref{fig:operation}). \par
+
+\textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller. 
 
 \subsubsection{CRDTs and File Systems}
 
@@ -267,25 +268,27 @@ Currently there two main proposed algorithms that allow a highly available move 
           a happened-before relation. Maram splits move operations into \textit{down-moves} (the node is moved away from the root) and \textit{up-moves} (the node is moved towards to root or to the same distance). The conflict resolution is as follows: in concurrent up-moves, they are safe (so no conflict resolution required); in a concurrent up-move and down-move, the up-move wins; in concurrent down-moves, the move with the highest priority wins (the priority is deterministic, and specific to each application).
 
 \end{itemize}
-Table \ref{table:differences} shows a comparison between the two algorithms:
+Table \ref{table:differences} shows a comparison between the two algorithms: 
 
 \begin{table}[ht]
-    \renewcommand{\arraystretch}{1.5}
+    \def\arraystretch{2}
     \caption{Comparison of Algorithms} % title of Table
     \centering % used for centering table
     \begin{tabular}{c c c} % centered columns (4 columns)
         \hline\hline %inserts double horizontal lines
-                       & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
+            & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
         %heading
         \hline % inserts single horizontal line
-        Delivery Layer & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency \\ \textit{High Cost}}  \\ % inserting body of the table
-        Operations     & \makecell{Total Order                                                                                                   \\ \textit{High Cost}} & \makecell{Partial Order \\ \textit{Low Cost}}
+        \textbf{Delivery Layer} & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency\textsuperscript{i}  \\ \textit{High Cost}}  \\ % inserting body of the table
+        \textbf{Operations}     & \makecell{Total Order                                                                                                   \\ \textit{High Cost}} & \makecell{Partial Order \\ \textit{Low Cost}}
 
         \\ [1ex] % [1ex] adds vertical space
         \hline %inserts single line
     \end{tabular}
     \label{table:differences} % is used to refer this table in the text
 \end{table}
+
+\textsuperscript{i}\textit{Causal Consistency} gurantees that if two operations are causally related (one operation happened before the other), then the second operation will be applied after the first operation on all replicas. \par
 
 \begin{figure}[H]
     \centering
@@ -347,8 +350,8 @@ The system is decoupled into three distinct layers, which will improve the maint
 The current work has been around reviewing relevant literature and creating an initial design from this research. The research has been into current systems for file synchronisation, and their drawbacks. As well as into distributed systems and consistency models. Most importantly, detailed research has been completed into CRDTs and ones applicable to this paper's proposed system. From this research, an initial design has been created outlining the main aspects of the proposed system.
 
 \subsection{Plan of remaining work}
-The design will be refined and more detailed. From this design, the CRDT layer will be implemented by first selecting an algorithm and then coding it. Then, the Network layer, where the peer-to-peer networking will be coded first, followed by operation transmission and finally file data transmission. Then, the File System layer, where the watcher (which watches the file system for changes) will be coded and then reading and writing to file content. Development of these layers may overlap, but it will follow the general structure listed. \par
-Once all components have been coded, the system will have its reliability and performance tested, which will inform the evaluation. The evaluation then needs to be written and will contain the outcome of the project.
+The design will be refined and more detailed. From this design, the CRDT layer will be implemented by first selecting an algorithm and then coding it. Then, the Network layer, where the peer-to-peer networking will be coded first, followed by operation transmission and finally file data transmission. Then, the File System layer, where the watcher (which watches the file system for changes) will be coded and then reading and writing file content. Development of these layers may overlap, but it will follow the general structure listed. \par
+Once all components have been coded, the system will have its reliability and performance tested, which will inform the evaluation. The testing will seek to measure the throughput and response time of the algorithm(s), and how adding more replicas affects this. The evaluation then needs to be written and will contain the outcome of the project.
 
 \subsection{Estimate of Support Required}
 The performance testing may require the use of rented servers, to test latency.
