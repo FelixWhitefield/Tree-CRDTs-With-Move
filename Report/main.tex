@@ -199,8 +199,8 @@ While this paper proved the CAP Theorem, further research into the area revealed
 Because the CAP Theorem is somewhat limited, a new theorem was created which takes into account new factors which better reflect the trade-offs placed on distributed systems.
 
 \subsubsection{The PACELC Theorem}
-The PACELC Theorem was created as an extension to the CAP theorem to fill the areas in which the CAP theorem does not take into account. This theorem, therefore, creates a more complete picture of the trade-offs within distributed systems. \par
-PACELC incorporates the CAP Theorem, with the first part, PAC, meaning if there is a partition (P) the distributed system would have to choose between availability (A) or Consistency (C). And the extra part, ELC, means else (E) when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the ELC part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system.
+The PACELC Theorem was proposed by Abadi \cite{6127847}, as an extension to the CAP theorem and to fill the areas in which the CAP theorem does not take into account. This theorem, therefore, creates a more complete picture of the trade-offs within distributed systems. \par
+PACELC incorporates the CAP Theorem, with the first part, 'PAC', having a similar meaning: when there is a partition (P), how does the system choose between availability (A) and consitency (C). The added part, 'ELC', means: else (E), when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the 'ELC' part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system (always giving up consitency).
 
 \subsection{Consistency Models}
 \subsubsection{Strong and Eventual Consistency}
