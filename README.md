@@ -1,2 +1,1 @@
-# Tree CRDTs with Highly Available Move Operation
-
+# Tree CRDTs with Highly Available Move Operations
