@@ -249,7 +249,7 @@ Delta State CRDTs are a form of state-based CRDTs that only send the changed, or
 
 Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send the update operation to other replicas. Each operation or update is a pair consisting of a \textit{prepare} method and an \textit{effect} method. The \textit{prepare} method is executed at the local replica and produces a message representing the operation, and the \textit{effect} method applies this operation at all replicas\cite{10.1007/978-3-642-24550-3_29}. The operations also have to be commutative, but not idempotent. Because of the lack of idempotence, there are more requirements on transmission between replicas as they have to ensure each operation is sent to each replica only once (This can be seen in Figure \ref{fig:operation}). \par
 
-\textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller. 
+\textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
 
 \subsubsection{CRDTs and File Systems}
 
@@ -268,7 +268,10 @@ Currently there two main proposed algorithms that allow a highly available move 
           a happened-before relation. Maram splits move operations into \textit{down-moves} (the node is moved away from the root) and \textit{up-moves} (the node is moved towards to root or to the same distance). The conflict resolution is as follows: in concurrent up-moves, they are safe (so no conflict resolution required); in a concurrent up-move and down-move, the up-move wins; in concurrent down-moves, the move with the highest priority wins (the priority is deterministic, and specific to each application).
 
 \end{itemize}
-Table \ref{table:differences} shows a comparison between the two algorithms: 
+  
+These will be referred to as \textit{Kleppmann's algorithm} and \textit{Maram}  respectively.
+
+Table \ref{table:differences} shows a comparison between the two algorithms:
 
 \begin{table}[ht]
     \def\arraystretch{2}
@@ -276,7 +279,7 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
     \centering % used for centering table
     \begin{tabular}{c c c} % centered columns (4 columns)
         \hline\hline %inserts double horizontal lines
-            & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
+                                & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
         %heading
         \hline % inserts single horizontal line
         \textbf{Delivery Layer} & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency\textsuperscript{i}  \\ \textit{High Cost}}  \\ % inserting body of the table
@@ -288,7 +291,7 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
     \label{table:differences} % is used to refer this table in the text
 \end{table}
 
-\textsuperscript{i}\textit{Causal Consistency} gurantees that if two operations are causally related (one operation happened before the other), then the second operation will be applied after the first operation on all replicas. \par
+\textsuperscript{i}\textit{Causal Consistency} gurantees that if two operations are causally related, then the second operation will be applied after the first operation on all replicas. For example, if a replica receives operation \textit{A} then creates operation \textit{B}, then operation \textit{A} should be applied before operation \textit{B} on all other replicas. \par
 
 \begin{figure}[H]
     \centering
@@ -300,44 +303,72 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
 Figure \ref{fig:responsetime} shows differences in response times between different algorithms. Kleppmann's algorithm \cite{9563274} can be regarded as a UDR Tree, and therefore we can see that it has a slightly lower response time than Maram \cite{https://doi.org/10.48550/arxiv.2103.04828}. Figure \ref{fig:responsetime} also shows how a lower response time can be achieved by using non-locking algorithms.
 
 
-This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project.
+This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project. Notably, these algorithms require a separate consistency layer which will depend on the chosen algorithm, either eventual consistency or causal consistency. This layer will be implemented separately from the CRDT layer.
 
 
 \newpage
 \section{Design}
+The original aim of this paper was to create a file synchronisation system using conflict-free replicated data types (CRDTs). However, due to the complexity and challenges of implementing such a system, this paper has narrowed its focus to explore the implementation and evaluation of the CRDTs. By narrowing down the scope of this research, this paper aims to provide a more in-depth analysis of the advantages and limitations of the CRDTs. This will allow for a more thorough evaluation of the CRDTs, and will allow for a more detailed comparison between the different CRDTs.
 
 \subsection{Requirements}
-The main focus of this paper is to create a file synchronisation system using new research into tree CRDTs with highly available move operations \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}. As such, the requirements will be as follows:
+The main focus of this paper is to implement the two CRDT algorithms, \cite{9563274} and \cite{https://doi.org/10.48550/arxiv.2103.04828}, and to test them individually as well as to compare them. While the evaluation of these algorithms will be the main focus, this paper will also attempt to create implementations that can be used by other developers. As such, the requirements will be as follows:
 \begin{itemize}
-    \item Operations on the file tree structure (such as creating, moving and removing files or directories) will be replicated across nodes, and conflicts between concurrent operations will be resolved without locking or a consensus.
-    \item Replicas will communicate with other replicas over a peer-to-peer network.
-    \item Files should be correctly replicated across all nodes (Concurrent updates on file content will not be merged as this is out of the scope)
-    \item The system should have measurably lower latency compared to client-server systems.
+    \item The system shall be comprised of multiple layers that can be modified independently.
+    \item The system should have a simple and easy to use API.
+    \item The implementations should follow the literature as closely as possible, to ensure they are logically correct.
+    \item The system shall support immediate local execution of operations on the CRDTs
+    \item The replication between replicas shall be handled by a separate layer than that which handles the CRDTs. This will allow for the replication layer to be modified independently of the CRDT layer, and vice versa.
+    \item The replication layer should handle the communication between replicas asynchronously.
+    \item Each layer should have an interface that allows for the layer to be replaced with a different implementation.
 \end{itemize}
 
 \subsection{Proposed Final Design}
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
 \begin{itemize}
     \item \textbf{File System} This layer will be responsible for the interaction with the file system. It will need to be able to:
-          \begin{itemize}
-              \item Watch the file system for changes and send alerts when changes happen
-              \item Read files when requested (For sending to other replicas)
-              \item Write / Update files when requested (For files sent by other replicas)
-          \end{itemize}
+        \begin{itemize}
+            \item Watch the file system for changes and send alerts when changes happen
+            \item Read files when requested (For sending to other replicas)
+            \item Write / Update files when requested (For files sent by other replicas)
+        \end{itemize}
     \item \textbf{CRDT} This layer will be in charge of conflict resolution. It will need to handle the following general list of concurrent operations which may cause conflicts:
-          \begin{itemize}
-              \item  Two \textit{Move} operations
-              \item  A \textit{Move} and an \textit{Add} operation
-              \item  A \textit{Move} and a \textit{Remove} operation
-              \item  Two \textit{Add} operations
-          \end{itemize}
+        \begin{itemize}
+            \item  Two \textit{Move} operations, such as:
+            \begin {itemize}
+                \item Two replicas move the same file to different locations
+                \item One replica moving directory A into directory B, and another replica moving directory B into directory A, resulting in a cycle (illegal in a file system)
+            \end{itemize}
+            \item  A \textit{Move} and an \textit{Add} operation, such as:
+            \begin {itemize}
+                \item One replica moves a file or directory into directory A, and another replica creates a file or directory respectively with the same name inside directory A
+            \end{itemize}
+            \item  A \textit{Move} and a \textit{Remove} operation, such as:
+            \begin{itemize}
+                \item One replica moves a file or directory into directory A, and another replica removes directory A
+            \end{itemize}
+            \item  Two \textit{Add} operations, such as:
+            \begin{itemize}
+                \item Two replicas create a file or directory with the same name
+            \end{itemize}
+            \item A \textit{Remove} and an \textit{Add} operation, such as:
+            \begin{itemize}
+                \item One replica creates a file or directory inside directory A, and another replica removes directory A
+            \end{itemize}
+        \end{itemize}
+
+    \item \textbf{Consistency} This layer will be in charge of ensuring the needed consistency model (eventual consistency or causal consistency). It will need to be able to:
+        \begin{itemize}
+            \item Ensure that the consistency model is met, even if some replicas are offline
+            \item Allow a replica to recover after being offline, and ensure that it is up-to-date with the rest of the network
+        \end{itemize}
     \item \textbf{Network} This layer will be in charge of network communications. It will need to be able to:
-          \begin{itemize}
-              \item Connect to the peer-to-peer network
-              \item Send and receive file data
-              \item Send and receive operations
-          \end{itemize}
+        \begin{itemize}
+            \item Connect to the peer-to-peer network
+            \item \textit{Send} and \textit{Receive} file data
+            \item \textit{Send} and \textit{Receive} operations
+        \end{itemize}
 \end{itemize}
+Certain CRDTs require different consistency models, therefore the consistency layer will be dependent on the chosen CRDT. \par
 
 \subsection{Justification of Design}
 The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par
