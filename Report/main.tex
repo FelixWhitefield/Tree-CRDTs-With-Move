@@ -252,8 +252,7 @@ Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (Cm
 \textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
 
 \subsubsection{CRDTs and File Systems}
-
-A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. The hard part of creating a tree-structured CRDT is making a move operation that is \textit{highly available} (does not require locking, consensus or creates duplicates). \par
+A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. However, designing a tree CRDT with a \textit{highly available} move operation poses significant challenges due to the need to preserve the strict tree invariant. \textit{Highly available} meaning: does not require locking, consensus and does not create duplicates.   \par
 
 This can be shown by ElmerFS (A file system created using CRDTs), where concurrent moves can create a cycle \cite{10.1145/3465332.3470872}. Najafadeh et al. \cite{Najafzadeh0E18} proposes a similar system which instead locks on move operations to ensure cycles are not created. These papers show how hard creating a highly available move operation is, however recent work has shown that it is possible \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}, \cite{https://doi.org/10.48550/arxiv.1805.04263}. \par
 
@@ -303,7 +302,7 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
 Figure \ref{fig:responsetime} shows differences in response times between different algorithms. Kleppmann's algorithm \cite{9563274} can be regarded as a UDR Tree, and therefore we can see that it has a slightly lower response time than Maram \cite{https://doi.org/10.48550/arxiv.2103.04828}. Figure \ref{fig:responsetime} also shows how a lower response time can be achieved by using non-locking algorithms.
 
 
-This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project. Notably, these algorithms require a separate consistency layer which will depend on the chosen algorithm, either eventual consistency or causal consistency. This layer will be implemented separately from the CRDT layer.
+This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project. Notably, these algorithms require a separate delivery layer to communicate between replicas. This layer will be implemented separately from the CRDTs.
 
 
 \newpage
@@ -316,21 +315,15 @@ The main focus of this paper is to implement the two CRDT algorithms, \cite{9563
     \item The system shall be comprised of multiple layers that can be modified independently.
     \item The system should have a simple and easy to use API.
     \item The implementations should follow the literature as closely as possible, to ensure they are logically correct.
-    \item The system shall support immediate local execution of operations on the CRDTs
+    \item The system shall support immediate local execution of operations on the CRDTs.
     \item The replication between replicas shall be handled by a separate layer than that which handles the CRDTs. This will allow for the replication layer to be modified independently of the CRDT layer, and vice versa.
     \item The replication layer should handle the communication between replicas asynchronously.
-    \item Each layer should have an interface that allows for the layer to be replaced with a different implementation.
+    \item Each layer should have an interface that allows for other implementations to be created and swapped in. This will allow for the system to be easily modified and extended.
 \end{itemize}
 
 \subsection{Proposed Final Design}
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
 \begin{itemize}
-    \item \textbf{File System} This layer will be responsible for the interaction with the file system. It will need to be able to:
-        \begin{itemize}
-            \item Watch the file system for changes and send alerts when changes happen
-            \item Read files when requested (For sending to other replicas)
-            \item Write / Update files when requested (For files sent by other replicas)
-        \end{itemize}
     \item \textbf{CRDT} This layer will be in charge of conflict resolution. It will need to handle the following general list of concurrent operations which may cause conflicts:
         \begin{itemize}
             \item  Two \textit{Move} operations, such as:

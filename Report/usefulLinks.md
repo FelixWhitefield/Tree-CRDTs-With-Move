@@ -6,3 +6,8 @@
 ## Updates
 - ✔ Add references to PALELC Theorem
 
+## Questions 
+- Should UML class diagrams be within the design section?
+- Should things like language go in design or implementation?
+- What should implementation show? (e.g. code snippets, UML diagrams, etc.)
+
