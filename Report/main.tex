@@ -256,8 +256,8 @@ A file system can be represented as a tree structure, where the files and direct
 
 This can be shown by ElmerFS (A file system created using CRDTs), where concurrent moves can create a cycle \cite{10.1145/3465332.3470872}. Najafadeh et al. \cite{Najafzadeh0E18} proposes a similar system which instead locks on move operations to ensure cycles are not created. These papers show how hard creating a highly available move operation is, however recent work has shown that it is possible \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}, \cite{https://doi.org/10.48550/arxiv.1805.04263}. \par
 
-\subsubsection{Algorithms With a Highly Available Move}
-Currently there two main proposed algorithms that allow a highly available move operation:
+\subsubsection{Algorithms With a Highly Available Move} \label{sssec:algorithms}
+Currently, there two main proposed algorithms that allow a highly available move operation:
 \begin{itemize}
     \item
           \textbf{Kleppmann et al. \cite{9563274}} proposes an algorithm that represents the tree as a set of parent-child relationships. A move operation is performed by removing the node from wherever it is in the tree and moving it to its new location. This operation can also be used for adding and removing nodes, the former by creating a new node under the specified parent and the latter by moving the node under a "trash" node. It also stores a \textit{log} of all previous operations, which allows the algorithm to implement a move operation. The algorithm can use the \textit{log} to ensure that all operations are applied in the correct order by undoing and reapplying operations (as proposed in \cite{https://doi.org/10.48550/arxiv.1805.04263}). It deals with cycles by ensuring that if any operations were to create a cycle, it would be ignored however they are still added to the \textit{log}. In general, the algorithm will prefer the latest operation that does not cause a conflict. The only conflict which the algorithm does not resolve is child nodes with the same parent having the same name.
@@ -322,9 +322,10 @@ The main focus of this paper is to implement the two CRDT algorithms, \cite{9563
 \end{itemize}
 
 \subsection{Proposed Final Design}
+
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
 \begin{itemize}
-    \item \textbf{CRDT} This layer will be in charge of conflict resolution. It will need to handle the following general list of concurrent operations which may cause conflicts:
+    \item \textbf{CRDT} This layer will be in charge of conflict resolution and is the main focus of this paper. The CRDTs will be implemented using the algorithms described in Section \ref{sssec:algorithms}. This layer is responsible for the following: 
         \begin{itemize}
             \item  Two \textit{Move} operations, such as:
             \begin {itemize}
@@ -366,7 +367,11 @@ Certain CRDTs require different consistency models, therefore the consistency la
 \subsection{Justification of Design}
 The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par
 
+\subsection{Language and Tools}
+\subsubsection{Go}
+Go is a language created by Google, and is designed to be used in distributed systems with the help of its built-in, lightweight concurrency features. As this paper aims to create a distributed system, then Go is a good choice to help with this. \par
 
+The CRDTs which will be implemented by this paper are particularly applicable to distributed file systems. Recent distributed file systems have been written using Go, such as JuiceFS or Kertish-DFS. Therefore, by using Go this paper aims to create useful implementations for these systems, or to provide a base implementation which can then be improved upon. \par
 
 \section{Project Management}
 
