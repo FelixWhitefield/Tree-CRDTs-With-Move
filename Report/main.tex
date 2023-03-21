@@ -228,15 +228,30 @@ Compared to physical clocks, which track time, logical clocks are used to track 
 \end{itemize}
 This happened-before relation can be used to track the causal dependencies, as if $a$ $\rightarrow$ $b$, then $b$ is \textit{causally dependent} on $a$. Which means that $b$ may have been influenced by $a$. \par 
 \subsubsection{Lamport Clocks}
-Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They are a logical clock which can be used to track the happened-before relation between events. They work by having each node maintain their own counter, which is incremented on each local event and attached to that event. This attached counter value is called a lamport timestamp. When nodes send messages to each other, they send their current counter value along with it. Then, the receiving node updates their counter to the received lamport timestamp if it is greater than their current counter value. It is important to note that sending and receiving messages both count as events. \par
+Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They work by having each node maintain their own counter, which is incremented on each local event. This counter value is attached to the event, and is the lamport timestamp for that event. When nodes send messages to each other, they send their current counter value along with it. Then, the receiving node updates their counter to the received lamport timestamp if it is greater than their current counter value. It is important to note that sending and receiving messages both count as events. \par
 
 With lamport clocks, it gives us the guarantee that if $a$ $\rightarrow$ $b$, then $L(a) < L(b)$. However, the reverse is not true. This can be denoted as: 
 \[a \rightarrow b \implies  L(a) < L(b)\]
-This is useful for detecting potential causal dependencies, however, by using lamport clocks, concurrent events may appear to be causally dependent. One use for lamport clocks is to create a total order which captures the causal dependencies. This can be achieved by assigning each node a unique ID, and using that to break ties when $L(a) = L(b)$. This requires the corresponding node ID to be stored in the lamport timestamp for each event. It is worth noting that this total order is arbitrary, but deterministic. This was defined by Lamport\cite{lamport1978time}, and can be denoted as:\par
+This is useful for detecting potential causal dependencies. However, by using lamport clocks, concurrent events may appear to be causally dependent. One use for lamport clocks is to create a total order which captures the causal dependencies. This can be achieved by assigning each node a unique ID, and using that to break ties when $L(a) = L(b)$. When an event happens on a node, the node ID is then also stored in the lamport timestamp. It is worth noting that this total order is arbitrary, but deterministic. This was defined by Lamport\cite{lamport1978time}, and can be denoted as:\par
 \[a \prec b \iff L(a) < L(b) \lor (L(a) = L(b) \land ID(a) < ID(b))\]
 
 \subsubsection{Vector Clocks}
+Vector clocks are another logical clock that provide more gurantees than lamport clocks. They are similar to lamport clocks, but instead of having a single counter, they have a counter for each node.
+When an event happens on a node, the node increments its own counter, and then sends the vector timestamp to the other nodes. When a node receives a vector timestamp, it updates its own vector timestamp to be the maximum of its own vector timestamp and the received vector timestamp \cite{mattern1989virtual}.\par
 
+Vector timestamps can be ordered by the following rules:
+\[V(a) \leq V(b) \iff \forall_i [V(a)_i \leq V(b)_i]  \]
+\[V(a) = V(b) \iff \forall_i [V(a)_i = V(b)_i]\]
+
+Lamport clocks can only indicate \emph{potential} causal dependencies. Vector timestamps are larger than Lamport timestamps, but they precisely indicate the happened-before relation between events in a system. This is denoted by the following ($\vert \vert$ denotes concurrent):
+
+\begin{itemize}
+    \item $a \rightarrow b \iff V(a) \leq V(b) \land V(a) \not = V(b)$
+    \item $a = b \iff V(a) = V(b)$
+    \item $a \: || \:  b \iff V(a) \not \leq V(b) \land V(b) \not \leq V(a)$
+\end{itemize}
+
+This can be used to create a partial order, as concurrent events are not ordered.
 
 \subsection{Conflict-free Replicated Data Types}
 CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par

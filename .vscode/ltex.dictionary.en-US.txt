@@ -2,3 +2,5 @@ Kleppmann
 CRDTs
 JuiceFS
 Kertish-DFS
+lamport
+Lamport
