@@ -42,7 +42,7 @@
 
     \HRule\\[0.4cm]
 
-    {\huge\bfseries Using CRDTs to Create a File Synchronization System}\\[0.4cm] % Title of your document
+    {\huge\bfseries A Study of Highly Available Move Operations in Tree CRDTs}\\[0.4cm] % Title of your document
 
     \HRule\\[1cm]
 
@@ -230,16 +230,19 @@ This happened-before relation can be used to track the causal dependencies, as i
 \subsubsection{Lamport Clocks}
 Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They work by having each node maintain their own counter, which is incremented on each local event. This counter value is attached to the event, and is the lamport timestamp for that event. When nodes send messages to each other, they send their current counter value along with it. Then, the receiving node updates their counter to the received lamport timestamp if it is greater than their current counter value. It is important to note that sending and receiving messages both count as events. \par
 
-With lamport clocks, it gives us the guarantee that if $a$ $\rightarrow$ $b$, then $L(a) < L(b)$. However, the reverse is not true. This can be denoted as: 
-\[a \rightarrow b \implies  L(a) < L(b)\]
-This is useful for detecting potential causal dependencies. However, by using lamport clocks, concurrent events may appear to be causally dependent. One use for lamport clocks is to create a total order which captures the causal dependencies. This can be achieved by assigning each node a unique ID, and using that to break ties when $L(a) = L(b)$. When an event happens on a node, the node ID is then also stored in the lamport timestamp. It is worth noting that this total order is arbitrary, but deterministic. This was defined by Lamport\cite{lamport1978time}, and can be denoted as:\par
+
+Lamport clocks give us the following guarantee, where $L(a)$ is the lamport timestamp of event $a$: 
+\begin{itemize}
+    \item $a \rightarrow b \implies  L(a) < L(b)$
+\end{itemize}
+This is useful for detecting potential causal dependencies. However, by using lamport clocks, concurrent events may appear to be causally dependent. One use for lamport clocks is to create a total order ($\prec$) which captures the causal dependencies. This can be achieved by assigning each node a unique ID, and using that to break ties when $L(a) = L(b)$. When an event happens on a node, the node ID is then also stored in the lamport timestamp. It is worth noting that this total order is arbitrary, but deterministic. This was defined by Lamport\cite{lamport1978time}, and can be denoted as:\par
 \[a \prec b \iff L(a) < L(b) \lor (L(a) = L(b) \land ID(a) < ID(b))\]
 
 \subsubsection{Vector Clocks}
-Vector clocks are another logical clock that provide more gurantees than lamport clocks. They are similar to lamport clocks, but instead of having a single counter, they have a counter for each node.
-When an event happens on a node, the node increments its own counter, and then sends the vector timestamp to the other nodes. When a node receives a vector timestamp, it updates its own vector timestamp to be the maximum of its own vector timestamp and the received vector timestamp \cite{mattern1989virtual}.\par
+Vector clocks are another logical clock that provide more gurantees than lamport clocks. Each node maintains a vector timestamp, which is a vector of counters. Each counter corresponds to a node in the system.
+When an event happens on a node, the node increments its own counter, and then sends its vector timestamp to the other nodes. When a node receives a vector timestamp, it updates its own vector timestamp to be the maximum of its own vector timestamp and the received vector timestamp \cite{mattern1989virtual}.\par
 
-Vector timestamps can be ordered by the following rules:
+Vector timestamps can be ordered by the following rules, where $V(a)$ is the timestamp of event $a$ and $V(a)_i$ is the value of the counter for node $i$:
 \[V(a) \leq V(b) \iff \forall_i [V(a)_i \leq V(b)_i]  \]
 \[V(a) = V(b) \iff \forall_i [V(a)_i = V(b)_i]\]
 
@@ -251,7 +254,7 @@ Lamport clocks can only indicate \emph{potential} causal dependencies. Vector ti
     \item $a \: || \:  b \iff V(a) \not \leq V(b) \land V(b) \not \leq V(a)$
 \end{itemize}
 
-This can be used to create a partial order, as concurrent events are not ordered.
+This can be used to create a partial order, as concurrent events are neither causally related nor ordered with respect to each other.
 
 \subsection{Conflict-free Replicated Data Types}
 CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
@@ -291,6 +294,33 @@ A file system can be represented as a tree structure, where the files and direct
 
 This can be shown by ElmerFS (A file system created using CRDTs), where concurrent moves can create a cycle \cite{10.1145/3465332.3470872}. Najafadeh et al. \cite{Najafzadeh0E18} proposes a similar system which instead locks on move operations to ensure cycles are not created. These papers show how hard creating a highly available move operation is, however recent work has shown that it is possible \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}, \cite{https://doi.org/10.48550/arxiv.1805.04263}. \par
 
+\subsubsection{Difficulties with Move Operations}
+Tree CRDTs themselves are not difficult to implement, as shown by the paper "Abstract unordered and ordered trees CRDT" \cite{martin2012abstract} from 2012. Tree CRDTs have also been using in real-time collaborative editing applications \cite{5158449}. However, these implementations only allow for adding and removing nodes, not moving them. This is because a move operation is difficult to implement, as concurrent moves can break the tree invariant. Therefore, this section will exclusively consider conflicts that arise from move operations, as these represent new advancements in tree CRDTs. 
+
+There are three main operations that will need to be considered when implementing conflict resolution. These being: \textit{add(p,n)}, \textit{remove(n)} and \textit{move(p,n)}. Where \textit{p} is the parent node, and \textit{n} is the globally unique id of the node to be added, removed or moved. $Add$ will add node \textit{n} under parent node \textit{p}, $remove$ will remove node \textit{n} and $move$ will move node \textit{n} to parent node \textit{p}. With these operations, there are three conflicts between two concurrent operations that involve move operation:
+\begin{itemize}
+    \item
+        \textit{Move-Add} conflict: Occurs when the move operation moves node with name $m$ is under node $p$, and the add operation adds a node with name $m$ under node $p$.*
+    \item
+        \textit{Move-Remove} conflict: This conflict has two cases:
+        \begin{itemize}
+            \item 
+                When the move operation moves node $n$ under node $p$, and the remove operation removes node $p$.
+            \item
+                When the move operation moves node $n$ under node $p$, and the remove operation removes node $n$.
+        \end{itemize}
+    \item
+        \textit{Move-Move} conflict: This conflict has these cases:
+        \begin{itemize}
+            \item 
+                When one move operation moves node with name $m$ under node $p$, and the other move operation moves node with name $m$ under node $p$.*
+            \item 
+                When one move operation moves node $n$ under node $p1$, and the other move operation moves node $n$ under node $p2$.
+        \end{itemize}
+\end{itemize}
+
+*This conflict will only arise if nodes are uniquely identified by their name and parent, as is typical in file systems. (However, for other systems this may not be the case)
+
 \subsubsection{Algorithms With a Highly Available Move} \label{sssec:algorithms}
 Currently, there two main proposed algorithms that allow a highly available move operation:
 \begin{itemize}
@@ -302,8 +332,8 @@ Currently, there two main proposed algorithms that allow a highly available move
           a happened-before relation. Maram splits move operations into \textit{down-moves} (the node is moved away from the root) and \textit{up-moves} (the node is moved towards to root or to the same distance). The conflict resolution is as follows: in concurrent up-moves, they are safe (so no conflict resolution required); in a concurrent up-move and down-move, the up-move wins; in concurrent down-moves, the move with the highest priority wins (the priority is deterministic, and specific to each application).
 
 \end{itemize}
-  
-These will be referred to as \textit{Kleppmann's algorithm} and \textit{Maram}  respectively.
+
+These will be referred to as \textit{Kleppmann's algorithm} and \textit{Maram} respectively, and will be the main focus of this paper.
 
 Table \ref{table:differences} shows a comparison between the two algorithms:
 
@@ -316,8 +346,8 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
                                 & \textbf{Kleppmann's \cite{9563274}} & \textbf{Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}} \\ [0.5ex] % inserts table
         %heading
         \hline % inserts single horizontal line
-        \textbf{Delivery Layer} & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency\textsuperscript{i}  \\ \textit{High Cost}}  \\ % inserting body of the table
-        \textbf{Operations}     & \makecell{Total Order                                                                                                   \\ \textit{High Cost}} & \makecell{Partial Order \\ \textit{Low Cost}}
+        \textbf{Delivery Layer} & \makecell{Eventual Consistency                                                                                          \\ \textit{Low Cost}} & \makecell{Causal Consistency\textsuperscript{i}  \\ \textit{Higher Cost}}  \\ % inserting body of the table
+        \textbf{Operation Order}     & \makecell{Total Order                                                                                                   \\ \textit{High Cost}} & \makecell{Partial Order \\ \textit{Low Cost}}
 
         \\ [1ex] % [1ex] adds vertical space
         \hline %inserts single line
@@ -337,7 +367,7 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
 Figure \ref{fig:responsetime} shows differences in response times between different algorithms. Kleppmann's algorithm \cite{9563274} can be regarded as a UDR Tree, and therefore we can see that it has a slightly lower response time than Maram \cite{https://doi.org/10.48550/arxiv.2103.04828}. Figure \ref{fig:responsetime} also shows how a lower response time can be achieved by using non-locking algorithms.
 
 
-This paper will use one of the algorithms stated above, Kleppmann's \cite{9563274} or Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}, to deal with directory conflicts. If time allows, both algorithms will be implemented and compared. The implementation of one or both of these algorithms, and subsequent testing, will be the main part of this project. Notably, these algorithms require a separate delivery layer to communicate between replicas. This layer will be implemented separately from the CRDTs.
+This paper will use both of the algorithms stated above, Kleppmann's \cite{9563274} and Nair's (\textit{Maram}) \cite{https://doi.org/10.48550/arxiv.2103.04828}. The implementation of these algorithms, and subsequent testing, will be the main part of this project. The testing will inform the evaluation, which will compare the two algorithms and determine their viability. Notably, these algorithms require a separate delivery layer to communicate between replicas. This layer will be implemented separately from the CRDTs.
 
 
 \newpage
@@ -362,27 +392,11 @@ The design will be split into different layers that will each be independent and
 \begin{itemize}
     \item \textbf{CRDT} This layer will be in charge of conflict resolution and is the main focus of this paper. The CRDTs will be implemented using the algorithms described in Section \ref{sssec:algorithms}. This layer is responsible for the following: 
         \begin{itemize}
-            \item  Two \textit{Move} operations, such as:
-            \begin {itemize}
-                \item Two replicas move the same file to different locations
-                \item One replica moving directory A into directory B, and another replica moving directory B into directory A, resulting in a cycle (illegal in a file system)
-            \end{itemize}
-            \item  A \textit{Move} and an \textit{Add} operation, such as:
-            \begin {itemize}
-                \item One replica moves a file or directory into directory A, and another replica creates a file or directory respectively with the same name inside directory A
-            \end{itemize}
-            \item  A \textit{Move} and a \textit{Remove} operation, such as:
-            \begin{itemize}
-                \item One replica moves a file or directory into directory A, and another replica removes directory A
-            \end{itemize}
-            \item  Two \textit{Add} operations, such as:
-            \begin{itemize}
-                \item Two replicas create a file or directory with the same name
-            \end{itemize}
-            \item A \textit{Remove} and an \textit{Add} operation, such as:
-            \begin{itemize}
-                \item One replica creates a file or directory inside directory A, and another replica removes directory A
-            \end{itemize}
+            \item Applying operations (which will be \textit{local} or \textit{remote}) on the CRDT
+            \item Resolving conflicts that arise between concurrent operations 
+            \item Ensuring that all replicas eventually converge to the same state
+            \item Keeping track of the state of the CRDT (the state of the tree)
+            \item Providing an interface for the user to interact with the CRDT
         \end{itemize}
 
     \item \textbf{Consistency} This layer will be in charge of ensuring the needed consistency model (eventual consistency or causal consistency). It will need to be able to:
@@ -464,6 +478,64 @@ The performance testing may require the use of rented servers, to test latency.
 \clearpage
 %TC:ignore
 \printbibliography
+
+\appendix
+\section{Original Brief}
+\subsection{Title}
+\begin{center}
+Using CRDTs to Create a File Synchronization System
+\end{center}
+
+\subsection{Problem}
+Distributed computing systems are becoming more popular for two main reasons, availability
+and scalability. Distributed storage systems that have replicas need a way to merge the replicas,
+however conflicts can arise when merging two different replicas. Software such as Google Drive
+and Dropbox exhibit bugs in their concurrency control when the filesystem is concurrently
+updated on different computers. CRDTs (Conflict-free Replicated Data Types) can be
+implemented to ensure strong eventual consistency (SEC) as well as remove the need for a
+centralized server or leader. SEC ensures that two nodes/peers will converge to the same state
+even if the order in which they receive a set of updates is different. CRDTs can have the benefit
+of a low-latency because updates can be made locally without having to contact another node,
+however their throughput may be lower than other solutions, such as state machines, due to
+them having to resolve conflicts. Due to the high guarantees of CRDTs, implementations for
+complex data types are still being theorized and tested in practice (such as tree CRDTs).
+
+\subsection{Goal}
+The goal of this project is to implement and test the performance and viability of using new
+advancements in tree CRDTs in a file synchronization system to solve directory conflicts. This
+project aims to be able to demonstrate whether using CRDTs in this application is viable, mainly
+focusing on the throughput and reliability of the system. The system should be able to tolerate
+network failures and offline usage. The implementation will be peer-to-peer, meaning that each
+node will be equally privileged. Another focus of this project will be on optimisation and so
+different methods will be documented to show how this was achieved, with a focus on
+increasing throughput (as CRDTs have naturally low latency).
+Tree structures are used in many scenarios so the code for this project could be used in other
+scenarios when Strong Eventual Consistency is wanted.
+
+\subsection{Scope}
+The scope of this project will be limited to implementing CRDTs to resolve directory conflicts and
+testing their performance and reliability. The system should be tested with a varying number of
+replicas to attempt to visualize how the system would scale. Optimisations will only be
+implemented after the system works as intended.
+File conflicts will not be a focus of this project, however they could be brought into the scope if
+time allows.
+
+\subsection{Interim Abstract}
+This report is an attempt to use new developments in tree CRDTs with
+highly available move operations to create a file synchronisation system that
+will resolve all directory conflicts without human interaction; and will not
+exhibit ’buggy’ behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these
+systems in a real-world scenario. So far, this paper has reviewed the existing
+literature and has analysed the concurrency issues facing current systems. As
+well as detailing two algorithms which have been proposed that state to have
+solutions to the problem of creating a highly available move operation.
+The remaining work includes creating a more refined design of the system and
+then implementing the separate parts to create a cohesive application. Once
+implemented, the system will be tested for reliability and performance. This
+testing will inform the final evaluation of system, where it will be compared
+to existing solutions.
+
+
 %TC:endignore
 \end{document}
 
