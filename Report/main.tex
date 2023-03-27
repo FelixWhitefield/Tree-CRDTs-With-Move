@@ -79,7 +79,7 @@
 
     \vfill\vfill\vfill\vfill % Position the date 3/4 down the remaining page
 
-    A project progress report submitted for the award of BSc Computer Science.
+    A project report submitted for the award of BSc Computer Science.
 
     % {\large\today} % Date, change the \today to a set date if you want to be precise
 
@@ -172,13 +172,13 @@ The two main network architectures of file synchronization systems are client-se
 % File synchronisation software usually comes in two variants; either a system with a central server that handles the file sharing, or a peer-to-peer system. Each system has its own benefits and drawbacks, as described below.
 
 \subsubsection{Client-server Systems}
-A vast majority of file synchronisation systems come in the form of file storage and synchronisation systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{https://www.google.co.uk/intl/en-GB/drive/}, OneDrive\footnote{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage} and Dropbox\footnote{https://www.dropbox.com/features/sync}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
+A vast majority of file synchronisation systems are integrated into file backup systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{https://www.google.co.uk/intl/en-GB/drive/}, OneDrive\footnote{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage} and Dropbox\footnote{https://www.dropbox.com/features/sync}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
 
 This has the drawback of increased latency as all requests have to go through and be processed by the central server. If many people use the service, then the strain on the server from file transfers would be high and could increase the latency further. These systems also rely on the user trusting the provider to keep their files safe. \par
 
 As the web evolves there is more talk about Web3\cite{WhatIsWeb3}, which has foundations in decentralisation.
 \subsubsection{Peer-to-peer Systems}
-There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While BitTorrent is widely used, one of the main drawbacks of the BitTorrent protocol is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement, however, it has some limitations and drawbacks, such as:
+There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement, however, it has some limitations and drawbacks, such as:
 \begin{itemize}
     \item Renaming a folder will not rename the folder on other devices \footnote{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}.
     \item Renaming a file will cause other devices to believe it is deleted, and move the file into an archive folder. Then when the peer detects the renamed file, it will check the archive folder for a file with the same hash, and put it back with a new name\footnote{https://help.resilio.com/hc/en-us/articles/209606526-What-happens-when-file-is-renamed}.
@@ -186,7 +186,7 @@ There are many peer-to-peer (p2p) file-sharing programs, with many popular ones 
               \item If the file is renamed and then changed, the hashes will not be the same and therefore will require the transmission of the whole file contents.
           \end{itemize}
 \end{itemize}  \par
-One drawback of peer-to-peer file sharing systems is that it for the sharing to occur, at least two nodes need to be online at the same time. In comparison to a client-server architecture, where the server is always available. Also, in practice, peer-to-peer networks require some form of centralisation for the initial connection, as you cannot multicast on the web.
+One drawback of peer-to-peer file sharing systems is that for the sharing to occur, at least two nodes need to be online at the same time. In comparison to a client-server architecture, where the server is always available. Also, in practice, peer-to-peer networks require some form of centralisation for the initial connection, as you cannot multicast on the web.
 
 \subsection{Distributed Systems}
 \subsubsection{The CAP Theorem}
@@ -202,7 +202,7 @@ Because the CAP Theorem is somewhat limited, a new theorem was created which tak
 
 \subsubsection{The PACELC Theorem}
 The PACELC Theorem was proposed by Abadi \cite{6127847}, as an extension to the CAP theorem and to fill the areas in which the CAP theorem does not take into account. This theorem, therefore, creates a more complete picture of the trade-offs within distributed systems. \par
-PACELC incorporates the CAP Theorem, with the first part, 'PAC', having a similar meaning: when there is a partition (P), how does the system choose between availability (A) and consitency (C). The added part, 'ELC', means: else (E), when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the 'ELC' part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system (always giving up consitency).
+PACELC incorporates the CAP Theorem, with the first part, 'PAC', having a similar meaning: when there is a partition (P), how does the system choose between availability (A) and consitency (C). The added part, 'ELC', means: else (E), when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the 'ELC' part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system (highly available, with low latency).
 
 \subsection{Consistency Models}
 \subsubsection{Strong and Eventual Consistency}
@@ -240,7 +240,8 @@ This is useful for detecting potential causal dependencies. However, by using la
 
 \subsubsection{Vector Clocks}
 Vector clocks are another logical clock that provide more gurantees than lamport clocks. Each node maintains a vector timestamp, which is a vector of counters. Each counter corresponds to a node in the system.
-When an event happens on a node, the node increments its own counter, and then sends its vector timestamp to the other nodes. When a node receives a vector timestamp, it updates its own vector timestamp to be the maximum of its own vector timestamp and the received vector timestamp \cite{mattern1989virtual}.\par
+When an event occurs on a node, the node increments its own counter in the vector and sends the updated vector to the other nodes.
+When a node receives a timestamp, it updates its own vector timestamp to be the maximum of the two timestamps. \cite{mattern1989virtual}.\par
 
 Vector timestamps can be ordered by the following rules, where $V(a)$ is the timestamp of event $a$ and $V(a)_i$ is the value of the counter for node $i$:
 \[V(a) \leq V(b) \iff \forall_i [V(a)_i \leq V(b)_i]  \]
