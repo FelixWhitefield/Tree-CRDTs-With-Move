@@ -9,6 +9,9 @@
 ## To Do
 - Watch Martin Kleppman video on CRDTs
 - Try detecting connection dropped 
+- [ ] Diagrams for clocks 
+- [ ] Redo old parts of report
+- [ ] Do design section
 
 ## Questions 
 - Should UML class diagrams be within the design section? Yes

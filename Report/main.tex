@@ -108,6 +108,7 @@
 This report is an attempt to use new developments in tree CRDTs with highly available move operations to create a file synchronisation system that will resolve all directory conflicts without human interaction; and will not exhibit 'buggy' behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these systems in a real-world scenario. So far, this paper has reviewed the existing literature and has analysed the concurrency issues facing current systems. As well as detailing two algorithms which have been proposed that state to have solutions to the problem of creating a highly available move operation. \par
 The remaining work includes creating a more refined design of the system and then implementing the separate parts to create a cohesive application. Once implemented, the system will be tested for reliability and performance. This testing will inform the final evaluation of system, where it will be compared to existing solutions.
 
+( rewrite this whole abstract once report is finished )
 
 %TC:endignore
 
@@ -152,15 +153,14 @@ contains plagiarised material, and for quality assurance purposes.
 \section{Introduction}
 
 \subsection{Problem}
-Distributed computing systems are becoming more popular for two main reasons, availability and scalability. Distributed storage systems that have replicas need a way to merge the replicas, however, conflicts can arise when merging concurrent operations. Current software such as Google Drive and Dropbox exhibit bugs in their concurrency control when the file system is concurrently updated on different computers. This can cause different issues, such as duplication, roll-backs and unintended actions. These issues are not helpful to a user and can hinder their productivity. Also, current systems which use a client-server architecture can feel 'slow' due to the latency added by communicating with a server.
+Distributed computing systems are becoming more popular for two main reasons, availability and scalability. Distributed storage systems that have replicas need a way to merge the replicas, however, conflicts can arise when merging concurrent operations. Current software such as Google Drive and Dropbox exhibit bugs in their concurrency control when the file system is concurrently updated on different computers. This can cause different issues, such as duplication, rollbacks and unintended actions. These issues are not helpful to a user and can hinder their productivity. Also, current systems which use a client-server architecture can feel 'slow' due to the latency added by communicating with a server. These systems use a tree-like structure to represent the directory hierarchy.
 
 \subsection{Goal}
-The goal of this project is to implement and test the viability of using new advancements in tree Conflict-Free Replicated Data Types (CRDTs) within a file synchronization system to solve directory conflicts. CRDTs are data types that can be concurrently updated on different nodes (without any coordination), will automatically resolve any differences within the data and are eventually consistent \cite{10.1007/978-3-642-24550-3_29}.  This project aims to test the reliability (whether the system correctly resolves conflicts) and performance of the implementation. The results of these tests can be used to inform future uses of these CRDTs and should demonstrate the trade-offs of using them. The system should be able to tolerate network failures and offline usage. The implementation will be peer-to-peer, meaning that each node will be equally privileged. Another focus of this project will be on testing the throughput of the new CRDTs as, while CRDTs have naturally low latency, their conflict resolution can cause lower throughput. \par
-Tree structures are used in many scenarios, so the code for this project could be re-used where a tree structure with a highly available move operation is wanted.
+The goal of this project is to implement and test the viability of using new advancements in tree Conflict-Free Replicated Data Types (CRDTs). CRDTs are data types that can be concurrently updated on different nodes (without any coordination), will automatically resolve any differences within the data and are eventually consistent \cite{10.1007/978-3-642-24550-3_29}.  This project aims to test the reliability (whether the system correctly resolves conflicts) and performance of the implementation. The results of these tests can be used to inform future uses of these CRDTs and should demonstrate the trade-offs of using them. The system should be able to tolerate network failures and offline usage. The implementation will be peer-to-peer, meaning that each node will be equally privileged. Another focus of this project will be on testing the throughput of the new CRDTs as, while CRDTs have naturally low latency, their conflict resolution can cause lower throughput. \par
+Tree structures are used in many scenarios, so the code for this project could be used where a tree structure with a highly available move operation is wanted.
 
 \subsection{Scope}
-The scope of this project will be limited to implementing CRDTs to resolve directory conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualize how the system would scale. Optimisations will be implemented if time allows.
-File conflicts will not be a focus of this project, however, they could be brought into the scope if time allows.
+The scope of this project will be limited to implementing CRDTs to resolve conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualize how the system would scale. Optimisations will be implemented if time allows.
 
 \newpage
 \section{Literature Review}
@@ -230,6 +230,12 @@ This happened-before relation can be used to track the causal dependencies, as i
 \subsubsection{Lamport Clocks}
 Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They work by having each node maintain their own counter, which is incremented on each local event. This counter value is attached to the event, and is the lamport timestamp for that event. When nodes send messages to each other, they send their current counter value along with it. Then, the receiving node updates their counter to the received lamport timestamp if it is greater than their current counter value. It is important to note that sending and receiving messages both count as events. \par
 
+\begin{figure}
+    \centering
+    \includegraphics[width=10cm]{LamportClocks.jpg}
+    \caption{Example of lamport clocks. \textit{m} represents a message.}
+    \label{fig:lamport}
+\end{figure}
 
 Lamport clocks give us the following guarantee, where $L(a)$ is the lamport timestamp of event $a$: 
 \begin{itemize}
@@ -256,6 +262,13 @@ Lamport clocks can only indicate \emph{potential} causal dependencies. Vector ti
 \end{itemize}
 
 This can be used to create a partial order, as concurrent events are neither causally related nor ordered with respect to each other.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=10cm]{VectorClocks.jpg}
+    \caption{Example of vector clocks. The first and second values correspond to nodes A and B respectively. \textit{m} represents a message.}
+    \label{fig:vector}
+\end{figure}
 
 \subsection{Conflict-free Replicated Data Types}
 CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
@@ -290,6 +303,8 @@ Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (Cm
 
 \textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
 
+It is important to note that operation-based CRDTs are more applicable to static distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in dynamic systems, such as using dotted version vectors \cite{preguiça2010dotted}. Moving forward, this paper will focus on static systems, and not dynamic systems as they are out of the scope of this paper.
+
 \subsubsection{CRDTs and File Systems}
 A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. However, designing a tree CRDT with a \textit{highly available} move operation poses significant challenges due to the need to preserve the strict tree invariant. \textit{Highly available} meaning: does not require locking, consensus and does not create duplicates.   \par
 
@@ -298,29 +313,37 @@ This can be shown by ElmerFS (A file system created using CRDTs), where concurre
 \subsubsection{Difficulties with Move Operations}
 Tree CRDTs themselves are not difficult to implement, as shown by the paper "Abstract unordered and ordered trees CRDT" \cite{martin2012abstract} from 2012. Tree CRDTs have also been using in real-time collaborative editing applications \cite{5158449}. However, these implementations only allow for adding and removing nodes, not moving them. This is because a move operation is difficult to implement, as concurrent moves can break the tree invariant. Therefore, this section will exclusively consider conflicts that arise from move operations, as these represent new advancements in tree CRDTs. 
 
-There are three main operations that will need to be considered when implementing conflict resolution. These being: \textit{add(p,n)}, \textit{remove(n)} and \textit{move(p,n)}. Where \textit{p} is the parent node, and \textit{n} is the globally unique id of the node to be added, removed or moved. $Add$ will add node \textit{n} under parent node \textit{p}, $remove$ will remove node \textit{n} and $move$ will move node \textit{n} to parent node \textit{p}. With these operations, there are three conflicts between two concurrent operations that involve move operation:
+There are three main operations that will need to be considered when implementing conflict resolution. These being: \textit{add(p,n)}, \textit{remove(n)} and \textit{move(p,n)}. Where \textit{p} is the parent node, and \textit{n} is the globally unique id of the node to be added, removed or moved. $Add$ will add node \textit{n} under parent node \textit{p}, $remove$ will remove node \textit{n} and $move$ will move node \textit{n} to parent node \textit{p}. Considering these operations, the following describes the conflicts that can arise from concurrent operations involving move operations:
+
+\addtocounter{footnote}{1}
+
 \begin{itemize}
     \item
-        \textit{Move-Add} conflict: Occurs when the move operation moves node with name $m$ is under node $p$, and the add operation adds a node with name $m$ under node $p$.*
-    \item
-        \textit{Move-Remove} conflict: This conflict has two cases:
+        \textit{Move-Add} conflict - This conflict has one case: 
         \begin{itemize}
-            \item 
-                When the move operation moves node $n$ under node $p$, and the remove operation removes node $p$.
-            \item
-                When the move operation moves node $n$ under node $p$, and the remove operation removes node $n$.
+            \item The move operation moves node $n_1$ with name $m$ is under node $p$, while the add operation adds node $n_2$ with name $m$ under node $p$\footnotemark[\value{footnote}]
         \end{itemize}
     \item
-        \textit{Move-Move} conflict: This conflict has these cases:
+        \textit{Move-Remove} conflict - This conflict has two cases:
         \begin{itemize}
             \item 
-                When one move operation moves node with name $m$ under node $p$, and the other move operation moves node with name $m$ under node $p$.*
-            \item 
-                When one move operation moves node $n$ under node $p1$, and the other move operation moves node $n$ under node $p2$.
+                The move operation moves node $n$ under node $p$, while the remove operation removes node $p$
+            \item
+                The move operation moves node $n$ under node $p$, while the remove operation removes node $n$
+        \end{itemize}
+    \item
+        \textit{Move-Move} conflict - This conflict has three cases:
+        \begin{itemize}
+            \item One move operation moves node $n_1$ with name $m$ under node $p$, while the other move operation moves node $n_2$ with name $m$ under node $p$\footnotemark[\value{footnote}]
+            \item Two move operations move the same node $n$ to different parents $p_1$ and $p_2$
+            \item One move operation moves node $n_1$ under node $n_2$, while the other move operation moves node $n_2$ under node $n_1$, creating a cycle
         \end{itemize}
 \end{itemize}
 
-*This conflict will only arise if nodes are uniquely identified by their name and parent, as is typical in file systems. (However, for other systems this may not be the case)
+\footnotetext[\value{footnote}]{This conflict will only arise if nodes are uniquely identified by their name and parent, as is typical in file systems. (However, for other systems this may not be the case)}
+
+The conflict resolution will not be discussed here, as it will be a part of the algorithms discussed in the next section. Each algorithm will have its own conflict resolution strategy. It is important to note that the algorithms, as they are, do not uniquely identify nodes by their name and parent. And therefore, do not resolve those conflicts. These algorithms may be adapted to resolve these conflicts, and if time permits, this paper will explore such modifications.
+
 
 \subsubsection{Algorithms With a Highly Available Move} \label{sssec:algorithms}
 Currently, there two main proposed algorithms that allow a highly available move operation:
