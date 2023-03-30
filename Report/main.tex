@@ -178,7 +178,7 @@ This has the drawback of increased latency as all requests have to go through an
 
 As the web evolves there is more talk about Web3\cite{WhatIsWeb3}, which has foundations in decentralisation.
 \subsubsection{Peer-to-peer Systems}
-There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement, however, it has some limitations and drawbacks, such as:
+There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement on BitTorrent, however, it has some limitations and drawbacks, such as:
 \begin{itemize}
     \item Renaming a folder will not rename the folder on other devices \footnote{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}.
     \item Renaming a file will cause other devices to believe it is deleted, and move the file into an archive folder. Then when the peer detects the renamed file, it will check the archive folder for a file with the same hash, and put it back with a new name\footnote{https://help.resilio.com/hc/en-us/articles/209606526-What-happens-when-file-is-renamed}.
@@ -193,9 +193,9 @@ One drawback of peer-to-peer file sharing systems is that for the sharing to occ
 In any distributed system that has a persistent state, such as a file system, there is a trade-off between Consistency, Availability and Partition Tolerance.
 This is set out in the CAP Theorem, which was first introduced by Brewer in 2000\cite{CAPTheorem}. In this talk, Brewer stated that a distributed system could only select 2 of the 3 properties. A formal proof for the CAP theorem was provided by Gilbert and Lynch in 2002\cite{10.1145/564585.564601}, they formally defined 3 properties as follows:
 \begin{itemize}
-    \item \textbf{Consistency} A total order on all operations must exist such that each operation looks as if it was completed at a single instance. An equivalence being requiring requests of a distributed shared memory act as if they were executing on a single node, responding to operations one at a time.
-    \item \textbf{Availability} Every request received by a non-failing node must result in a response.  This means any algorithm used by the service must eventually terminate.
-    \item \textbf{Partition Tolerance} The network is allowed to lose arbitrarily many messages sent from one node to another. This can either be all the messages (full partition) or only a portion of the messages (temporary partition).
+    \item \textbf{Consistency}: A total order on all operations must exist such that each operation looks as if it was completed at a single instance. An equivalence being requiring requests of a distributed shared memory act as if they were executing on a single node, responding to operations one at a time.
+    \item \textbf{Availability}: Every request received by a non-failing node must result in a response.  This means any algorithm used by the service must eventually terminate.
+    \item \textbf{Partition Tolerance}: The network is allowed to lose arbitrarily many messages sent from one node to another. This can either be all the messages (full partition) or only a portion of the messages (temporary partition).
 \end{itemize}
 While this paper proved the CAP Theorem, further research into the area revealed that the initial CAP Theorem was too simplified. As, in reality, it is more of a trade-off between Availability and Consistency, instead of having to choose between the two. In a later paper by Brewer, "CAP Twelve Years Later: How the "Rules" Have Changed"\cite{6133253}, he explains how instead of having to choose 2 of 3 properties, different trade-offs can be made. He also explains how partitions are rare, and therefore usually Consistency or Availability would not need to be sacrificed. Only needing to make sacrifices when partitions are present. Some designers of distributed systems have misunderstood the CAP theorem and have built systems with unnecessary limitations at all times, whereas limitations are only needed in the event of failures \cite{6133253}. \par
 Because the CAP Theorem is somewhat limited, a new theorem was created which takes into account new factors which better reflect the trade-offs placed on distributed systems.
@@ -208,8 +208,8 @@ PACELC incorporates the CAP Theorem, with the first part, 'PAC', having a simila
 \subsubsection{Strong and Eventual Consistency}
 Most distributed data stores today are either:
 \begin{itemize}
-    \item \textbf{Strongly Consistent} Any subsequent read after a write will return the most recent value.
-    \item \textbf{Eventually Consistent} The latest data will eventually become available, if no new updates are made.
+    \item \textbf{Strongly Consistent}: Any subsequent read after a write will return the most recent value.
+    \item \textbf{Eventually Consistent}: The latest data will eventually become available, if no new updates are made.
 \end{itemize}
 Many databases are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}. Even databases such as MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels don't require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
 
@@ -271,9 +271,11 @@ This can be used to create a partial order, as concurrent events are neither cau
 \end{figure}
 
 \subsection{Conflict-free Replicated Data Types}
+Conflict-free Replicated Data Types are types of data structures, such as sets, counters, and registers, that can be replicated across multiple nodes in a distributed system. They are unique in that the data type itself is responsible for resolving conflicts, rather than the application. 
+
 CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
 One useful application for CRDTs is their ability for offline use \cite{10.1145/3359591.3359737}. If an application is built using CRDTs, it can feel more responsive as updates to the state can be made locally first without the system having to wait on replies from remove servers. \par
-There are two main types of CRDTs, state-based and operation-based.
+There are two main types of CRDTs, state-based and operation-based. Both have different ways of sending updates to other nodes, and different ways of resolving conflicts. \par
 
 
 \subsubsection{State-Based (CvRDTs)}
@@ -303,7 +305,9 @@ Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (Cm
 
 \textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
 
-It is important to note that operation-based CRDTs are more applicable to static distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in dynamic systems, such as using dotted version vectors \cite{preguiça2010dotted}. Moving forward, this paper will focus on static systems, and not dynamic systems as they are out of the scope of this paper.
+It is important to note that operation-based CRDTs are more applicable to static distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in dynamic systems, such as using dotted version vectors \cite{preguiça2010dotted}. However, moving forward this paper will focus on static systems, and not dynamic systems as they are out of the scope of this paper.\par 
+
+It is important to note that operation-based CRDTs usually require reliable causal broadcast \cite{10.1007/978-3-662-43352-2_11}. These algorithms can be complex, but they are not the focus of this paper. Therefore, this paper will implement a simple reliable causal broadcast algorithm. If the CRDTs discussed in this paper are to be used in a real-world application, a more complex reliable causal broadcast algorithm should be used \cite{10.1145/128738.128742}. \par
 
 \subsubsection{CRDTs and File Systems}
 A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. However, designing a tree CRDT with a \textit{highly available} move operation poses significant challenges due to the need to preserve the strict tree invariant. \textit{Highly available} meaning: does not require locking, consensus and does not create duplicates.   \par
@@ -502,6 +506,8 @@ The performance testing may require the use of rented servers, to test latency.
 \clearpage
 %TC:ignore
 \printbibliography
+
+\newpage
 
 \appendix
 \section{Original Brief}
