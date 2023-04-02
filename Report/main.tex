@@ -9,6 +9,7 @@
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage[parfill]{parskip} 
+\usepackage[htt]{hyphenat}
 
 \begin{document}
 %TC:ignore
@@ -414,7 +415,7 @@ The main focus of this paper is to implement the two CRDT algorithms, \cite{9563
     \item Each layer should have an interface that allows for other implementations to be created and swapped in. This will allow for the system to be easily modified and extended.
 \end{itemize}
 
-\subsection{Proposed Final Design}
+\subsection{System Architecture}
 
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
 \begin{itemize}
@@ -422,24 +423,54 @@ The design will be split into different layers that will each be independent and
         \begin{itemize}
             \item Applying operations (which will be \textit{local} or \textit{remote}) on the CRDT
             \item Resolving conflicts that arise between concurrent operations 
-            \item Ensuring that all replicas eventually converge to the same state
+            \item Ensuring that all replicas eventually converge to the same state, if they have all received the same operations
             \item Keeping track of the state of the CRDT (the state of the tree)
-            \item Providing an interface for the user to interact with the CRDT
+            \item Providing an interface for application code to interact with the CRDT
         \end{itemize}
 
-    \item \textbf{Consistency} This layer will be in charge of ensuring the needed consistency model (eventual consistency or causal consistency). It will need to be able to:
+    \item \textbf{Interface} This layer will provide a uniform interface to the user, as well as provide the connection between the CRDT and Network layer. It will need to be able to:
         \begin{itemize}
-            \item Ensure that the consistency model is met, even if some replicas are offline
-            \item Allow a replica to recover after being offline, and ensure that it is up-to-date with the rest of the network
+            \item Ensure that operations are applied to the local CRDT only when they are ready to be applied (This will depend on the chosen consistency model)
+            \item Buffer operations that are not ready to be applied on the local CRDT
+            \item Provide an interface for application code to interact with the CRDT
+            \item Ensure that all operations are sent to the network layer for replication
         \end{itemize}
     \item \textbf{Network} This layer will be in charge of network communications. It will need to be able to:
         \begin{itemize}
-            \item Connect to the peer-to-peer network
-            \item \textit{Send} and \textit{Receive} file data
-            \item \textit{Send} and \textit{Receive} operations
+            \item Connect to other peers, and share peers with other peers
+            \item Send and Receive operations to and from other peers
+            \item Ensure that operations are sent to all peers, even if some peers are offline
+            \item Buffer operations to be sent to peers that are offline
         \end{itemize}
 \end{itemize}
-Certain CRDTs require different consistency models, therefore the consistency layer will be dependent on the chosen CRDT. \par
+Certain CRDTs require different consistency models, therefore the interface layer will ensure that incoming operations are applied correctly. It is important that each CRDT is correctly paired with the correct consistency model, as otherwise the CRDT may not work correctly. \par
+
+\subsection{System Design}
+The system will be designed using the requirements stated above. The design will attempt to use interfaces where possible, to allow for the system to be easily modified and extended. 
+
+\subsubsection{Clocks and Timestamps}
+
+\begin{figure}[h]
+    \centering
+    \fbox{\includegraphics[width=12cm]{clocks.jpeg}}
+    \caption{Class diagram for the clocks and timestamps. Including Lamport and Vector clocks.}
+    \label{fig:ordered}
+\end{figure}
+
+The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
+As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
+
+The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \ref{fig:ordered}. The class \texttt{Lamport} implements both, as it is both a timestamp and a clock. The Vector clock is split into two classes, \texttt{VectorClock} and \texttt{VectorTimestamp}. The \texttt{VectorClock} implements the \texttt{Clock} interface, and the \texttt{VectorTimestamp} implements the \texttt{Timestamp} interface. \par
+
+The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{TotalOrder} and \texttt{PartialOrder} respectively. They denote the differences in the gurantees that the two types of clocks provide. The \texttt{Lamport} class implements \texttt{TotalOrder} as it provides an arbitrary, but deterministic total order of events. The \texttt{VectorTimestamp} class implements \texttt{PartialOrder} as it provides a partial order of events. \par
+
+\subsubsection{CRDT}
+
+\subsubsection{Interface}
+
+\subsubsection{Network}
+
+
 
 \subsection{Justification of Design}
 The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par

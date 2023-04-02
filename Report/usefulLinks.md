@@ -9,9 +9,10 @@
 ## To Do
 - Watch Martin Kleppman video on CRDTs
 - Try detecting connection dropped 
-- [ ] Diagrams for clocks 
+- [x] Diagrams for clocks 
 - [ ] Redo old parts of report
 - [ ] Do design section
+- [ ] Add section on Reliable Causal Broadcast 
 
 ## Questions 
 - Should UML class diagrams be within the design section? Yes
