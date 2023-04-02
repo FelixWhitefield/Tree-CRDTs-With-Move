@@ -450,15 +450,16 @@ The system will be designed using the requirements stated above. The design will
 
 \subsubsection{Clocks and Timestamps}
 
-\begin{figure}[h]
+
+The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
+As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
+
+\begin{figure}[H]
     \centering
     \fbox{\includegraphics[width=12cm]{clocks.jpeg}}
     \caption{Class diagram for the clocks and timestamps. Including Lamport and Vector clocks.}
     \label{fig:ordered}
-\end{figure}
-
-The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
-As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
+\end{figure} 
 
 The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \ref{fig:ordered}. The class \texttt{Lamport} implements both, as it is both a timestamp and a clock. The Vector clock is split into two classes, \texttt{VectorClock} and \texttt{VectorTimestamp}. The \texttt{VectorClock} implements the \texttt{Clock} interface, and the \texttt{VectorTimestamp} implements the \texttt{Timestamp} interface. \par
 
@@ -470,6 +471,12 @@ The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{Tota
 
 \subsubsection{Network}
 
+\begin{figure}[h]
+    \centering
+    \fbox{\includegraphics[width=6cm]{connection.jpeg}}
+    \caption{Class diagram for the Network layer. With the interface \texttt{ConnectionProvider} and implementing class \texttt{TCPProvider}.}
+    \label{fig:connection}
+\end{figure}
 
 
 \subsection{Justification of Design}
