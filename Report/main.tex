@@ -306,7 +306,7 @@ Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (Cm
 
 \textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
 
-It is important to note that operation-based CRDTs are more applicable to static distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in dynamic systems, such as using dotted version vectors \cite{preguiça2010dotted}. However, moving forward this paper will focus on static systems, and not dynamic systems as they are out of the scope of this paper.\par 
+It is important to note that operation-based CRDTs are more applicable to \textit{static} distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in \textit{dynamic} systems, such as using dotted version vectors \cite{preguiça2010dotted}. For the remainder of this paper, the terms 'static' and 'dynamic' systems will be used as defined above. The focus of this paper will be on static systems, as dynamic systems are beyond its scope.\par 
 
 It is important to note that operation-based CRDTs usually require reliable causal broadcast \cite{10.1007/978-3-662-43352-2_11}. These algorithms can be complex, but they are not the focus of this paper. Therefore, this paper will implement a simple reliable causal broadcast algorithm. If the CRDTs discussed in this paper are to be used in a real-world application, a more complex reliable causal broadcast algorithm should be used \cite{10.1145/128738.128742}. \par
 
@@ -449,12 +449,10 @@ Certain CRDTs require different consistency models, therefore the interface laye
 The system will be designed using the requirements stated above. The design will attempt to use interfaces where possible, to allow for the system to be easily modified and extended. 
 
 \subsubsection{Clocks and Timestamps}
-
-
 The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
 As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
 
-\begin{figure}[H]
+\begin{figure}[h]
     \centering
     \fbox{\includegraphics[width=12cm]{clocks.jpeg}}
     \caption{Class diagram for the clocks and timestamps. Including Lamport and Vector clocks.}
@@ -465,11 +463,24 @@ The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \
 
 The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{TotalOrder} and \texttt{PartialOrder} respectively. They denote the differences in the gurantees that the two types of clocks provide. The \texttt{Lamport} class implements \texttt{TotalOrder} as it provides an arbitrary, but deterministic total order of events. The \texttt{VectorTimestamp} class implements \texttt{PartialOrder} as it provides a partial order of events. \par
 
-\subsubsection{CRDT}
+\subsubsection{CRDT and Interface}
+Since the CRDT layer is the primary focus of this paper, it will comprise multiple components, making it the largest layer. The components will be specific to each CRDT, and will be implemented using the algorithms described in Section \ref{sssec:algorithms}. \par
 
-\subsubsection{Interface}
+\begin{figure}[h]
+    \centering
+    \fbox{\includegraphics[width=12cm]{crdt.jpeg}}
+    \caption{Class diagram for the CRDT and Interface layer. The \texttt{Tree} interface provides an interface for application code. Classes \texttt{MTree} and \texttt{KTree} provide implementations for the specific CRDTs.}
+    \label{fig:crdt}
+\end{figure}
 
+The exact \texttt{Components} of each CRDT will be known once the algorithms have been implemented. It may also be possible to provide a \texttt{CmRDT} interface for the CRDTs, with \textit{prepare} and \textit{effect} methods. However, this will not be explored in this paper. \par
+
+The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be responsible for sending operations to the network layer to be broadcast to other peers. As well as receiving operations from the network layer, and either applying them to the local CRDT or buffering them, depending on the consistency model. \par
 \subsubsection{Network}
+The network layer takes inspiration from Yjs\footnote{https://docs.yjs.dev/}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the Interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
+
+If the system was to be designed to be dynamic, then the CRDT layer would have more requirements. The CRDT would either need to store all local operations indefinitely or provide a means of transferring its state to new nodes, as they would require access to the current state of the CRDT.
+This helps to simplify the design, as the network layer does not need to know about the CRDTs, and the CRDTs do not need to know about the network layer. \par 
 
 \begin{figure}[h]
     \centering
@@ -477,6 +488,8 @@ The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{Tota
     \caption{Class diagram for the Network layer. With the interface \texttt{ConnectionProvider} and implementing class \texttt{TCPProvider}.}
     \label{fig:connection}
 \end{figure}
+
+The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection}. It describes what the network layer is required to do, broadcast messages and receive them. This interface is implemented by the class \texttt{TCPProvider}. The \texttt{TCPProvider} class is responsible for creating and managing connections to other peers. It will also be responsible for sending and receiving messages to and from other peers. \par
 
 
 \subsection{Justification of Design}
