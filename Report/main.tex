@@ -85,7 +85,7 @@
 
     \vfill\vfill\vfill\vfill % Position the date 3/4 down the remaining page
 
-    A project report submitted for the award of BSc Computer Science.
+    A project report submitted for the award of BSc Computer Science
 
     % {\large\today} % Date, change the \today to a set date if you want to be precise
 
@@ -459,6 +459,7 @@ The main focus of this paper is to implement the two CRDT algorithms, \cite{9563
     \item Each layer should have an interface that allows for other implementations to be created and swapped in. This will allow for the system to be easily modified and extended.
 \end{itemize}
 
+
 \section{System Architecture}\label{sec:architecture}
 
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
@@ -581,6 +582,21 @@ The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection
 The \texttt{TCPConnection} class is responsible for sending and receiving messages to and from a single peer. When a node joins after being offline, this class is responsible for sending all buffered messages to the peer. It will not handle messages directly, instead it will pass them to the \texttt{TCPProvider} for handling. This helps to avoid race conditions, as the \texttt{TCPProvider} will handle all messages in a single thread. \par
 
 \section{Communication Sequences}
+
+\subsection{Network Layer}
+
+The network layer will comprise multiple concurrent processes. One process will be responsible for listening for incoming connections, and creating a new \texttt{TCPConnection} for each connection. The \texttt{TCPConnection} will only be responsible for receiving messages from the peer, and passing them to the \texttt{TCPProvider handleOps} process. The \texttt{TCPProvider handleOps} will then handle the messages in a single thread, update any state and pass the messages to the CRDT layer. This is shown in Figure \ref{fig:netsequence}. \par
+
+The \texttt{TCPProvider} will also be responsible for sending messages to other peers. This will be done in a separate process, which will be responsible for sending messages to all peers. The process will receive operations to send from the Interface layer. Whenever an operation needs to be broadcasted, it is added to a map that associates the operation's ID with a list of node IDs. When a node sends an acknowledgement for an operation, that node ID is added to the list of node IDs for that operation. When the list of node IDs is the same size as the number of nodes, the operation is removed from the map. This is how the system ensures each node receives each operation. \par
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\textwidth]{networksequence.png}
+    \caption{Sequence diagram for the network layer, showing a replica connecting and sending an operation.}
+    \label{fig:netsequence}
+\end{figure}
+
+\subsection{Interface Layer}
 
 
 
