@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[12pt]{report}
 \usepackage[utf8]{inputenc}
 \usepackage[backend=biber, notetype=foot+end]{biblatex}
 \addbibresource{bibliography.bib}
@@ -11,7 +11,12 @@
 \usepackage[parfill]{parskip} 
 \usepackage[htt]{hyphenat}
 
+
 \begin{document}
+
+\pagenumbering{roman}
+\setcounter{page}{1}
+
 %TC:ignore
 \begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
     \newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness here
@@ -102,14 +107,14 @@
 \newpage
 %TC:ignore
 % ------------------------------------- Abstract -------------------------------------------
-\begin{center}
-    \textsc{\large Abstract}
-\end{center}
+\begin{abstract}
+\addcontentsline{toc}{section}{Abstract}
 
 This report is an attempt to use new developments in tree CRDTs with highly available move operations to create a file synchronisation system that will resolve all directory conflicts without human interaction; and will not exhibit 'buggy' behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these systems in a real-world scenario. So far, this paper has reviewed the existing literature and has analysed the concurrency issues facing current systems. As well as detailing two algorithms which have been proposed that state to have solutions to the problem of creating a highly available move operation. \par
 The remaining work includes creating a more refined design of the system and then implementing the separate parts to create a cohesive application. Once implemented, the system will be tested for reliability and performance. This testing will inform the final evaluation of system, where it will be compared to existing solutions.
 
 ( rewrite this whole abstract once report is finished )
+\end{abstract}
 
 %TC:endignore
 
@@ -119,6 +124,8 @@ The remaining work includes creating a more refined design of the system and the
 
 % STATEMENT OF ORIGINALITY ------------------------------------------------------------
 %TC:ignore
+
+\addcontentsline{toc}{section}{Statement of Originality}
 \begin{center}
     \textsc{\LARGE Statement of Originality} \\ [1cm]
 \end{center}
@@ -144,6 +151,12 @@ contains plagiarised material, and for quality assurance purposes.
 \end{itemize}
 
 % STATEMENT OF ORIGINALITY ------------------------------------------------------------
+\newpage
+\section*{Achknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+
+some new stuff here
+
 
 
 \newpage
@@ -151,34 +164,38 @@ contains plagiarised material, and for quality assurance purposes.
 %TC:endignore
 
 \newpage
-\section{Introduction}
 
-\subsection{Problem}
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{Introduction}
+
+\section{Problem}
 Distributed computing systems are becoming more popular for two main reasons, availability and scalability. Distributed storage systems that have replicas need a way to merge the replicas, however, conflicts can arise when merging concurrent operations. Current software such as Google Drive and Dropbox exhibit bugs in their concurrency control when the file system is concurrently updated on different computers. This can cause different issues, such as duplication, rollbacks and unintended actions. These issues are not helpful to a user and can hinder their productivity. Also, current systems which use a client-server architecture can feel 'slow' due to the latency added by communicating with a server. These systems use a tree-like structure to represent the directory hierarchy.
 
-\subsection{Goal}
+\section{Goal}
 The goal of this project is to implement and test the viability of using new advancements in tree Conflict-Free Replicated Data Types (CRDTs). CRDTs are data types that can be concurrently updated on different nodes (without any coordination), will automatically resolve any differences within the data and are eventually consistent \cite{10.1007/978-3-642-24550-3_29}.  This project aims to test the reliability (whether the system correctly resolves conflicts) and performance of the implementation. The results of these tests can be used to inform future uses of these CRDTs and should demonstrate the trade-offs of using them. The system should be able to tolerate network failures and offline usage. The implementation will be peer-to-peer, meaning that each node will be equally privileged. Another focus of this project will be on testing the throughput of the new CRDTs as, while CRDTs have naturally low latency, their conflict resolution can cause lower throughput. \par
 Tree structures are used in many scenarios, so the code for this project could be used where a tree structure with a highly available move operation is wanted.
 
-\subsection{Scope}
+\section{Scope}
 The scope of this project will be limited to implementing CRDTs to resolve conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualize how the system would scale. Optimisations will be implemented if time allows.
 
 \newpage
-\section{Literature Review}
-This research will focus on understanding current file synchronisation systems and their drawbacks; the trade-offs that come with distributed systems and their consistency models; and CRDTs and their recent developments in highly available move operations.
+\chapter{Literature Review}
+This research will focus on understanding current file synchronisation systems and their drawbacks; the trade-offs that come with distributed systems and their consistency models; logical clocks; and CRDTs and their recent developments in highly available move operations.
 
-\subsection{Review of Existing Software}
+\section{Review of Existing Software}
 The two main network architectures of file synchronization systems are client-server and peer-to-peer. Below I will discuss both, along with their respective drawbacks.
 
 % File synchronisation software usually comes in two variants; either a system with a central server that handles the file sharing, or a peer-to-peer system. Each system has its own benefits and drawbacks, as described below.
 
-\subsubsection{Client-server Systems}
+\subsection{Client-server Systems}
 A vast majority of file synchronisation systems are integrated into file backup systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{https://www.google.co.uk/intl/en-GB/drive/}, OneDrive\footnote{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage} and Dropbox\footnote{https://www.dropbox.com/features/sync}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
 
 This has the drawback of increased latency as all requests have to go through and be processed by the central server. If many people use the service, then the strain on the server from file transfers would be high and could increase the latency further. These systems also rely on the user trusting the provider to keep their files safe. \par
 
 As the web evolves there is more talk about Web3\cite{WhatIsWeb3}, which has foundations in decentralisation.
-\subsubsection{Peer-to-peer Systems}
+\subsection{Peer-to-peer Systems}
 There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement on BitTorrent, however, it has some limitations and drawbacks, such as:
 \begin{itemize}
     \item Renaming a folder will not rename the folder on other devices \footnote{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}.
@@ -189,8 +206,8 @@ There are many peer-to-peer (p2p) file-sharing programs, with many popular ones 
 \end{itemize}  \par
 One drawback of peer-to-peer file sharing systems is that for the sharing to occur, at least two nodes need to be online at the same time. In comparison to a client-server architecture, where the server is always available. Also, in practice, peer-to-peer networks require some form of centralisation for the initial connection, as you cannot multicast on the web.
 
-\subsection{Distributed Systems}
-\subsubsection{The CAP Theorem}
+\section{Distributed Systems}
+\subsection{The CAP Theorem}
 In any distributed system that has a persistent state, such as a file system, there is a trade-off between Consistency, Availability and Partition Tolerance.
 This is set out in the CAP Theorem, which was first introduced by Brewer in 2000\cite{CAPTheorem}. In this talk, Brewer stated that a distributed system could only select 2 of the 3 properties. A formal proof for the CAP theorem was provided by Gilbert and Lynch in 2002\cite{10.1145/564585.564601}, they formally defined 3 properties as follows:
 \begin{itemize}
@@ -201,12 +218,12 @@ This is set out in the CAP Theorem, which was first introduced by Brewer in 2000
 While this paper proved the CAP Theorem, further research into the area revealed that the initial CAP Theorem was too simplified. As, in reality, it is more of a trade-off between Availability and Consistency, instead of having to choose between the two. In a later paper by Brewer, "CAP Twelve Years Later: How the "Rules" Have Changed"\cite{6133253}, he explains how instead of having to choose 2 of 3 properties, different trade-offs can be made. He also explains how partitions are rare, and therefore usually Consistency or Availability would not need to be sacrificed. Only needing to make sacrifices when partitions are present. Some designers of distributed systems have misunderstood the CAP theorem and have built systems with unnecessary limitations at all times, whereas limitations are only needed in the event of failures \cite{6133253}. \par
 Because the CAP Theorem is somewhat limited, a new theorem was created which takes into account new factors which better reflect the trade-offs placed on distributed systems.
 
-\subsubsection{The PACELC Theorem}
+\subsection{The PACELC Theorem}
 The PACELC Theorem was proposed by Abadi \cite{6127847}, as an extension to the CAP theorem and to fill the areas in which the CAP theorem does not take into account. This theorem, therefore, creates a more complete picture of the trade-offs within distributed systems. \par
 PACELC incorporates the CAP Theorem, with the first part, 'PAC', having a similar meaning: when there is a partition (P), how does the system choose between availability (A) and consitency (C). The added part, 'ELC', means: else (E), when there are no partitions, the system has to choose between latency (L) and consistency (C) \cite{6127847}. It also states that the 'ELC' part (trade-off between latency and consistency) only applies to systems that replicate data. This paper is proposing to create a PA/EL \cite{6127847} system (highly available, with low latency).
 
-\subsection{Consistency Models}
-\subsubsection{Strong and Eventual Consistency}
+\section{Consistency Models}
+\subsection{Strong and Eventual Consistency}
 Most distributed data stores today are either:
 \begin{itemize}
     \item \textbf{Strongly Consistent}: Any subsequent read after a write will return the most recent value.
@@ -214,21 +231,21 @@ Most distributed data stores today are either:
 \end{itemize}
 Many databases are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}. Even databases such as MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels don't require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
 
-\subsubsection{Strong Eventual Consistency}
+\subsection{Strong Eventual Consistency}
 Strong Eventual Consistency (SEC) takes eventual consistency even further, by guaranteeing that two nodes which receive the same updates (regardless of order) will be in the same state. In eventually consistent systems, the nodes would have to communicate to resolve conflicts by consensus or roll-back. Whereas in strong eventually consistent systems the conflicts are resolved in a deterministic manner on each node (without the need for communication). \par
 SEC was proposed in 2011\cite{10.1007/978-3-642-24550-3_29} to describe Conflict-free Replicated Data Types (CRDTs). It was defined as:
 \begin{itemize}
     \item \textbf{Strong Eventual Consistency} Eventually consistent, as well as conforming to: any two replicas that have received the same updates will have the same state.
 \end{itemize}
 
-\subsection{Logical Clocks}
+\section{Logical Clocks}
 Compared to physical clocks, which track time, logical clocks are used to track events. They were designed to capture the happened-before relation between events, which in turn captures causal relationships between them. The happened-before relation is denoted by "$\rightarrow$", and was defined by Lamport in 1978\cite{lamport1978time} as:
 \begin{itemize}
     \item "If $a$ and $b$ are events in the same
     process, and $a$ comes before $b$, then $a$ $\rightarrow$ $b$"
 \end{itemize}
 This happened-before relation can be used to track the causal dependencies, as if $a$ $\rightarrow$ $b$, then $b$ is \textit{causally dependent} on $a$. Which means that $b$ may have been influenced by $a$. \par 
-\subsubsection{Lamport Clocks}
+\subsection{Lamport Clocks}
 Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They work by having each node maintain their own counter, which is incremented on each local event. This counter value is attached to the event, and is the lamport timestamp for that event. When nodes send messages to each other, they send their current counter value along with it. Then, the receiving node updates their counter to the received lamport timestamp if it is greater than their current counter value. It is important to note that sending and receiving messages both count as events. \par
 
 \begin{figure}
@@ -245,7 +262,7 @@ Lamport clocks give us the following guarantee, where $L(a)$ is the lamport time
 This is useful for detecting potential causal dependencies. However, by using lamport clocks, concurrent events may appear to be causally dependent. One use for lamport clocks is to create a total order ($\prec$) which captures the causal dependencies. This can be achieved by assigning each node a unique ID, and using that to break ties when $L(a) = L(b)$. When an event happens on a node, the node ID is then also stored in the lamport timestamp. It is worth noting that this total order is arbitrary, but deterministic. This was defined by Lamport\cite{lamport1978time}, and can be denoted as:\par
 \[a \prec b \iff L(a) < L(b) \lor (L(a) = L(b) \land ID(a) < ID(b))\]
 
-\subsubsection{Vector Clocks}
+\subsection{Vector Clocks}
 Vector clocks are another logical clock that provide more gurantees than lamport clocks. Each node maintains a vector timestamp, which is a vector of counters. Each counter corresponds to a node in the system.
 When an event occurs on a node, the node increments its own counter in the vector and sends the updated vector to the other nodes.
 When a node receives a timestamp, it updates its own vector timestamp to be the maximum of the two timestamps. \cite{mattern1989virtual}.\par
@@ -271,7 +288,7 @@ This can be used to create a partial order, as concurrent events are neither cau
     \label{fig:vector}
 \end{figure}
 
-\subsection{Conflict-free Replicated Data Types}
+\section{Conflict-free Replicated Data Types}
 Conflict-free Replicated Data Types are types of data structures, such as sets, counters, and registers, that can be replicated across multiple nodes in a distributed system. They are unique in that the data type itself is responsible for resolving conflicts, rather than the application. 
 
 CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
@@ -279,7 +296,7 @@ One useful application for CRDTs is their ability for offline use \cite{10.1145/
 There are two main types of CRDTs, state-based and operation-based. Both have different ways of sending updates to other nodes, and different ways of resolving conflicts. \par
 
 
-\subsubsection{State-Based (CvRDTs)}
+\subsection{State-Based (CvRDTs)}
 
 \begin{figure}
     \centering
@@ -293,7 +310,7 @@ State-based CRDTs, or otherwise called Convergent Replicated Data Types (CvRDTs)
 Delta State CRDTs are a form of state-based CRDTs that only send the changed, or the delta, part of the state. This allows for the messages sent between replicas to be smaller and work across unreliable networks \cite{Almeida_2018}. They, therefore, have the best of both operation and state-based CRDTs.
 
 
-\subsubsection{Operation-Based (CmRDTs)}
+\subsection{Operation-Based (CmRDTs)}
 
 \begin{figure}
     \centering
@@ -310,12 +327,12 @@ It is important to note that operation-based CRDTs are more applicable to \texti
 
 It is important to note that operation-based CRDTs usually require reliable causal broadcast \cite{10.1007/978-3-662-43352-2_11}. These algorithms can be complex, but they are not the focus of this paper. Therefore, this paper will implement a simple reliable causal broadcast algorithm. If the CRDTs discussed in this paper are to be used in a real-world application, a more complex reliable causal broadcast algorithm should be used \cite{10.1145/128738.128742}. \par
 
-\subsubsection{CRDTs and File Systems}
+\subsection{CRDTs and File Systems}
 A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. However, designing a tree CRDT with a \textit{highly available} (or \textit{atomic}) move operation poses significant challenges due to the need to preserve the strict tree invariant. \textit{Highly available} meaning: does not require locking, consensus and does not create duplicates.   \par
 
 This can be shown by ElmerFS (A file system created using CRDTs), where concurrent moves can create a cycle \cite{10.1145/3465332.3470872}. Najafadeh et al. \cite{Najafzadeh0E18} proposes a similar system which instead locks on move operations to ensure cycles are not created. These papers show how hard creating a highly available move operation is, however recent work has shown that it is possible \cite{9563274}, \cite{https://doi.org/10.48550/arxiv.2103.04828}, \cite{https://doi.org/10.48550/arxiv.1805.04263}. \par
 
-\subsubsection{Move Operations in Tree CRDTs}
+\subsection{Move Operations in Tree CRDTs}
 Tree CRDTs themselves are not difficult to implement, as shown by the paper "Abstract unordered and ordered trees CRDT" \cite{martin2012abstract} from 2012. Tree CRDTs have also been using in real-time collaborative editing applications \cite{5158449}. However, these implementations only allow for adding and removing nodes, not moving them. This is because a highly available move operation is difficult to implement, as concurrent moves can break the tree invariant. Therefore, this section will exclusively consider conflicts that arise from move operations, as these represent new advancements in tree CRDTs. 
 
 There are three main operations that will need to be considered when implementing conflict resolution. These being: \textit{add(p,n)}, \textit{remove(n)} and \textit{move(p,n)}. Where \textit{p} is the parent node, and \textit{n} is the globally unique id of the node to be added, removed or moved. $Add$ will add node \textit{n} under parent node \textit{p}, $remove$ will remove node \textit{n} and $move$ will move node \textit{n} to parent node \textit{p}. Considering these operations, the following describes the conflicts that can arise from concurrent operations involving move operations:
@@ -350,24 +367,42 @@ There are three main operations that will need to be considered when implementin
 The conflict resolution will not be discussed here, as it will be a part of the algorithms discussed in the next section. Each algorithm will have its own conflict resolution strategy. It is important to note that the algorithms, as they are, do not uniquely identify nodes by their name and parent. And therefore, do not resolve those conflicts. These algorithms may be adapted to resolve these conflicts, and if time permits, this paper will explore such modifications.
 
 
-\subsubsection{Algorithms With a Highly Available Move} \label{sssec:algorithms}
+\subsection{Algorithms With a Highly Available Move} \label{sssec:algorithms}
 Currently, there two main proposed algorithms that allow a highly available move operation. It must be noted that Najafzadeh et al. \cite{Najafzadeh0E18} has shown that any coordination-free solution will have anomalies, such as having to ignore certain operations. The following section will discuss these algorithms and how they work: \par
 \begin{itemize}
     \item
-          \textbf{Kleppmann et al. \cite{9563274}} proposes an algorithm based off previous work by Kleppmann, called OpSets \cite{https://doi.org/10.48550/arxiv.1805.04263}. The general approach is to have a total order for all operations, which can be achieved using lamport timestamps. Along with \textit{undo} and \textit{redo} operations. Using these, the algorithm will apply each operation in the correct order, undoing and redoing operations as necessary. A \textit{log} is required to store all previous operations so that the algorithm can undo and redo operations. There is only one correct way for the operations to be applied and therefore one final state. If an operation were to cause an invalid tree state (a cycle), or relies on an operation that did, it is ignored. 
+          \textbf{Kleppmann et al. \cite{9563274}} proposes an algorithm based off previous work by Kleppmann, called OpSets \cite{https://doi.org/10.48550/arxiv.1805.04263}. The general approach is to have a total order for all operations, which can be achieved using lamport timestamps. Along with \textit{undo} and \textit{redo} operations. Using these, the algorithm will apply each operation in the correct order, undoing and redoing operations as necessary. A \textit{log} is required to store all previous operations so that the algorithm can undo and redo operations. There is only one correct way for the operations to be applied and therefore one final state. An operation is ignored if it would cause an invalid tree state (a cycle), or if the node or new parent does not exist. It is possible to trim the log to reduce the amount of memory required using a causally stable threshold, however this will not be discussed here. \par
           \begin{itemize}
             \item This algorithm has the overhead of having to undo and redo operations, however, it is easily extensible to add other conflicts (such as file name conflicts). \par
             \item Operations can be applied immediately, as if they are dependent on any other operation, they will eventually be applied in the correct order. \par
             \item This algorithm may not produce wanted behaviour, as it uses lamport timestamps to order operations. This means that if two operations are performed at the same time, the order is arbitrary (but deterministic). \par
           \end{itemize}
+
+          \begin{figure}
+            \centering
+            \includegraphics[width=1\textwidth]{kleppmann.png}
+            \caption{Concurrent move operations causing a cycle. Kleppmann's algorithm prefers the move from the replica with the lower ID and ignores the other operation (producing \textit{c} in this case). Reproduced from \cite{9563274}}
+            \label{fig:kleppmann}
+        \end{figure}
           
         %   represents the tree as a set of parent-child relationships. A move operation is performed by removing the node from wherever it is in the tree and moving it to its new location. This operation can also be used for adding and removing nodes, the former by creating a new node under the specified parent and the latter by moving the node under a "trash" node. It stores a \textit{log} of all previous operations, which allows the algorithm to implement a move operation. The algorithm can use the \textit{log} to ensure that all operations are applied in the correct order by undoing and reapplying operations (as proposed in \cite{https://doi.org/10.48550/arxiv.1805.04263}). It deals with cycles by ensuring that if any operations were to create a cycle, it would be ignored however they are still added to the \textit{log}. In general, the algorithm will prefer the latest operation that does not cause a conflict. The only conflict which the algorithm does not resolve is child nodes with the same parent having the same name.
 
     \item
-          \textbf{Nair et al. \cite{https://doi.org/10.48550/arxiv.2103.04828}} proposes \textit{Maram}, a more "light-weight" approach compared to other tree CRDT algorithms.
+          \textbf{Nair et al. \cite{https://doi.org/10.48550/arxiv.2103.04828}} proposes \textit{Maram}, a "light-weight" tree CRDT algorithm. It only applies conflict resolution for concurrent move operations. The paper defines two types of move operations, \textit{up-moves} and \textit{down-moves}. An \textit{up-move} is a move operation that moves a node towards the root, or to the same distance from the root. A \textit{down-move} is a move operation that moves a node away from the root. Each move operation also has a priority. The idea is, that concurrent up-moves are safe (as they do not cause a cycle), and therefore do not need conflict resolution. Whereas, two concurrent down-moves, or an up-move and a down-move require conflict resolution if both operations move a node into the critical descendants (as shown in Figure \ref{fig:maram}) of the other move operation. In the case of a concurrent up-move and down-move, the up-move wins. In the case of concurrent down-moves, the move with the highest priority wins. The priority is a unique number that is assigned to each move operation.
+          \begin{itemize}
+            \item This algorithm has the overhead of having to resolve conflicts for concurrent move operations, but not for any other operations. \par
+            \item It requires a priority to be assigned to each move operation, which may be difficult to implement in some systems. \par
+            \item It has more overhead for timestamps, as the timestamps must be able to detect concurrent operations. \par
+            \item It is harder to extend to other types of conflicts, such as file name conflicts, as its conflict resolution policy is specific to move operations that cause cycles. \par
+          \end{itemize}
           
-          CRDT with a highly available move operation that represents the tree a set of nodes and child-to-parent relations. Instead of storing an in-order log of operations, this algorithm relies on a causal delivery layer which guarantees
-          a happened-before relation. Maram splits move operations into \textit{down-moves} (the node is moved away from the root) and \textit{up-moves} (the node is moved towards to root or to the same distance). The conflict resolution is as follows: in concurrent up-moves, they are safe (so no conflict resolution required); in a concurrent up-move and down-move, the up-move wins; in concurrent down-moves, the move with the highest priority wins (the priority is deterministic, and specific to each application).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{maram.png}
+    \caption{Critical ancestors and critical descendants for concurrent move operations, \textit{move(node, newparent)}. \textit{l} is the closest common ancestor. Reproduced from \cite{https://doi.org/10.48550/arxiv.2103.04828}.}
+    \label{fig:maram}
+\end{figure}
 
 \end{itemize}
 
@@ -375,7 +410,7 @@ These will be referred to as \textit{Kleppmann's algorithm} and \textit{Maram} r
 
 Table \ref{table:differences} shows a comparison between the two algorithms:
 
-\begin{table}[ht]
+\begin{table}[h]
     \def\arraystretch{2}
     \caption{Comparison of Algorithms} % title of Table
     \centering % used for centering table
@@ -409,10 +444,10 @@ This paper will use both of the algorithms stated above, Kleppmann's \cite{95632
 
 
 \newpage
-\section{Planning}
+\chapter{Planning}
 The original aim of this paper was to create a file synchronisation system using conflict-free replicated data types (CRDTs). However, due to the complexity and challenges of implementing such a system, this paper has narrowed its focus to explore the implementation and evaluation of the CRDTs. By narrowing down the scope of this research, this paper aims to provide a more in-depth analysis of the advantages and limitations of the CRDTs. This will allow for a more thorough evaluation of the CRDTs, and will allow for a more detailed comparison between the different CRDTs.
 
-\subsection{Requirements}
+\section{Requirements}
 The main focus of this paper is to implement the two CRDT algorithms, \cite{9563274} and \cite{https://doi.org/10.48550/arxiv.2103.04828}, and to test them individually as well as to compare them. While the evaluation of these algorithms will be the main focus, this paper will also attempt to create implementations that can be used by other developers. As such, the requirements will be as follows:
 \begin{itemize}
     \item The system shall be comprised of multiple layers that can be modified independently.
@@ -424,7 +459,7 @@ The main focus of this paper is to implement the two CRDT algorithms, \cite{9563
     \item Each layer should have an interface that allows for other implementations to be created and swapped in. This will allow for the system to be easily modified and extended.
 \end{itemize}
 
-\subsection{System Architecture}\label{sec:architecture}
+\section{System Architecture}\label{sec:architecture}
 
 The design will be split into different layers that will each be independent and can be modified separately. The layers are as follows:
 \begin{itemize}
@@ -454,21 +489,21 @@ The design will be split into different layers that will each be independent and
 \end{itemize}
 Certain CRDTs require different consistency models, therefore the interface layer will ensure that incoming operations are applied correctly. It is important that each CRDT is correctly paired with the correct consistency model, as otherwise the CRDT may not work correctly. \par
 
-\subsection{Language and Tools}
-\subsubsection{Go}
+\section{Language and Tools}
+\subsection{Go}
 Go is a language created by Google, and is designed to be used in distributed systems with the help of its built-in, lightweight concurrency features. As this paper aims to create a distributed system, then Go is a good choice to help with this. \par
 
 The CRDTs which will be implemented by this paper are particularly applicable to distributed file systems. Recent distributed file systems have been written using Go, such as JuiceFS or Kertish-DFS. Therefore, by using Go this paper aims to create useful implementations for these systems, or to provide a base implementation which can then be improved upon. \par
 
 
-\subsubsection{GitHub}
+\subsection{GitHub}
 The source code for this project will be stored in a GitHub repository. This will allow for the code to be easily shared and modified by other developers. It will also allow for the code to be easily version controlled, and for the history of the project to be easily tracked. This report is also stored in the GitHub repository. \par
 
-\subsection{Testing}
+\section{Testing}
 Go has a built-in testing framework, which will be used to test the code. Unit tests can be used to simulate concurrent operations on the CRDTs, and therefore test the correctness of the CRDTs. Integration tests will be used to test the correctness of the system as a whole and ensure that the different layers work together correctly. \par
 
 
-\subsection{Code Structure}\label{sec:code_structure}
+\section{Code Structure}\label{sec:code_structure}
 The code will be written in accordance with the Go style guide\footnote{https://golang.org/doc/effective\_go}. This will ensure that the code is easy to read and understand. Go itself is opinionated about how code should be structured, and comes with a built-in tool to automatically format code. This makes code written in Go consistent and easy to read. \par
 
 The code will be split into different packages, with each package containing a single component of the system. The packages will be as follows:
@@ -480,10 +515,10 @@ The code will be split into different packages, with each package containing a s
 \end{itemize}
 
 \newpage
-\section{Design}
+\chapter{Design}
 The system will be designed according to Section \ref{sec:architecture}. The design will attempt to use interfaces where possible, to allow for the system to be easily modified and extended. 
 
-\subsection{Package Structure}
+\section{Package Structure}
 The system will be split into different packages as described in Section \ref{sec:code_structure}. The \texttt{TreeCRDT} package is the CRDT layer. The \texttt{TreeInterface} is the Interface layer. And the \texttt{Connection} package is the Network layer. The dependencies between these packages are shown in Figure \ref{fig:packages}.
 
 \begin{figure}[H] 
@@ -495,9 +530,9 @@ The system will be split into different packages as described in Section \ref{se
 
 The packages will be developed in a way which implements the main focus of this paper first, the CRDTs. Therefore, they will be developed in the following order: \texttt{Clocks}, \texttt{TreeCRDT}, \texttt{Connection} and finally \texttt{TreeInterface}. This will allow for the main focus of this paper to be implemented first, and then the rest of the system can be built around it. \par
 
-\subsection{System Structure}
+\section{System Structure}
 
-\subsubsection{Clocks}
+\subsection{Clocks}
 The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
 As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
 
@@ -512,7 +547,7 @@ The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \
 
 The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{TotalOrder} and \texttt{PartialOrder} respectively. They denote the differences in the gurantees that the two types of clocks provide. The \texttt{Lamport} class implements \texttt{TotalOrder} as it provides an arbitrary, but deterministic total order of events. The \texttt{VectorTimestamp} class implements \texttt{PartialOrder} as it provides a partial order of events. \par
 
-\subsubsection{CRDT and Interface}
+\subsection{CRDT and Interface}
 Since the CRDT layer is the primary focus of this paper, it will comprise multiple components, making it the largest layer. The components will be specific to each CRDT, and will be implemented using the algorithms described in Section \ref{sssec:algorithms}. The exact implementation is not known at this point, and will be discussed in Section \ref{sec:implementation}. \par
 
 
@@ -527,7 +562,7 @@ The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be
     \label{fig:crdt}
 \end{figure}
 
-\subsubsection{Network}
+\subsection{Network}
 The network layer takes inspiration from Yjs\footnote{https://docs.yjs.dev/}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the Interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
 
 If the system was to be designed to be dynamic, then the CRDT layer would have more requirements. The CRDT would either need to store all local operations indefinitely or provide a means of transferring its state to new nodes, as they would require access to the current state of the CRDT.
@@ -545,41 +580,41 @@ The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection
 
 The \texttt{TCPConnection} class is responsible for sending and receiving messages to and from a single peer. When a node joins after being offline, this class is responsible for sending all buffered messages to the peer. It will not handle messages directly, instead it will pass them to the \texttt{TCPProvider} for handling. This helps to avoid race conditions, as the \texttt{TCPProvider} will handle all messages in a single thread. \par
 
-\subsection{System Integrations}
+\section{Communication Sequences}
 
 
 
-\subsection{Justification of Design}
+\section{Justification of Design}
 The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par
 
 
-\section{Implementation}\label{sec:implementation}
+\chapter{Implementation}\label{sec:implementation}
 
-\section{Project Management}
+\chapter{Project Management}
 
-\subsection{Account of Work to date}
+\section{Account of Work to date}
 The current work has been around reviewing relevant literature and creating an initial design from this research. The research has been into current systems for file synchronisation, and their drawbacks. As well as into distributed systems and consistency models. Most importantly, detailed research has been completed into CRDTs and ones applicable to this paper's proposed system. From this research, an initial design has been created outlining the main aspects of the proposed system.
 
-\subsection{Plan of remaining work}
+\section{Plan of remaining work}
 The design will be refined and more detailed. From this design, the CRDT layer will be implemented by first selecting an algorithm and then coding it. Then, the Network layer, where the peer-to-peer networking will be coded first, followed by operation transmission and finally file data transmission. Then, the File System layer, where the watcher (which watches the file system for changes) will be coded and then reading and writing file content. Development of these layers may overlap, but it will follow the general structure listed. \par
 Once all components have been coded, the system will have its reliability and performance tested, which will inform the evaluation. The testing will seek to measure the throughput and response time of the algorithm(s), and how adding more replicas affects this. The evaluation then needs to be written and will contain the outcome of the project.
 
-\subsection{Estimate of Support Required}
+\section{Estimate of Support Required}
 The performance testing may require the use of rented servers, to test latency.
 
-\subsection{Gantt Chart}
+\section{Gantt Chart}
 
-\subsubsection{Completed Work}
+\subsection{Completed Work}
 \includegraphics[width=16cm]{completed.jpg}
 
 
-\subsubsection{Remaining Work}
+\subsection{Remaining Work}
 \begin{center}
     \includegraphics[width=16cm]{remaining.jpg}
 \end{center}
 
 
-\subsection{Risk Assessment}
+\section{Risk Assessment}
 
 \begin{itemize}
     \item \textbf{(P) Probability} 1 - low, 5 - high
@@ -610,18 +645,18 @@ The performance testing may require the use of rented servers, to test latency.
 
 \clearpage
 %TC:ignore
+\addcontentsline{toc}{chapter}{References}
 \printbibliography
-
 \newpage
 
 \appendix
-\section{Original Brief}
-\subsection{Title}
+\chapter{Original Brief}
+\section{Original Title}
 \begin{center}
 Using CRDTs to Create a File Synchronization System
 \end{center}
 
-\subsection{Problem}
+\section{Problem}
 Distributed computing systems are becoming more popular for two main reasons, availability
 and scalability. Distributed storage systems that have replicas need a way to merge the replicas,
 however conflicts can arise when merging two different replicas. Software such as Google Drive
@@ -635,7 +670,7 @@ however their throughput may be lower than other solutions, such as state machin
 them having to resolve conflicts. Due to the high guarantees of CRDTs, implementations for
 complex data types are still being theorized and tested in practice (such as tree CRDTs).
 
-\subsection{Goal}
+\section{Goal} 
 The goal of this project is to implement and test the performance and viability of using new
 advancements in tree CRDTs in a file synchronization system to solve directory conflicts. This
 project aims to be able to demonstrate whether using CRDTs in this application is viable, mainly
@@ -647,7 +682,7 @@ increasing throughput (as CRDTs have naturally low latency).
 Tree structures are used in many scenarios so the code for this project could be used in other
 scenarios when Strong Eventual Consistency is wanted.
 
-\subsection{Scope}
+\section{Scope}
 The scope of this project will be limited to implementing CRDTs to resolve directory conflicts and
 testing their performance and reliability. The system should be tested with a varying number of
 replicas to attempt to visualize how the system would scale. Optimisations will only be
@@ -655,7 +690,7 @@ implemented after the system works as intended.
 File conflicts will not be a focus of this project, however they could be brought into the scope if
 time allows.
 
-\subsection{Interim Abstract}
+\section{Interim Abstract}
 This report is an attempt to use new developments in tree CRDTs with
 highly available move operations to create a file synchronisation system that
 will resolve all directory conflicts without human interaction; and will not
