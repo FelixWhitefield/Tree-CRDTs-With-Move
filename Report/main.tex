@@ -10,6 +10,7 @@
 \usepackage{amsmath}
 \usepackage[parfill]{parskip} 
 \usepackage[htt]{hyphenat}
+\usepackage{caption}
 
 
 \begin{document}
@@ -289,10 +290,10 @@ This can be used to create a partial order, as concurrent events are neither cau
 \end{figure}
 
 \section{Conflict-free Replicated Data Types}
-Conflict-free Replicated Data Types are types of data structures, such as sets, counters, and registers, that can be replicated across multiple nodes in a distributed system. They are unique in that the data type itself is responsible for resolving conflicts, rather than the application. 
+Conflict-free Replicated Data Types (CRDTs) are types of data structures, such as sets, counters, and registers, that can be replicated across multiple nodes in a distributed system. They are unique in that the data type itself is responsible for resolving conflicts, rather than the application. 
 
-CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
-One useful application for CRDTs is their ability for offline use \cite{10.1145/3359591.3359737}. If an application is built using CRDTs, it can feel more responsive as updates to the state can be made locally first without the system having to wait on replies from remove servers. \par
+CRDTs were created to allow for a better eventually consistent model, that can increase availability and performance while removing the need for conflict arbitration.  One main factor that allows CRDTs to guarantee SEC is that the data types are commutative\cite{10.1007/978-3-642-24550-3_29}, meaning that the updates can be applied in any order. Although, certain CRDTs may rely on causal consistency to operate correclty. They also do not require a main or primary elected server, as each node can resolve the conflicts by themselves. Therefore, CRDTs are applicable in a peer-to-peer environment. \par
+One useful application for CRDTs is their ability for offline use \cite{10.1145/3359591.3359737}. If an application is built using CRDTs, it can feel more responsive as updates to the state can be made locally without the system having to wait on replies from remote servers. \par
 There are two main types of CRDTs, state-based and operation-based. Both have different ways of sending updates to other nodes, and different ways of resolving conflicts. \par
 
 
@@ -305,7 +306,7 @@ There are two main types of CRDTs, state-based and operation-based. Both have di
     \label{fig:statebased}
 \end{figure}
 
-State-based CRDTs, or otherwise called Convergent Replicated Data Types (CvRDTs), send their full state to other replicas where they are merged by a function to form a new state. The merge function must be associative, commutative and idempotent \cite{10.1007/978-3-642-24550-3_29}. CvRDTs can use lots of bandwidth because as the state grows in size, they will still have to send the whole state. However, because they send their full state, if the transmission of a state is 'missed' it does not break the system as the next state transmission will contain all previous 'missed' updates to the state. Also, CvRDTs can make use of gossip protocols (as shown in Figure \ref{fig:statebased}) which helps reduces network usage. \par
+State-based CRDTs, or otherwise called Convergent Replicated Data Types (CvRDTs), send their full state to other replicas where they are merged by a function to form a new state. The \textit{merge} function must be associative, commutative and idempotent \cite{10.1007/978-3-642-24550-3_29}. As the state of a CvRDT grows in size, the entire state must be sent, which can result in high bandwidth usage. However, since CvRDTs send their full state, missed updates do not break the system because the next state transmission includes all previously missed updates. As a result, there are fewer requirements on the replication layer. Also, CvRDTs can make use of gossip protocols (as shown in Figure \ref{fig:statebased}) which helps reduce network usage. \par
 
 Delta State CRDTs are a form of state-based CRDTs that only send the changed, or the delta, part of the state. This allows for the messages sent between replicas to be smaller and work across unreliable networks \cite{Almeida_2018}. They, therefore, have the best of both operation and state-based CRDTs.
 
@@ -319,13 +320,13 @@ Delta State CRDTs are a form of state-based CRDTs that only send the changed, or
     \label{fig:operation}
 \end{figure}
 
-Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send the update operation to other replicas. Each operation or update is a pair consisting of a \textit{prepare} method and an \textit{effect} method. The \textit{prepare} method is executed at the local replica and produces a message representing the operation, and the \textit{effect} method applies this operation at all replicas\cite{10.1007/978-3-642-24550-3_29}. The operations also have to be commutative, but not idempotent. Because of the lack of idempotence, there are more requirements on transmission between replicas as they have to ensure each operation is sent to each replica only once (This can be seen in Figure \ref{fig:operation}). \par
+Operation-based CRDTs, or otherwise called Commutative Replicated Data Types (CmRDTs), only send operations to other replicas. Each update to the data is a pair consisting of a \textit{prepare} method and an \textit{effect} method. The \textit{prepare} method is executed at the local replica and produces a message representing the operation, and the \textit{effect} method applies this operation to the state\cite{10.1007/978-3-642-24550-3_29}. The operations have to be commutative, but not idempotent. As CmRDTs only send operations, each replica must receive all operations otherwise the state will be incorrect. Therefore, there are more requirements on the replication layer. Figure \ref{fig:operation} shows an example of this replication. \par
 
-\textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. They also require the state of the object to be comprised of a partially ordered log of operations. As well as defining an extension which strips causality information from operations once they are \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}, alllowing for the state to be smaller.
+\textit{Pure} operation-based CRDTs were proposed to create better operation-based CRDTs\cite{10.1007/978-3-662-43352-2_11}. These impose restrictions on the \textit{prepare} method, requiring that it does not inspect the current state and can only return the operation. Additionally, the state of the object is composed of a partially ordered log of operations. It is possible to reduce the state size by implementing a method that strips causality information from operations once they become \textit{"causally stable"}\cite{10.1007/978-3-662-43352-2_11}.
 
 It is important to note that operation-based CRDTs are more applicable to \textit{static} distributed systems, where the number of replicas is fixed. Papers about operation-based CRDTs usually assume a fixed number of replicas, such as \cite{baquero2017pure}. There are ways to make operation-based CRDTs work well in \textit{dynamic} systems, such as using dotted version vectors \cite{preguiça2010dotted}. For the remainder of this paper, the terms 'static' and 'dynamic' systems will be used as defined above. The focus of this paper will be on static systems, as dynamic systems are beyond its scope.\par 
 
-It is important to note that operation-based CRDTs usually require reliable causal broadcast \cite{10.1007/978-3-662-43352-2_11}. These algorithms can be complex, but they are not the focus of this paper. Therefore, this paper will implement a simple reliable causal broadcast algorithm. If the CRDTs discussed in this paper are to be used in a real-world application, a more complex reliable causal broadcast algorithm should be used \cite{10.1145/128738.128742}. \par
+It is important to note that operation-based CRDTs usually require reliable causal broadcast \cite{10.1007/978-3-662-43352-2_11}, which can be complex. However, for the purpose of this paper, a rudimentary reliable causal broadcast algorithm will be implemented. If the CRDTs discussed in this paper are to be used in a real-world application, a more complex reliable causal broadcast algorithm should be used \cite{10.1145/128738.128742}. \par
 
 \subsection{CRDTs and File Systems}
 A file system can be represented as a tree structure, where the files and directories are the nodes and the directory hierarchy is represented by the branches between nodes. Therefore, a tree CRDT can be used to create a distributed/replicated file system that will have high availability and low latency. Tree-structured CRDTs have been created before \cite{10.1145/2757667.2757683}, \cite{kleppmann2018automerge}. However, designing a tree CRDT with a \textit{highly available} (or \textit{atomic}) move operation poses significant challenges due to the need to preserve the strict tree invariant. \textit{Highly available} meaning: does not require locking, consensus and does not create duplicates.   \par
@@ -375,7 +376,7 @@ Currently, there two main proposed algorithms that allow a highly available move
           \begin{itemize}
             \item This algorithm has the overhead of having to undo and redo operations, however, it is easily extensible to add other conflicts (such as file name conflicts). \par
             \item Operations can be applied immediately, as if they are dependent on any other operation, they will eventually be applied in the correct order. \par
-            \item This algorithm may not produce wanted behaviour, as it uses lamport timestamps to order operations. This means that if two operations are performed at the same time, the order is arbitrary (but deterministic). \par
+            \item This algorithm may produce unwanted behaviour, as it uses lamport timestamps to order operations. This means that if two operations are performed concurrently, the order they are applied is arbitrary (but deterministic). \par
           \end{itemize}
 
           \begin{figure}
@@ -564,49 +565,82 @@ The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be
 \end{figure}
 
 \subsection{Network}
-The network layer takes inspiration from Yjs\footnote{https://docs.yjs.dev/}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the Interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
+The network layer takes inspiration from Yjs\footnote{https://docs.yjs.dev/}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
 
 If the system was to be designed to be dynamic, then the CRDT layer would have more requirements. The CRDT would either need to store all local operations indefinitely or provide a means of transferring its state to new nodes, as they would require access to the current state of the CRDT.
-This helps to simplify the design, as the network layer does not need to know about the CRDT, and the CRDT do not need to know about the network layer. \par 
+
+The network layer assumes that each node will be started with the same number of peers, and the total set of peers will not change. This is a reasonable assumption for a static system, however it is not suitable for a dynamic system. \par
 
 \begin{figure}[h]
     \centering
-    \fbox{\includegraphics[width=12cm]{connection.jpeg}}
+    \fbox{\includegraphics[width=12cm]{networkuml.jpeg}}
     \caption{Class diagram for the Network layer. With the interface \texttt{ConnectionProvider} and implementing class \texttt{TCPProvider}.}
     \label{fig:connection}
 \end{figure}
 
-The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection}. It describes what the network layer is required to do, broadcast messages and receive them. This interface is implemented by the class \texttt{TCPProvider}. The \texttt{TCPProvider} class is responsible for creating and managing connections to other peers. It will also be responsible for sending and receiving messages to and from other peers. \par
+The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection}. It describes what the network layer is required to do, broadcast messages and receive them. This interface is implemented by the class \texttt{TCPProvider}. The \texttt{TCPProvider} class is responsible for providing the reliable broadcast functionality, as well as listening for incoming connections. \par
 
 
-The \texttt{TCPConnection} class is responsible for sending and receiving messages to and from a single peer. When a node joins after being offline, this class is responsible for sending all buffered messages to the peer. It will not handle messages directly, instead it will pass them to the \texttt{TCPProvider} for handling. This helps to avoid race conditions, as the \texttt{TCPProvider} will handle all messages in a single thread. \par
+The \texttt{TCPConnection} class is responsible for maintaining a connection with a single node, and receiving messages from that node. When a node joins after being offline, \texttt{TCPProvider} is responsible for sending them all the messages which they missed. The \texttt{TCPConnection} will not apply incoming operations, instead they will be passed to the TreeInterface for processing. This is useful as it reduces the need for locks, which would be required if the \texttt{TCPConnection} was responsible for applying operations. \par 
 
 \section{Communication Sequences}
+The CRDT layer and Clocks in the application should not be affected by concurrency because they are designed to be used in a single thread. Therefore, it is the responsibility of the developer to ensure that both are used exclusively within a single thread. The Interface and Network layer however will run in multiple threads, and therefore concurrency and message passing must be considered. \par
 
 \subsection{Network Layer}
 
-The network layer will comprise multiple concurrent processes. One process will be responsible for listening for incoming connections, and creating a new \texttt{TCPConnection} for each connection. The \texttt{TCPConnection} will only be responsible for receiving messages from the peer, and passing them to the \texttt{TCPProvider handleOps} process. The \texttt{TCPProvider handleOps} will then handle the messages in a single thread, update any state and pass the messages to the CRDT layer. This is shown in Figure \ref{fig:netsequence}. \par
-
-The \texttt{TCPProvider} will also be responsible for sending messages to other peers. This will be done in a separate process, which will be responsible for sending messages to all peers. The process will receive operations to send from the Interface layer. Whenever an operation needs to be broadcasted, it is added to a map that associates the operation's ID with a list of node IDs. When a node sends an acknowledgement for an operation, that node ID is added to the list of node IDs for that operation. When the list of node IDs is the same size as the number of nodes, the operation is removed from the map. This is how the system ensures each node receives each operation. \par
-
-\begin{figure}
+\begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{networksequence.png}
+    \includegraphics[width=1\textwidth]{networkjoin.png}
     \caption{Sequence diagram for the network layer, showing a replica connecting and sending an operation.}
-    \label{fig:netsequence}
-\end{figure}
+    \label{fig:networkjoin}
+\end{figure} 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{networksend.png}
+    \caption{Sequence diagram for the network layer, showing an operation being sent and an acknowledgement being received.}
+    \label{fig:networksend}
+\end{figure} 
+
+The network layer will comprise multiple concurrent processes. One process will be responsible for listening for incoming connections, and creating a new \texttt{TCPConnection} for each connection. The \texttt{TCPConnection} will only be responsible for receiving messages from the peer but not sending them. If the message is an operation, it is sent to the TreeInterface buffer to be applied to the Tree. Otherwise, if it is an acknowledgement, it is sent to \texttt{TCPProvider handleAcks()} for processing. As show by Figure \ref{fig:networkjoin} and \ref{fig:networksend}. \par
+
+The \texttt{TCPProvider} will be responsible for sending messages to other peers, which will happen in a separate process as show by Figure \ref{fig:networksend}. The process will receive operations to send from the Interface layer. Whenever an operation is broadcasted, it is added to a map that associates the operation's ID with a list of node IDs. When a node sends an acknowledgement for an operation, that node ID is added to the list of node IDs for that operation. When the list of node IDs is the same size as the number of nodes, the operation is removed from the map. This is how the system ensures each node receives each operation. \par
+
+
 
 \subsection{Interface Layer}
 
+As shown by Figure \ref{fig:interfaceseq}, the interface layer will buffer operations from the network layer, and only apply them when they are ready. This is important for the causal consistency model, as it ensures that operations are applied in the correct order. For local operations, they are translated into operations for the specific CRDT, and then applied to the CRDT. It is likely that the CRDT will be protected by a lock, as it is not thread safe. \par
+
+Broadcasting operations is not shown in Figure \ref{fig:interfaceseq}, but it would happen after the operation is applied to the CRDT. A message would be sent to the network layer, which would then broadcast the operation to all other nodes. \par
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{treeinterface.png}
+    \caption{Sequence diagram for the interface layer, showing operations being applied to the Tree. Broadcasting is not shown.}
+    \label{fig:interfaceseq}
+\end{figure}
 
 
 \section{Justification of Design}
-The system is decoupled into three distinct layers, which will improve the maintainability, readability and re-usability of the code. It will also help during development, as each layer will only need to focus on its own requirements. As well as allowing for each layer to be tested individually. \par
+The design is split into four packages, which helps to keep the code modular and easy to understand. Each package has a single responsibility, which helps to keep the code easy to maintain. This design approach of having a single responsibility for each package and having interdependencies between packages is a common design pattern in software engineering. \par
+
+The system takes advantage of concurrency to allow for increased performance and scalability. Message passing will be used to reduce the need for locks, which can otherwise cause performance issues. The use of multiple threads also allows for the system to be more responsive, as it can handle multiple requests at once. Each thread will be responsible for a single task, which will help to keep the code easy to understand. \par
 
 
 \chapter{Implementation}\label{sec:implementation}
 
-\chapter{Project Management}
+\chapter{Testing}
+
+\chapter{Evaluation}
+
+%TC:ignore
+\addcontentsline{toc}{chapter}{References}
+\printbibliography
+
+\appendix
+
+\chapter{Interim Project Management}
 
 \section{Account of Work to date}
 The current work has been around reviewing relevant literature and creating an initial design from this research. The research has been into current systems for file synchronisation, and their drawbacks. As well as into distributed systems and consistency models. Most importantly, detailed research has been completed into CRDTs and ones applicable to this paper's proposed system. From this research, an initial design has been created outlining the main aspects of the proposed system.
@@ -638,16 +672,20 @@ The performance testing may require the use of rented servers, to test latency.
     \item \textbf{(RE) Risk Exposure} Probability * Severity
 \end{itemize}
 
-\begin{table}[ht]
+\begin{table}[htbp]
     \renewcommand{\arraystretch}{1.3}
-    \caption{Risk Assessment} % title of Table
+    \captionsetup{
+        font=normalsize,
+        skip=2pt % adjust the value as needed
+    }
+    \caption{Risk Assessment} % title of Table 
     \centering % used for centering table
     \begin{tabular}{|p{3cm} | p{0.4cm} | p{0.4cm} | p{0.6cm} | p{8cm}|} % centered columns (4 columns)
         \hline\hline %inserts double horizontal lines
         \textbf{Risk}               & \textbf{P} & \textbf{S} & \textbf{RE} & \textbf{Mitigation}                                                                                              \\ [0.5ex] % inserts table
         %heading
         \hline % inserts single horizontal line
-        Loss of Report              & 2          & 5          & 10          & Back-up on computer, laptop and OneDrive                                                                         \\ \hline % inserting body of the table
+        Loss of Report             & 2          & 5          & 10          & Back-up on computer, laptop and OneDrive                                                                         \\ \hline % inserting body of the table
         Loss of Code                & 1          & 5          & 5           & Back-up on computer, laptop, OneDrive and GitHub                                                                 \\ \hline
         Underestimating Tasks       & 3          & 3          & 9           & Plan for extra time in case tasks require it, as well as making informed estimates for time needed for each task \\ \hline
         Health Issues               & 2          & 4          & 8           & Allow for spare time, and possible removal of parts of project. Attempt to not become sick.                      \\ \hline
@@ -658,14 +696,6 @@ The performance testing may require the use of rented servers, to test latency.
     \label{table:risk} % is used to refer this table in the text
 \end{table}
 
-
-\clearpage
-%TC:ignore
-\addcontentsline{toc}{chapter}{References}
-\printbibliography
-\newpage
-
-\appendix
 \chapter{Original Brief}
 \section{Original Title}
 \begin{center}
