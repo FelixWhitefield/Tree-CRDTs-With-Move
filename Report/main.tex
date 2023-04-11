@@ -230,7 +230,7 @@ Most distributed data stores today are either:
     \item \textbf{Strongly Consistent}: Any subsequent read after a write will return the most recent value.
     \item \textbf{Eventually Consistent}: The latest data will eventually become available, if no new updates are made.
 \end{itemize}
-Many databases are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}. Even databases such as MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels don't require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
+Many databases are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}. Even databases such as MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels do not require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
 
 \subsection{Strong Eventual Consistency}
 Strong Eventual Consistency (SEC) takes eventual consistency even further, by guaranteeing that two nodes which receive the same updates (regardless of order) will be in the same state. In eventually consistent systems, the nodes would have to communicate to resolve conflicts by consensus or roll-back. Whereas in strong eventually consistent systems the conflicts are resolved in a deterministic manner on each node (without the need for communication). \par
@@ -547,7 +547,7 @@ As shown in Figure \ref{fig:ordered}, the system will have two implementations o
     \fbox{\includegraphics[width=13cm]{clocks.jpeg}}
     \caption{Class diagram for the clocks and timestamps. Including Lamport and Vector clocks.}
     \label{fig:ordered}
-\end{figure} 
+\end{figure}  
 
 The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \ref{fig:ordered}. The class \texttt{Lamport} implements both, as it is both a timestamp and a clock. The Vector clock is split into two classes, \texttt{VectorClock} and \texttt{VectorTimestamp}. The \texttt{VectorClock} implements the \texttt{Clock} interface, and the \texttt{VectorTimestamp} implements the \texttt{Timestamp} interface. \par
 
