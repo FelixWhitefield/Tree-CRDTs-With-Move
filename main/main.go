@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-	var clock clocks.Timestamp
-	clock = clocks.NewLamport(1)
-	fmt.Println(clock)
+	c := clocks.NewLamport()
+	fmt.Println(c)
 }
