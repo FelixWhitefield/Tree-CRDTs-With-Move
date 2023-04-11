@@ -10,34 +10,31 @@ const (
 	GREATER = 1
 	CONCURRENT = 2
 )
-
-
+/* ----- Interfaces ------ */
 type TotalOrder interface {
 	Compare(other TotalOrder) int 
 }
 
-
 type PartialOrder interface {
-	Compare(other PartialOrder) int
+	Compare(other any) int
 }
 
-type Timestamp interface {
-	Clone() Timestamp
+type Timestamp[T any] interface {
+	Clone() T
 }
 
 type Clock interface {
 	Inc() Clock // increments clock, returns clone
 	Tick() Clock  // returns clock inc by 1 (doesn't update clock)
-	Merge(other Timestamp)
+	Merge(other Timestamp[any])
 }
-
+/* ----- Structs ------ */
 type Lamport struct {
 	actorID int
 	counter int
 }
 
 type VectorTimestamp map[int]int
-
 
 type VectorClock struct {
 	timestamp VectorTimestamp
@@ -56,6 +53,7 @@ func NewVectorClock(actorID int) VectorClock {
 	return VectorClock{actorID: actorID, timestamp: NewVectorTimestamp()}
 }
 
+// Returns either LESS, EQUAL, or GREATER
 func (l Lamport) Compare(other Lamport) int {
 	if diff := l.counter - other.counter; diff < 0 {
 		return LESS
@@ -85,10 +83,11 @@ func (l Lamport) Clone() Lamport {
 	return Lamport{actorID: l.actorID, counter: l.counter}
 }
 
-func (l Lamport) Print() {
-	fmt.Println(l.actorID , ": ", l.counter)
+func (l Lamport) String() string {
+	return fmt.Sprintf("%v: %v", l.actorID, l.counter)
 }
 
+// Returns either LESS, EQUAL, GREATER or CONCURRENT
 func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	isLess := false
 	isGreater := false
@@ -103,7 +102,7 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 		}
 
 		if isLess && isGreater {
-			return 2 // concurrent
+			return CONCURRENT // concurrent
 		}
 	}
 
@@ -117,11 +116,11 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	}
 
 	if isLess {
-		return -1
+		return LESS
 	} else if isGreater {
-		return 1
+		return GREATER
 	} else {
-		return 0
+		return EQUAL
 	}
 }
 

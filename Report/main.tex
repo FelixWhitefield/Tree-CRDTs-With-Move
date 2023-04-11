@@ -251,7 +251,7 @@ Lamport clocks were created by Lamport in 1978\cite{lamport1978time}. They work 
 
 \begin{figure}
     \centering
-    \includegraphics[width=10cm]{LamportClocks.jpg}
+    \includegraphics[width=10cm]{images/LamportClocks.jpg}
     \caption{Example of lamport clocks. \textit{m} represents a message.}
     \label{fig:lamport}
 \end{figure}
@@ -284,7 +284,7 @@ This can be used to create a partial order, as concurrent events are neither cau
 
 \begin{figure}
     \centering
-    \includegraphics[width=10cm]{VectorClocks.jpg}
+    \includegraphics[width=10cm]{images/VectorClocks.jpg}
     \caption{Example of vector clocks. The first and second values correspond to nodes A and B respectively. \textit{m} represents a message.}
     \label{fig:vector}
 \end{figure}
@@ -301,7 +301,7 @@ There are two main types of CRDTs, state-based and operation-based. Both have di
 
 \begin{figure}
     \centering
-    \includegraphics[width=8cm]{state.jpg}
+    \includegraphics[width=8cm]{images/state.jpg}
     \caption{State-based CRDT replication. Reproduced from \cite{10.1007/978-3-642-24550-3_29}}
     \label{fig:statebased}
 \end{figure}
@@ -315,7 +315,7 @@ Delta State CRDTs are a form of state-based CRDTs that only send the changed, or
 
 \begin{figure}
     \centering
-    \includegraphics[width=8 cm]{operation.jpg}
+    \includegraphics[width=8 cm]{images/operation.jpg}
     \caption{Operation-based CRDT replication. Reproduced from \cite{10.1007/978-3-642-24550-3_29}}
     \label{fig:operation}
 \end{figure}
@@ -381,7 +381,7 @@ Currently, there two main proposed algorithms that allow a highly available move
 
           \begin{figure}
             \centering
-            \includegraphics[width=1\textwidth]{kleppmann.png}
+            \includegraphics[width=1\textwidth]{images/kleppmann.png}
             \caption{Concurrent move operations causing a cycle. Kleppmann's algorithm prefers the move from the replica with the lower ID and ignores the other operation (producing \textit{c} in this case). Reproduced from \cite{9563274}}
             \label{fig:kleppmann}
         \end{figure}
@@ -400,7 +400,7 @@ Currently, there two main proposed algorithms that allow a highly available move
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.6\textwidth]{maram.png}
+    \includegraphics[width=0.6\textwidth]{images/maram.png}
     \caption{Critical ancestors and critical descendants for concurrent move operations, \textit{move(node, newparent)}. \textit{l} is the closest common ancestor. Reproduced from \cite{https://doi.org/10.48550/arxiv.2103.04828}.}
     \label{fig:maram}
 \end{figure}
@@ -433,7 +433,7 @@ Table \ref{table:differences} shows a comparison between the two algorithms:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=10cm]{Response.jpg}
+    \includegraphics[width=10cm]{images/Response.jpg}
     \caption{Response time for different conflict rates (0-20\%). Reproduced from \cite{https://doi.org/10.48550/arxiv.2103.04828}}
     \label{fig:responsetime}
 \end{figure}
@@ -529,7 +529,7 @@ The system will be split into different packages as described in Section \ref{se
 
 \begin{figure}[H] 
     \centering
-    \fbox{\includegraphics[width=12cm]{packages.jpeg}}
+    \fbox{\includegraphics[width=12cm]{images/packages.jpeg}}
     \caption{Package structure for the project, with dependencies shown.}
     \label{fig:packages}
 \end{figure}
@@ -544,7 +544,7 @@ As shown in Figure \ref{fig:ordered}, the system will have two implementations o
 
 \begin{figure}[h]
     \centering
-    \fbox{\includegraphics[width=13cm]{clocks.jpeg}}
+    \fbox{\includegraphics[width=13cm]{images/clocks.jpeg}}
     \caption{Class diagram for the clocks and timestamps. Including Lamport and Vector clocks.}
     \label{fig:ordered}
 \end{figure}  
@@ -563,7 +563,7 @@ The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be
 
 \begin{figure}[H]
     \centering
-    \fbox{\includegraphics[width=13cm]{crdt.jpeg}}
+    \fbox{\includegraphics[width=13cm]{images/crdt.jpeg}}
     \caption{Class diagram for the CRDT and Interface layer. The \texttt{Tree} interface provides an interface for application code. Classes \texttt{MTree} and \texttt{KTree} provide implementations for the specific CRDTs.}
     \label{fig:crdt}
 \end{figure}
@@ -577,7 +577,7 @@ The network layer assumes that each node will be started with the same number of
 
 \begin{figure}[h]
     \centering
-    \fbox{\includegraphics[width=12cm]{networkuml.jpeg}}
+    \fbox{\includegraphics[width=12cm]{images/networkuml.jpeg}}
     \caption{Class diagram for the Network layer. With the interface \texttt{ConnectionProvider} and implementing class \texttt{TCPProvider}.}
     \label{fig:connection}
 \end{figure}
@@ -594,14 +594,14 @@ The CRDT layer and Clocks in the application should not be affected by concurren
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{networkjoin.png}
+    \includegraphics[width=1\textwidth]{images/networkjoin.png}
     \caption{Sequence diagram for the network layer, showing a replica connecting and sending an operation.}
     \label{fig:networkjoin}
 \end{figure} 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{networksend.png}
+    \includegraphics[width=1\textwidth]{images/networksend.png}
     \caption{Sequence diagram for the network layer, showing an operation being sent and an acknowledgement being received.}
     \label{fig:networksend}
 \end{figure} 
@@ -620,7 +620,7 @@ Broadcasting operations is not shown in Figure \ref{fig:interfaceseq}, but it wo
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{treeinterface.png}
+    \includegraphics[width=1\textwidth]{images/treeinterface.png}
     \caption{Sequence diagram for the interface layer, showing operations being applied to the Tree. Broadcasting is not shown.}
     \label{fig:interfaceseq}
 \end{figure}
@@ -659,13 +659,13 @@ The performance testing may require the use of rented servers, to test latency.
 \section{Gantt Chart}
 
 \subsection{Completed Work}
-\includegraphics[width=16cm]{completed.jpg}
+\includegraphics[width=16cm]{images/completed.jpg}
 
 
 \subsection{Remaining Work}
 \begin{center}
-    \includegraphics[width=16cm]{remaining.jpg}
-\end{center}
+    \includegraphics[width=16cm]{images/remaining.jpg}
+\end{center} 
 
 
 \section{Risk Assessment}
