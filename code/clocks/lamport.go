@@ -6,16 +6,16 @@ import (
 )
 
 type Lamport struct {
-	actorID int
-	counter int
+	actorID uint64
+	counter uint
 }
 
-func NewLamport(ids ...int) *Lamport {
-	var actorID int
+func NewLamport(ids ...uint64) *Lamport {
+	var actorID uint64
 	if len(ids) > 0 {
 		actorID = ids[0]
 	} else {
-		actorID = rand.Int()
+		actorID = rand.Uint64()
 	}
 
 	return &Lamport{actorID: actorID, counter: 0}

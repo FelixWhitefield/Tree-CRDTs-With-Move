@@ -20,9 +20,11 @@ func main() {
 	v2 := clocks.NewVectorClock()
 	v2.Inc()
 
+	fmt.Println("Before ", v)
+
 	v.Merge(v2.CloneTimestamp())
 
-	fmt.Println(v)
+	fmt.Println("After ", v)
 
 	fmt.Println(v.CompareTimestamp(v2.CloneTimestamp()))
 }

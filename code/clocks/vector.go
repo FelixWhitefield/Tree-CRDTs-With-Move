@@ -5,23 +5,23 @@ import (
 	"math/rand"
 )
 
-type VectorTimestamp map[int]int
+type VectorTimestamp map[uint64]int
 
 type VectorClock struct {
 	timestamp VectorTimestamp
-	actorID int
+	actorID uint64
 }
 
 func NewVectorTimestamp() VectorTimestamp {
-	return make(map[int]int)
+	return make(map[uint64]int)
 }
 // Returns a new VectorClock with a random actorID or the given actorID 
-func NewVectorClock(ids ...int) VectorClock {
-	var actorID int
+func NewVectorClock(ids ...uint64) VectorClock {
+	var actorID uint64
 	if len(ids) > 0 {
 		actorID = ids[0]
 	} else {
-		actorID = rand.Int()
+		actorID = rand.Uint64()
 	}
 
 	return VectorClock{actorID: actorID, timestamp: NewVectorTimestamp()}
@@ -64,8 +64,8 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	}
 }
 
-func (vt VectorTimestamp) Inc(key int) {
-	vt[key]++
+func (vt VectorTimestamp) Inc(id uint64) {
+	vt[id]++
 }
 
 /* ----- VectorClock ------ */
