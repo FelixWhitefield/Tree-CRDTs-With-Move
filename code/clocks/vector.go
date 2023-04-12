@@ -69,6 +69,10 @@ func (vt VectorTimestamp) Inc(id uint64) {
 }
 
 /* ----- VectorClock ------ */
+func (v VectorClock) ActorID() uint64 {
+	return v.actorID
+}
+
 func (v *VectorClock) Inc() VectorClock {
 	v.timestamp[v.actorID]++
 	return VectorClock{actorID: v.actorID, timestamp: v.timestamp}

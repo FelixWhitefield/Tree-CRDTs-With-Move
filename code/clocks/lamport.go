@@ -21,6 +21,10 @@ func NewLamport(ids ...uint64) *Lamport {
 	return &Lamport{actorID: actorID, counter: 0}
 }
 
+func (l Lamport) ActorID() uint64 {
+	return l.actorID
+}
+
 // Returns either LESS, EQUAL, or GREATER
 func (l Lamport) Compare(other Lamport) int {
 	switch {
