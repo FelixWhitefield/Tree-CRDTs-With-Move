@@ -11,8 +11,11 @@
 - Try detecting connection dropped 
 - [x] Diagrams for clocks 
 - [ ] Redo old parts of report
-- [ ] Do design section
-- [ ] Add section on Reliable Causal Broadcast 
+- [x] Do design section
+- [x] Add section on Reliable Causal Broadcast 
+
+## Commands
+texcount -1 -sum main.tex
 
 ## Questions 
 - Should UML class diagrams be within the design section? Yes
