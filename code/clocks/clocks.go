@@ -9,7 +9,7 @@ const (
 /* ----- Interfaces ------ */
 type TotalOrder[T any] interface {
 	Compare(other T) int 
-}
+} 
 
 type PartialOrder[T any] interface {
 	Compare(other T) int

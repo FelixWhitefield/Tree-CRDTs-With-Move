@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 func main() {
@@ -27,4 +29,12 @@ func main() {
 	fmt.Println("After ", v)
 
 	fmt.Println(v.CompareTimestamp(v2.CloneTimestamp()))
+
+	m := treecrdt.NewOpMove(*c, 1, 2, "hi")
+	_ = m
+
+	newf := func(a int, b int) int {
+		return a + b
+	}
+	fmt.Println(newf(1, 2))
 }
