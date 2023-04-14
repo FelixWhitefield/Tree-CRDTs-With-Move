@@ -5,6 +5,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// Add Op: Has all childID, parentID, and metadata
+// Remove Op: Has all childID and nil parentID
+// Move Op: Has all childID, parentID and metadata
+
 type OpMove[MD Metadata, T opTimestamp[T]] struct {
 	timestamp T
 	parentID  uuid.UUID

@@ -4,10 +4,23 @@ import (
 	"fmt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/google/uuid"
 )
 
+// uuid.NewUUID() for version 1's
+// uuid.New() for V4
 
 func main() {
+	tree := treecrdt.NewTree[string]()
+	u1 := uuid.New()
+	tree.Add(u1, *treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
+	tree.Add(uuid.New(), *treecrdt.NewTreeNode(u1, "hi2"))
+
+	fmt.Println(tree)
+
+	fmt.Println(tree.GetNode(u1))
+	fmt.Println(tree.GetChildren(u1))
+
 	l1 := clocks.NewLamport()
 
 	l2 := clocks.NewLamport()
@@ -41,8 +54,6 @@ func main() {
 
 	fmt.Println(v.CompareTimestamp(v2.CloneTimestamp()))
 
-	m := treecrdt.NewOpMove(*c, 1, 2, "hi")
-	_ = m
 
 	newf := func(a int, b int) int {
 		return a + b
