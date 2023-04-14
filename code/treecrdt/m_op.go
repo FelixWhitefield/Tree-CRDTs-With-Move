@@ -2,12 +2,13 @@ package treecrdt
 
 import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	"github.com/google/uuid"
 )
 
-type OpMove[MD Metadata,T opTimestamp[T]] struct {
+type OpMove[MD Metadata, T opTimestamp[T]] struct {
 	timestamp T
-	parentID  uint64
-	childID   uint64
+	parentID  uuid.UUID
+	childID   uuid.UUID
 	metadata  MD
 }
 
@@ -16,7 +17,7 @@ type opTimestamp[T any] interface {
 	clocks.Timestamp[T]
 }
 
-func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uint64, childID uint64, metadata MD) OpMove[MD, T] {
+func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) OpMove[MD, T] {
 	return OpMove[MD, T]{timestamp: timestamp, parentID: parentID, childID: childID, metadata: metadata}
 }
 
@@ -24,11 +25,11 @@ func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
 	return op.timestamp
 }
 
-func (op OpMove[MD, T]) ParentID() uint64 {
+func (op OpMove[MD, T]) ParentID() uuid.UUID {
 	return op.parentID
 }
 
-func (op OpMove[MD, T]) ChildID() uint64 {
+func (op OpMove[MD, T]) ChildID() uuid.UUID {
 	return op.childID
 }
 

@@ -2,26 +2,26 @@ package clocks
 
 import (
 	"fmt"
-	"math/rand"
+	"github.com/google/uuid"
 )
 
-type VectorTimestamp map[uint64]int
+type VectorTimestamp map[uuid.UUID]uint64
 
 type VectorClock struct {
 	timestamp VectorTimestamp
-	actorID uint64
+	actorID uuid.UUID
 }
 
 func NewVectorTimestamp() VectorTimestamp {
-	return make(map[uint64]int)
+	return make(map[uuid.UUID]uint64)
 }
 // Returns a new VectorClock with a random actorID or the given actorID 
-func NewVectorClock(ids ...uint64) VectorClock {
-	var actorID uint64
+func NewVectorClock(ids ...uuid.UUID) VectorClock {
+	var actorID uuid.UUID
 	if len(ids) > 0 {
 		actorID = ids[0]
 	} else {
-		actorID = rand.Uint64()
+		actorID = uuid.New()
 	}
 
 	return VectorClock{actorID: actorID, timestamp: NewVectorTimestamp()}
@@ -64,12 +64,12 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	}
 }
 
-func (vt VectorTimestamp) Inc(id uint64) {
+func (vt VectorTimestamp) Inc(id uuid.UUID) {
 	vt[id]++
 }
 
 /* ----- VectorClock ------ */
-func (v VectorClock) ActorID() uint64 {
+func (v VectorClock) ActorID() uuid.UUID {
 	return v.actorID
 }
 

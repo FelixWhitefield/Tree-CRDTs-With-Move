@@ -2,26 +2,27 @@ package clocks
 
 import (
 	"fmt"
-	"math/rand"
+	"bytes"
+	"github.com/google/uuid"
 )
 
 type Lamport struct {
-	actorID uint64
-	counter uint
+	actorID uuid.UUID
+	counter uint64
 }
 
-func NewLamport(ids ...uint64) *Lamport {
-	var actorID uint64
+func NewLamport(ids ...uuid.UUID) *Lamport {
+	var actorID uuid.UUID
 	if len(ids) > 0 {
 		actorID = ids[0]
 	} else {
-		actorID = rand.Uint64()
+		actorID = uuid.New()
 	}
 
 	return &Lamport{actorID: actorID, counter: 0}
 }
 
-func (l Lamport) ActorID() uint64 {
+func (l Lamport) ActorID() uuid.UUID {
 	return l.actorID
 }
 
@@ -30,12 +31,7 @@ func (l Lamport) Compare(other Lamport) int {
 	switch {
 	case l.counter < other.counter: return LESS
 	case l.counter > other.counter: return GREATER
-	default: 
-		switch {
-		case l.actorID < other.actorID: return LESS
-		case l.actorID > other.actorID: return GREATER
-		default: return EQUAL // The two timestamps are the same
-		}
+	default: return bytes.Compare(l.actorID[:], other.actorID[:]) 
 	}
 }
 

@@ -2,12 +2,23 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
+
 func main() {
+	l1 := clocks.NewLamport()
+
+	l2 := clocks.NewLamport()
+
+	fmt.Println(l1.Compare(*l2))
+
+
+	v1 := clocks.NewVectorClock()
+	v1.Inc()
+	fmt.Println(v1)
+
 	var c *clocks.Lamport
 	c = clocks.NewLamport()
 	c.Inc()
@@ -37,4 +48,6 @@ func main() {
 		return a + b
 	}
 	fmt.Println(newf(1, 2))
+
+
 }
