@@ -2,17 +2,17 @@ package treecrdt
 
 import "github.com/google/uuid"
 
-type OldData[MD Metadata] struct {
+type OldParent[MD Metadata] struct {
 	parentID uuid.UUID
 	metadata MD
 }
 
 type LogOpMove[MD Metadata, T opTimestamp[T]] struct {
 	op   OpMove[MD, T]
-	oldP OldData[MD]
+	oldP OldParent[MD]
 }
 
-func NewLogOpMove[MD Metadata, T opTimestamp[T]](op OpMove[MD, T], oldP OldData[MD]) LogOpMove[MD, T] {
+func NewLogOpMove[MD Metadata, T opTimestamp[T]](op OpMove[MD, T], oldP OldParent[MD]) LogOpMove[MD, T] {
 	return LogOpMove[MD, T]{op: op, oldP: oldP}
 }
 

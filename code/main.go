@@ -14,12 +14,15 @@ func main() {
 	tree := treecrdt.NewTree[string]()
 	u1 := uuid.New()
 	tree.Add(u1, *treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
-	tree.Add(uuid.New(), *treecrdt.NewTreeNode(u1, "hi2"))
+	u2 := uuid.New()
+	tree.Add(u2, *treecrdt.NewTreeNode(u1, "hi2"))
 
 	fmt.Println(tree)
 
 	fmt.Println(tree.GetNode(u1))
 	fmt.Println(tree.GetChildren(u1))
+
+	fmt.Println(tree.IsAncestor(u2, u1))
 
 	l1 := clocks.NewLamport()
 

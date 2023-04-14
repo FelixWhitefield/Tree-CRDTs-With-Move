@@ -137,7 +137,14 @@ func (t *Tree[MD]) DeleteSubTree(id uuid.UUID) error {
 }
 
 // Checks if node is ancestor of other node.
-
+func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) bool {
+	for childID != RootUUID {
+		if childID = t.nodes[childID].parentID; childID == ancID {
+			return true
+		}
+	}
+	return false
+}
 
 func (t *Tree[MD]) String() string {
 	return fmt.Sprintf("nodes: %v \nchildren: %v", t.nodes, t.children)
