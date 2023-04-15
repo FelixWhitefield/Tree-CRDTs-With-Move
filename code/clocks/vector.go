@@ -28,7 +28,7 @@ func NewVectorClock(ids ...uuid.UUID) VectorClock {
 }
 
 /* ----- VectorTimestamp ------ */
-// Returns either LESS, EQUAL, GREATER or CONCURRENT
+// will return 0 if a == b, -1 if a < b, 1 if a > b, 2 if a || b (concurrent)
 // This function makes use of go's default map behaviour (if a key doesn't exist, it returns 0)
 func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	isLess := false

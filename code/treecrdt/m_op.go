@@ -10,10 +10,10 @@ import (
 // Move Op: Has all childID, parentID and metadata
 
 type OpMove[MD Metadata, T opTimestamp[T]] struct {
-	timestamp T
-	parentID  uuid.UUID
-	childID   uuid.UUID
-	metadata  MD
+	timestamp   T
+	childID     uuid.UUID
+	newParentID uuid.UUID
+	newMetadata    MD
 }
 
 type opTimestamp[T any] interface {
@@ -22,7 +22,7 @@ type opTimestamp[T any] interface {
 }
 
 func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) OpMove[MD, T] {
-	return OpMove[MD, T]{timestamp: timestamp, parentID: parentID, childID: childID, metadata: metadata}
+	return OpMove[MD, T]{timestamp: timestamp, newParentID: parentID, childID: childID, newMetadata: metadata}
 }
 
 func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
@@ -30,7 +30,7 @@ func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
 }
 
 func (op OpMove[MD, T]) ParentID() uuid.UUID {
-	return op.parentID
+	return op.newParentID
 }
 
 func (op OpMove[MD, T]) ChildID() uuid.UUID {
@@ -38,7 +38,7 @@ func (op OpMove[MD, T]) ChildID() uuid.UUID {
 }
 
 func (op OpMove[MD, T]) Metadata() MD {
-	return op.metadata
+	return op.newMetadata
 }
 
 func (op OpMove[MD, T]) Compare(other OpMove[MD, T]) int {

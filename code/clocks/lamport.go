@@ -26,11 +26,11 @@ func (l Lamport) ActorID() uuid.UUID {
 	return l.actorID
 }
 
-// Returns either LESS, EQUAL, or GREATER
+// will return 0 if a == b, -1 if a < b, 1 if a > b
 func (l Lamport) Compare(other Lamport) int {
 	switch {
-	case l.counter < other.counter: return LESS
-	case l.counter > other.counter: return GREATER
+	case l.counter < other.counter: return -1
+	case l.counter > other.counter: return 1
 	default: return bytes.Compare(l.actorID[:], other.actorID[:]) 
 	}
 }

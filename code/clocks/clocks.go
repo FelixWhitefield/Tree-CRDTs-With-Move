@@ -1,11 +1,5 @@
 package clocks
 
-const (
-	LESS = -1
-	EQUAL = 0
-	GREATER = 1
-	CONCURRENT = 2
-)
 /* ----- Interfaces ------ */
 type TotalOrder[T any] interface {
 	Compare(other T) int 
