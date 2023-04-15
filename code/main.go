@@ -10,12 +10,24 @@ import (
 // uuid.NewUUID() for version 1's
 // uuid.New() for V4
 
+func test(i *int) {
+	ni := 10
+	pni := &ni 
+	*i = *pni
+}
+
 func main() {
+	i := 2;
+	test(&i)
+	fmt.Println(i)
+
+
+
 	tree := treecrdt.NewTree[string]()
 	u1 := uuid.New()
-	tree.Add(u1, *treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
+	tree.Add(u1, treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
 	u2 := uuid.New()
-	tree.Add(u2, *treecrdt.NewTreeNode(u1, "hi2"))
+	tree.Add(u2, treecrdt.NewTreeNode(u1, "hi2"))
 
 	fmt.Println(tree)
 

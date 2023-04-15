@@ -17,14 +17,14 @@ var (
 )
 
 type Tree[MD Metadata] struct {
-	nodes    map[uuid.UUID]TreeNode[MD] // node id -> tree node
+	nodes    map[uuid.UUID]*TreeNode[MD] // node id -> tree node
 	children map[uuid.UUID][]uuid.UUID // node id -> []child id
 }
 
 func NewTree[MD Metadata]() *Tree[MD] {
-	tree := Tree[MD]{nodes: make(map[uuid.UUID]TreeNode[MD]), children: make(map[uuid.UUID][]uuid.UUID)}
-	tree.nodes[RootUUID] = TreeNode[MD]{}
-	tree.nodes[TombstoneUUID] = TreeNode[MD]{}
+	tree := Tree[MD]{nodes: make(map[uuid.UUID]*TreeNode[MD]), children: make(map[uuid.UUID][]uuid.UUID)}
+	tree.nodes[RootUUID] = &TreeNode[MD]{}
+	tree.nodes[TombstoneUUID] = &TreeNode[MD]{}
 	return &tree
 }
 
@@ -36,7 +36,8 @@ func (t *Tree[MD]) Tombstone() uuid.UUID {
 	return TombstoneUUID
 }
 
-func (t *Tree[MD]) GetNode(id uuid.UUID) (TreeNode[MD], bool) {
+// Returns the node with the given id. Returns false if the node does not exist.
+func (t *Tree[MD]) GetNode(id uuid.UUID) (*TreeNode[MD], bool) {
 	node, exists := t.nodes[id]
 	return node, exists
 }
@@ -49,7 +50,7 @@ func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 // Adds a node to the tree.
 // Errors if the node already exists.
 // Errors if the parent node does not exist.
-func (t *Tree[MD]) Add(id uuid.UUID, node TreeNode[MD]) error {
+func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 	if _, exists := t.nodes[id]; exists {
 		return errors.New("node already exists")
 	}
@@ -96,7 +97,7 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 // Compared to remove and adding a node, this method completes all checks before modifying the tree.
 // Errors if either the node or the new parent does not exist.
 // Errors if the node is the root or deleted node.
-func (t *Tree[MD]) Move(id uuid.UUID, node TreeNode[MD]) error {
+func (t *Tree[MD]) Move(id uuid.UUID, node *TreeNode[MD]) error {
 	if _, exists := t.nodes[id]; !exists {
 		return errors.New("node does not exist")
 	}

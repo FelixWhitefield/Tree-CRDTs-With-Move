@@ -44,7 +44,7 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 		}
 
 		if isLess && isGreater {
-			return CONCURRENT // concurrent
+			return 2 // concurrent
 		}
 	}
 
@@ -58,9 +58,9 @@ func (vt VectorTimestamp) Compare(other VectorTimestamp) int {
 	}
 
 	switch {
-	case isLess: return LESS
-	case isGreater: return GREATER
-	default: return EQUAL // The two timestamps are the same
+	case isLess: return -1
+	case isGreater: return 1
+	default: return 0 // The two timestamps are the same
 	}
 }
 

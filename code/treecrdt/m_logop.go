@@ -5,8 +5,8 @@ type LogOpMove[MD Metadata, T opTimestamp[T]] struct {
 	oldP *TreeNode[MD]
 }
 
-func NewLogOpMove[MD Metadata, T opTimestamp[T]](op OpMove[MD, T], oldP *TreeNode[MD]) LogOpMove[MD, T] {
-	return LogOpMove[MD, T]{op: op, oldP: oldP}
+func NewLogOpMove[MD Metadata, T opTimestamp[T]](op OpMove[MD, T], oldP *TreeNode[MD]) *LogOpMove[MD, T] {
+	return &LogOpMove[MD, T]{op: op, oldP: oldP}
 }
 
 func (lop LogOpMove[MD, T]) Timestamp() opTimestamp[T] {
