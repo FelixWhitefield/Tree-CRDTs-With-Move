@@ -1,6 +1,8 @@
 // Implements the tree data structure used by the CRDT.
-// This contains a map of all the nodes, and a map of nodes to their children.
-//
+// The `nodes` map represents the triples indexed by child id.
+// The `children` map provides a quick lookup of a node's children.
+// RootUUID and TombstoneUUID are special nodes that are always present.
+// They are set manually as to ensure they are the same across all replicas.
 package treecrdt
 
 import (
@@ -15,7 +17,7 @@ var (
 )
 
 type Tree[MD Metadata] struct {
-	nodes    map[uuid.UUID]TreeNode[MD] // node id -> node
+	nodes    map[uuid.UUID]TreeNode[MD] // node id -> tree node
 	children map[uuid.UUID][]uuid.UUID // node id -> []child id
 }
 
@@ -68,7 +70,7 @@ func (t *Tree[MD]) Add(id uuid.UUID, node TreeNode[MD]) error {
 // Removes a node from the tree. Doesn't remove the corresponding children entry.
 // Errors if the node does not exist.
 // Errors if the node is the root or deleted node.
-func (t *Tree[MD]) Delete(id uuid.UUID) error {
+func (t *Tree[MD]) Remove(id uuid.UUID) error {
 	if _, exists := t.nodes[id]; !exists {
 		return errors.New("node does not exist")
 	}
@@ -105,7 +107,7 @@ func (t *Tree[MD]) Move(id uuid.UUID, node TreeNode[MD]) error {
 		return errors.New("cannot move root or deleted node")
 	}
 
-	t.Delete(id) // remove node from old parent
+	t.Remove(id) // remove node from old parent
 	t.Add(id, node) // add node to new parent
 
 	return nil
@@ -130,13 +132,14 @@ func (t *Tree[MD]) DeleteSubTree(id uuid.UUID) error {
 	}
 
 	// remove node
-	t.Delete(id)
+	t.Remove(id)
 
 	delete(t.children, id) // remove child from children
 	return nil
 }
 
 // Checks if node is ancestor of other node.
+// E.g. If ancID can be reached by following the parent pointers from childID.
 func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) bool {
 	for childID != RootUUID {
 		if childID = t.nodes[childID].parentID; childID == ancID {

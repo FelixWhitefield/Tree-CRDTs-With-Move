@@ -13,11 +13,15 @@ func (s *State[MD, T]) DoOp(op OpMove[MD, T]) {
 	//
 }
 
-func (s *State[MD, T]) UndoOp(op OpMove[MD, T]) {
-	//
+func (s *State[MD, T]) UndoOp(op LogOpMove[MD, T]) {
+	if &op.oldP == nil {
+		s.tree.Remove(op.op.childID)
+	} else {
+		s.tree.Move(op.op.childID, op.oldP)
+	}
 }
 
-func (s *State[MD, T]) RedoOp(op OpMove[MD, T]) {
+func (s *State[MD, T]) RedoOp(op LogOpMove[MD, T]) {
 	//
 }
 
@@ -26,5 +30,7 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 }
 
 func (s *State[MD, T]) ApplyOps(ops []OpMove[MD, T]) {
-	//
+	for _, op := range ops {
+		s.ApplyOp(op)
+	}
 }

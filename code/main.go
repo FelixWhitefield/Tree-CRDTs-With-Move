@@ -24,6 +24,10 @@ func main() {
 
 	fmt.Println(tree.IsAncestor(u2, u1))
 
+	tree.DeleteSubTree(u1)
+
+	fmt.Println(tree)
+
 	l1 := clocks.NewLamport()
 
 	l2 := clocks.NewLamport()
