@@ -6,8 +6,8 @@
 package treecrdt
 
 import (
+	//"errors"
 	"fmt"
-	"errors"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +18,7 @@ var (
 
 type Tree[MD Metadata] struct {
 	nodes    map[uuid.UUID]*TreeNode[MD] // node id -> tree node
-	children map[uuid.UUID][]uuid.UUID // node id -> []child id
+	children map[uuid.UUID][]uuid.UUID   // node id -> []child id
 }
 
 func NewTree[MD Metadata]() *Tree[MD] {
@@ -52,10 +52,10 @@ func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 // Errors if the parent node does not exist.
 func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 	if _, exists := t.nodes[id]; exists {
-		return errors.New("node already exists")
+		return IDAlreadyExistsError{id: id}
 	}
 	if _, exists := t.nodes[node.parentID]; !exists {
-		return errors.New("parent node does not exist")
+		return MissingNodeIDError{id: node.parentID}
 	}
 
 	t.nodes[id] = node
@@ -67,16 +67,15 @@ func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 	return nil
 }
 
-
 // Removes a node from the tree. Doesn't remove the corresponding children entry.
 // Errors if the node does not exist.
 // Errors if the node is the root or deleted node.
 func (t *Tree[MD]) Remove(id uuid.UUID) error {
 	if _, exists := t.nodes[id]; !exists {
-		return errors.New("node does not exist")
+		return MissingNodeIDError{id: id}
 	}
 	if id == RootUUID || id == TombstoneUUID {
-		return errors.New("cannot remove root or deleted node")
+		return InvalidNodeDeletionError{id: id}
 	}
 
 	parentID := t.nodes[id].parentID
@@ -99,16 +98,16 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 // Errors if the node is the root or deleted node.
 func (t *Tree[MD]) Move(id uuid.UUID, node *TreeNode[MD]) error {
 	if _, exists := t.nodes[id]; !exists {
-		return errors.New("node does not exist")
+		return MissingNodeIDError{id: id}
 	}
 	if _, exists := t.nodes[node.parentID]; !exists {
-		return errors.New("new parent node does not exist")
+		return MissingNodeIDError{id: node.parentID}
 	}
 	if id == RootUUID || id == TombstoneUUID {
-		return errors.New("cannot move root or deleted node")
+		return InvalidNodeDeletionError{id: id}
 	}
 
-	t.Remove(id) // remove node from old parent
+	t.Remove(id)    // remove node from old parent
 	t.Add(id, node) // add node to new parent
 
 	return nil
@@ -118,10 +117,10 @@ func (t *Tree[MD]) Move(id uuid.UUID, node *TreeNode[MD]) error {
 // Extension to the CRDT algorithm. Allows removal of deleted nodes.
 func (t *Tree[MD]) DeleteSubTree(id uuid.UUID) error {
 	if _, exists := t.nodes[id]; !exists {
-		return errors.New("node does not exist")
+		return MissingNodeIDError{id: id}
 	}
 	if id == RootUUID || id == TombstoneUUID {
-		return errors.New("cannot remove root or deleted node")
+		return InvalidNodeDeletionError{id: id}
 	}
 
 	// remove children
@@ -141,15 +140,21 @@ func (t *Tree[MD]) DeleteSubTree(id uuid.UUID) error {
 
 // Checks if node is ancestor of other node.
 // E.g. If ancID can be reached by following the parent pointers from childID.
-func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) bool {
+func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) {
+	if _, exists := t.nodes[childID]; !exists {
+		return false, MissingNodeIDError{id: childID}
+	}
+	if _, exists := t.nodes[ancID]; !exists {
+		return false, MissingNodeIDError{id: ancID}
+	}
 	for childID != RootUUID {
 		if childID = t.nodes[childID].parentID; childID == ancID {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (t *Tree[MD]) String() string {
-	return fmt.Sprintf("nodes: %v \nchildren: %v", t.nodes, t.children)
+	return fmt.Sprintf("Nodes: %v \nChildren: %v", t.nodes, t.children)
 }
