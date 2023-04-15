@@ -27,7 +27,7 @@ func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
 // if the move is invalid, then the op is not applied but still logged
 func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP, _ := s.tree.GetNode(op.childID)
-	if !(s.tree.IsAncestor(op.childID, op.newParentID) || op.childID == op.newParentID) {
+	if isAnc, _ := s.tree.IsAncestor(op.childID, op.newParentID); !(isAnc || op.childID == op.newParentID) {
 		s.tree.Move(op.childID, oldP)
 	}
 	return NewLogOpMove(op, oldP)

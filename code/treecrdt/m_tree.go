@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	RootUUID      = uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	TombstoneUUID = uuid.Nil
+	RootUUID      = uuid.MustParse("00000000-0000-0000-0000-000000000001") 
+	TombstoneUUID = uuid.Nil 
 )
 
 type Tree[MD Metadata] struct {
@@ -21,6 +21,8 @@ type Tree[MD Metadata] struct {
 	children map[uuid.UUID][]uuid.UUID   // node id -> []child id
 }
 
+// Creates a new tree with the root and tombstone nodes
+// This is the proper way to create a new tree.
 func NewTree[MD Metadata]() *Tree[MD] {
 	tree := Tree[MD]{nodes: make(map[uuid.UUID]*TreeNode[MD]), children: make(map[uuid.UUID][]uuid.UUID)}
 	tree.nodes[RootUUID] = &TreeNode[MD]{}
@@ -42,6 +44,7 @@ func (t *Tree[MD]) GetNode(id uuid.UUID) (*TreeNode[MD], bool) {
 	return node, exists
 }
 
+// Returns the children of the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 	children, exists := t.children[id]
 	return children, exists
