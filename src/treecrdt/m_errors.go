@@ -2,7 +2,6 @@ package treecrdt
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
 

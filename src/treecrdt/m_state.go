@@ -16,6 +16,7 @@ type State[MD Metadata, T opTimestamp[T]] struct {
 	tree Tree[MD] // state of the tree
 	log  list.List // ascending list of log moves 
 	// the log differs from the paper, as the paper states it should be descending
+	// in practice this doesn't affect the algorithm
 }
 
 func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
