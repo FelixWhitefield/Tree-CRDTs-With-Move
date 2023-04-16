@@ -21,6 +21,7 @@ type OpMove[MD Metadata, T opTimestamp[T]] struct {
 type opTimestamp[T any] interface {
 	clocks.TotalOrder[T]
 	clocks.Timestamp[T]
+	ActorID() uuid.UUID
 }
 
 func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) *OpMove[MD, T] {
