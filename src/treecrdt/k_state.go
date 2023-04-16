@@ -5,8 +5,9 @@ package treecrdt
 // `State` is independent of any peer, and should 
 // be equal between peers which have seens the same operations
 //
-// The code differes slightly from the paper
-// However, the algorithm functions the same
+// The op log is implemented as a linked list, as this allows for 
+// easy insertions in the middle of the list,  
+// as well as removals without the need to shift the list
 
 import (
 	"container/list"
