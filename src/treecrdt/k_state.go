@@ -17,6 +17,7 @@ type State[MD Metadata, T opTimestamp[T]] struct {
 	log  list.List // ascending list of log moves 
 	// the log differs from the paper, as the paper states it should be descending
 	// in practice this doesn't affect the algorithm
+	extraConflict *TNConflict[MD] 
 }
 
 func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
@@ -28,9 +29,21 @@ func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
 // if the move is invalid, then the op is not applied but still logged
 func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP, _ := s.tree.GetNode(op.childID)
-	if isAnc, _ := s.tree.IsAncestor(op.childID, op.newParentID); !(isAnc || op.childID == op.newParentID) {
-		s.tree.Move(op.childID, oldP)
+
+	isAnc, _ := s.tree.IsAncestor(op.childID, op.newP.parentID)
+	newParentIsSelf := op.childID == op.newP.parentID
+
+	// this is not in the algorithm.
+	// it allows the user to define a custom conflict function
+	conflict := false
+	if s.extraConflict != nil && (*s.extraConflict)(op.newP, &s.tree) {
+		conflict = true
 	}
+
+	if !isAnc && !newParentIsSelf && !conflict {
+		s.tree.Move(op.childID, op.newP)
+	}
+
 	return NewLogOpMove(op, oldP)
 }
 
@@ -47,16 +60,15 @@ func (s *State[MD, T]) UndoOp(lop *LogOpMove[MD, T]) {
 // 'redo_op' from the paper
 // takes a log move, and applies the op move to the tree
 func (s *State[MD, T]) RedoOp(lop *LogOpMove[MD, T]) {
-	op := lop.op
-	logop := s.DoOp(op)
-	*lop = *logop
+	logop := s.DoOp(lop.op)
+	*lop = *logop // update the logop in place (optimisation)
 }
 
 // 'apply_op' from the paper
 // applies an op to the tree
 // undo's and redo's ops if necessary
 // the paper defines this method as a recursive function
-// this implementation is iterative, and does not remove and then re-add the op to the logas this would be inefficient
+// this implementation is iterative, and does not remove and then re-add the op to the logas - this would be inefficient
 // instead, a linked list is used to store the log, and the op is inserted in the correct place
 // the elements in the list are modified in place
 func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {

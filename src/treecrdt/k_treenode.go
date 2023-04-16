@@ -19,4 +19,8 @@ func (tn TreeNode[MD]) Metadata() MD {
 	return tn.metadata
 }
 
-type TNConflict[MD Metadata] func(tn1 TreeNode[MD], tn2 TreeNode[MD]) bool
+// defines a conflict (or multiple conflicts) 
+// the conflict will be between the tree node to be inserted
+// and the current state of the tree
+// the function should not modify the tree or the tree node
+type TNConflict[MD Metadata] func(tn1 *TreeNode[MD], tn2 *Tree[MD]) bool

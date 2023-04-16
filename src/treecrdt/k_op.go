@@ -5,15 +5,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// Add Op: Has all childID, parentID, and metadata
+// Could use the following to distinguish between different types of operations (add, remove, move)
+// Could be used for implementing optimisations (as discuessed in the paper)
+// Add Op: Has all childID, parentID, and metadata (childID is not in tree)
 // Remove Op: Has all childID and nil parentID
 // Move Op: Has all childID, parentID and metadata
 
+// Represents moving node with id childID to parent and metadata within newP
 type OpMove[MD Metadata, T opTimestamp[T]] struct {
 	timestamp   T
 	childID     uuid.UUID
-	newParentID uuid.UUID
-	newMetadata    MD
+	newP    *TreeNode[MD]
 }
 
 type opTimestamp[T any] interface {
@@ -22,7 +24,7 @@ type opTimestamp[T any] interface {
 }
 
 func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) OpMove[MD, T] {
-	return OpMove[MD, T]{timestamp: timestamp, newParentID: parentID, childID: childID, newMetadata: metadata}
+	return OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode[MD](parentID, metadata)}
 }
 
 func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
@@ -30,7 +32,7 @@ func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
 }
 
 func (op OpMove[MD, T]) ParentID() uuid.UUID {
-	return op.newParentID
+	return op.newP.parentID
 }
 
 func (op OpMove[MD, T]) ChildID() uuid.UUID {
@@ -38,9 +40,10 @@ func (op OpMove[MD, T]) ChildID() uuid.UUID {
 }
 
 func (op OpMove[MD, T]) Metadata() MD {
-	return op.newMetadata
+	return op.newP.metadata
 }
 
+// Compares two OpMoves by their timestamps
 func (op OpMove[MD, T]) Compare(other OpMove[MD, T]) int {
 	return op.timestamp.Compare(other.timestamp)
 }

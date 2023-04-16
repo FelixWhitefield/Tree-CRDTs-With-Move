@@ -5,6 +5,7 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
+	"container/list"
 )
 
 // uuid.NewUUID() for version 1's
@@ -17,6 +18,21 @@ func test(i *int) {
 }
 
 func main() {
+	li := list.New()
+	num := 10
+	ptr := &num
+	li.PushBack(ptr)
+
+	fmt.Println(*li.Front().Value.(*int))
+
+	*ptr = 20
+
+	fmt.Println(*li.Front().Value.(*int))
+
+
+
+
+
 	i := 2;
 	test(&i)
 	fmt.Println(i)
