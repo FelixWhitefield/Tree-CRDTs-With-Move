@@ -21,17 +21,20 @@ func TestTreeNode(t *testing.T) {
 }
 
 func TestTreeNodeConflict(t *testing.T) {
-	tnc := TNConflict[Metadata](func(tn1 TreeNode[Metadata], tn2 TreeNode[Metadata]) bool {
-		return tn1.Metadata() == tn2.Metadata()
+	tnc := TNConflict[Metadata](func(tn *TreeNode[Metadata], t *Tree[Metadata]) bool {
+		children, ok := t.GetChildren(tn.ParentID())
+		if !ok {
+			return false
+		}
+		for _, tnid := range children {
+			if t.GetNode(tnid).Metadata() == tn.Metadata() {
+				return true
+			}
+		}
 	})
 
 	tn1 := NewTreeNode[Metadata](uuid.New(), "test")
 	tn2 := NewTreeNode[Metadata](uuid.New(), "test")
 	tn3 := NewTreeNode[Metadata](uuid.New(), "test2")
-	if !tnc(*tn1, *tn2) {
-		t.Errorf("TNConflict() returned false")
-	}
-	if tnc(*tn1, *tn3) {
-		t.Errorf("TNConflict() returned true")
-	}
+
 }

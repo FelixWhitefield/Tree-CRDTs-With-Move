@@ -1,9 +1,12 @@
-// Implements the tree data structure used by the CRDT.
+package treecrdt
+
+// `Tree` holds the current state of the tree.
+//
 // The `nodes` map represents the triples indexed by child id.
 // The `children` map provides a quick lookup of a node's children.
+//
 // RootUUID and TombstoneUUID are special nodes that are always present.
 // They are set manually as to ensure they are the same across all replicas.
-package treecrdt
 
 import (
 	//"errors"
@@ -39,9 +42,9 @@ func (t *Tree[MD]) Tombstone() uuid.UUID {
 }
 
 // Returns the node with the given id. Returns false if the node does not exist.
-func (t *Tree[MD]) GetNode(id uuid.UUID) (*TreeNode[MD], bool) {
-	node, exists := t.nodes[id]
-	return node, exists
+func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
+	node, _ := t.nodes[id]
+	return node
 }
 
 // Returns the children of the node with the given id. Returns false if the node does not exist.

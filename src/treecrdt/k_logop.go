@@ -1,5 +1,6 @@
 package treecrdt
 
+// Represents a log of the move `op`, and the old parent `oldP`
 type LogOpMove[MD Metadata, T opTimestamp[T]] struct {
 	op   OpMove[MD, T]
 	oldP *TreeNode[MD]

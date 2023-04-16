@@ -29,7 +29,7 @@ func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
 // takes an op move, and applies it to the tree
 // if the move is invalid, then the op is not applied but still logged
 func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
-	oldP, _ := s.tree.GetNode(op.childID)
+	oldP := s.tree.GetNode(op.childID)
 
 	isAnc, _ := s.tree.IsAncestor(op.childID, op.newP.parentID)
 	newParentIsSelf := op.childID == op.newP.parentID
