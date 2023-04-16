@@ -10,6 +10,7 @@ package treecrdt
 
 import (
 	"container/list"
+	"log"
 )
 
 type State[MD Metadata, T opTimestamp[T]] struct {
@@ -41,7 +42,17 @@ func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
 	}
 
 	if !isAnc && !newParentIsSelf && !conflict {
-		s.tree.Move(op.childID, op.newP)
+		// instead of removing and then re-adding the node, we just move it
+		// this ensures that the node will either be moved fully, or not at all
+		// removing then adding may cause the node to be removed, but not added
+		// which would cause the tree to be missing a node (which is unwanted)
+		err := s.tree.Move(op.childID, op.newP)
+
+		// errors will happen during concurrent operations
+		// this is normal, and will be resolved once the operations are applied in order
+		if err != nil {
+			log.Println("Error moving node: ", err)
+		}
 	}
 
 	return NewLogOpMove(op, oldP)

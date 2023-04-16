@@ -54,7 +54,7 @@ func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 // Errors if the node already exists.
 // Errors if the parent node does not exist.
 func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
-	if _, exists := t.nodes[id]; exists {
+	if _, exists := t.nodes[id]; exists { // if already exists, there may be duplicate data
 		return IDAlreadyExistsError{id: id}
 	}
 	if _, exists := t.nodes[node.parentID]; !exists {
@@ -75,7 +75,7 @@ func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 // Errors if the node is the root or deleted node.
 func (t *Tree[MD]) Remove(id uuid.UUID) error {
 	if _, exists := t.nodes[id]; !exists {
-		return MissingNodeIDError{id: id}
+		return nil // already removed
 	}
 	if id == RootUUID || id == TombstoneUUID {
 		return InvalidNodeDeletionError{id: id}
@@ -97,12 +97,10 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 
 // Moves a node.
 // Compared to remove and adding a node, this method completes all checks before modifying the tree.
-// Errors if either the node or the new parent does not exist.
+// Ensures that the operation is fully completed.
+// Errors if the new parent does not exist.
 // Errors if the node is the root or deleted node.
 func (t *Tree[MD]) Move(id uuid.UUID, node *TreeNode[MD]) error {
-	if _, exists := t.nodes[id]; !exists {
-		return MissingNodeIDError{id: id}
-	}
 	if _, exists := t.nodes[node.parentID]; !exists {
 		return MissingNodeIDError{id: node.parentID}
 	}
@@ -156,6 +154,11 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 		}
 	}
 	return false, nil
+}
+
+func (t *Tree[MD]) Contains(id uuid.UUID) bool {
+	_, exists := t.nodes[id]
+	return exists
 }
 
 func (t *Tree[MD]) String() string {
