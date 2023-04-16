@@ -22,12 +22,12 @@ func NewLamport(ids ...uuid.UUID) *Lamport {
 	return &Lamport{actorID: actorID, counter: 0}
 }
 
-func (l Lamport) ActorID() uuid.UUID {
+func (l *Lamport) ActorID() uuid.UUID {
 	return l.actorID
 }
 
 // will return 0 if a == b, -1 if a < b, 1 if a > b
-func (l Lamport) Compare(other Lamport) int {
+func (l *Lamport) Compare(other *Lamport) int {
 	switch {
 	case l.counter < other.counter: return -1
 	case l.counter > other.counter: return 1
@@ -35,26 +35,27 @@ func (l Lamport) Compare(other Lamport) int {
 	}
 }
 
-func (l *Lamport) Inc() Lamport {
+// increments the counter and returns a new Lamport clock with the same actorID
+func (l *Lamport) Inc() *Lamport {
 	l.counter++
-	return Lamport{actorID: l.actorID, counter: l.counter}
+	return &Lamport{actorID: l.actorID, counter: l.counter}
 }
 
-func (l Lamport) Tick() Lamport {
-	l.counter++
-	return l
+// returns a new Lamport clock with the same actorID and a counter incremented by 1 (doesn't update clock)
+func (l *Lamport) Tick() *Lamport {
+	return &Lamport{actorID: l.actorID, counter: l.counter + 1}
 }
 
-func (l *Lamport) Merge(other Lamport) {
+func (l *Lamport) Merge(other *Lamport) {
 	if other.counter > l.counter {
 		l.counter = other.counter
 	} 
 }
 
-func (l Lamport) Clone() Lamport {
-	return Lamport{actorID: l.actorID, counter: l.counter}
+func (l *Lamport) Clone() *Lamport {
+	return &Lamport{actorID: l.actorID, counter: l.counter}
 }
 
-func (l Lamport) String() string {
+func (l *Lamport) String() string {
 	return fmt.Sprintf("%v: %v", l.actorID, l.counter)
 }

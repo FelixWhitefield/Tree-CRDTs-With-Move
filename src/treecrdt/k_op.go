@@ -23,8 +23,8 @@ type opTimestamp[T any] interface {
 	clocks.Timestamp[T]
 }
 
-func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) OpMove[MD, T] {
-	return OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode[MD](parentID, metadata)}
+func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) *OpMove[MD, T] {
+	return &OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode(parentID, metadata)}
 }
 
 func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {

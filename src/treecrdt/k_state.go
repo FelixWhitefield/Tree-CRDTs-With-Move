@@ -1,6 +1,6 @@
 package treecrdt
 
-// Contains the CRDT state and implements the algorithm
+// Contains the CRDT state and implements the main algorithm
 //
 // `State` is independent of any peer, and should 
 // be equal between peers which have seens the same operations
