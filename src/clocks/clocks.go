@@ -3,6 +3,7 @@ package clocks
 import "github.com/google/uuid"
 
 /* ----- Interfaces ------ */
+// T should be the struct implementing this interface
 type TotalOrder[T any] interface {
 	Compare(other T) int
 }

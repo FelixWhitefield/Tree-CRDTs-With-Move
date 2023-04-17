@@ -1,7 +1,7 @@
 package treecrdt
 
 import (
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/google/uuid"
 )
 
@@ -19,8 +19,8 @@ type OpMove[MD Metadata, T opTimestamp[T]] struct {
 }
 
 type opTimestamp[T any] interface {
-	clocks.TotalOrder[T]
-	clocks.Timestamp[T]
+	c.TotalOrder[T]
+	c.Timestamp[T]
 	ActorID() uuid.UUID
 }
 
