@@ -2,11 +2,11 @@ package treecrdt
 
 // Contains the CRDT state and implements the main algorithm
 //
-// `State` is independent of any peer, and should 
+// `State` is independent of any peer, and should
 // be equal between peers which have seens the same operations
 //
-// The op log is implemented as a linked list, as this allows for 
-// easy insertions in the middle of the list,  
+// The op log is implemented as a linked list, as this allows for
+// easy insertions in the middle of the list,
 // as well as removals without the need to shift the list
 
 import (
@@ -16,14 +16,14 @@ import (
 
 type State[MD Metadata, T opTimestamp[T]] struct {
 	tree Tree[MD] // state of the tree
-	log  list.List // ascending list of log moves 
+	log  *list.List // ascending list of log moves 
 	// the log differs from the paper, as the paper states it should be descending
 	// in practice this doesn't affect the algorithm
 	extraConflict *TNConflict[MD] 
 }
 
 func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
-	return State[MD, T]{tree: *NewTree[MD](), log: *list.New()}
+	return State[MD, T]{tree: *NewTree[MD](), log: list.New()}
 }
 
 // 'do_op' from the paper
@@ -92,12 +92,12 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 		// This ignores the case where CompareOp returns 0, which is not defined in the paper
 		// This should not happen in normal operation, if it does then the state is in an undefined state
 		// loops while log op is greater than op
-		for ; e.Value.(LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
+		for ; e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
 			s.UndoOp(e.Value.(*LogOpMove[MD, T]))
 		}
 
 		// check if the op is already in the log (should not happen in normal operation)
-		if !(e.Value.(LogOpMove[MD, T]).CompareOp(op) == 0) {
+		if !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
 			logop := s.DoOp(op)
 			e = s.log.InsertAfter(logop, e)
 		}

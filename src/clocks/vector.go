@@ -84,11 +84,11 @@ func (v *VectorClock) ActorID() uuid.UUID {
 
 func (v *VectorClock) Inc() *VectorTimestamp {
 	v.timestamp[v.actorID]++
-	return v.CloneTimestamp()
+	return v.CurrentTime()
 }
 
 func (v *VectorClock) Tick() *VectorTimestamp {
-	vc := v.CloneTimestamp()
+	vc := v.CurrentTime()
 	vc.Inc(v.actorID)
 	return vc
 }
@@ -101,7 +101,7 @@ func (v *VectorClock) Merge(other *VectorTimestamp) {
 	}
 }
 
-func (v *VectorClock) CloneTimestamp() *VectorTimestamp {
+func (v *VectorClock) CurrentTime() *VectorTimestamp {
 	return v.timestamp.Clone()
 }
 

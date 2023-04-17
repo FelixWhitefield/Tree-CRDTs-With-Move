@@ -60,7 +60,7 @@ func main() {
 
 	l2 := clocks.NewLamport()
 
-	fmt.Println(l1.Compare(*l2))
+	fmt.Println(l1.Compare(l2))
 
 
 	v1 := clocks.NewVectorClock()
@@ -83,11 +83,11 @@ func main() {
 
 	fmt.Println("Before ", v)
 
-	v.Merge(v2.CloneTimestamp())
+	v.Merge(v2.CurrentTime())
 
 	fmt.Println("After ", v)
 
-	fmt.Println(v.CompareTimestamp(v2.CloneTimestamp()))
+	fmt.Println(v.CompareTimestamp(v2.CurrentTime()))
 
 
 	newf := func(a int, b int) int {

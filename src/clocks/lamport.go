@@ -56,6 +56,10 @@ func (l *Lamport) Clone() *Lamport {
 	return &Lamport{actorID: l.actorID, counter: l.counter}
 }
 
+func (l *Lamport) CurrentTime() *Lamport {
+	return l.Clone();
+}
+
 func (l *Lamport) String() string {
 	return fmt.Sprintf("%v: %v", l.actorID, l.counter)
 }

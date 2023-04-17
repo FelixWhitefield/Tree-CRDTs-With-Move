@@ -1,4 +1,4 @@
-package treecrdt 
+package treecrdt
 
 // `TreeReplica` is a replica of a tree CRDT. It contains the state of the replica and the clock of the replica.
 //
@@ -18,17 +18,25 @@ type TreeReplica[MD Metadata, T opTimestamp[T]] struct {
 }
 
 // Returns a new TreeReplica with a random actorID, using the Lamport clock
-func NewTreeReplica[MD Metadata]() TreeReplica[MD, *c.Lamport] {
-	return TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+func NewTreeReplica[MD Metadata]() *TreeReplica[MD, *c.Lamport] {
+	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
 }
 
 // Returns a new TreeReplica with the given actorID, using the Lamport clock
-func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) TreeReplica[MD, *c.Lamport] {
-	return TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
+	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
 }
 
 func (tr *TreeReplica[MD, T]) ActorID() uuid.UUID {
 	return tr.clock.ActorID()
+}
+
+func (tr *TreeReplica[MD, T]) CurrentTime() T {
+	return tr.clock.CurrentTime()
+}
+
+func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
+	return tr.state.tree.GetChildren(u)
 }
 
 // The `prepare` method for the op-based CRDt, prepares an operation for the replica.
@@ -43,7 +51,7 @@ func (tr *TreeReplica[MD, T]) Effect(op OpMove[MD, T]) {
 	
 	id := op.Timestamp().ActorID()
 	// if the latest timestamp of the actor is less than the timestamp of the operation
-	if tr.latest_timestamp_by_actor[id].Compare(op.Timestamp().(T)) == -1 {
+	if latest, exist := tr.latest_timestamp_by_actor[id]; !exist || latest.Compare(op.Timestamp().(T)) == -1 {
 		tr.latest_timestamp_by_actor[id] = op.Timestamp().Clone()
 	}
 	
@@ -69,6 +77,6 @@ func (tr *TreeReplica[MD, T]) CausallyStableThreshold() *T {
 func (tr *TreeReplica[MD, T]) TruncateLog() {
 	threshold := tr.CausallyStableThreshold()
 	if threshold != nil {
-		tr.state.TruncateLogBefore(threshold)
+		tr.state.TruncateLogBefore(*threshold)
 	}
 }

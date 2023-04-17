@@ -17,6 +17,7 @@ type Timestamp[T any] interface {
 
 // Clock with timestamp of type T
 type Clock[T Timestamp[T]] interface {
+	CurrentTime() T // returns a clone of the current timestamp
 	Inc() T // increments clock, returns clone
 	Tick() T  // returns clock inc by 1 (doesn't update clock)
 	Merge(other T)
