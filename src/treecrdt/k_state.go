@@ -15,11 +15,11 @@ import (
 )
 
 type State[MD Metadata, T opTimestamp[T]] struct {
-	tree Tree[MD] // state of the tree
-	log  *list.List // ascending list of log moves 
+	tree Tree[MD]   // state of the tree
+	log  *list.List // ascending list of log moves
 	// the log differs from the paper, as the paper states it should be descending
 	// in practice this doesn't affect the algorithm
-	extraConflict *TNConflict[MD] 
+	extraConflict *TNConflict[MD]
 }
 
 func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
@@ -104,7 +104,7 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 			e = s.log.InsertAfter(logop, e)
 		}
 		e = e.Next()
-		
+
 		// redo ops until the end of the log
 		for ; e != nil; e = e.Next() {
 			s.RedoOp(e.Value.(*LogOpMove[MD, T]))

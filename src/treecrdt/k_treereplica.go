@@ -12,8 +12,8 @@ import (
 )
 
 type TreeReplica[MD Metadata, T opTimestamp[T]] struct {
-	state State[MD, T] // contains the state of the replica
-	clock c.Clock[T] // contains current time of replica (including actorID)
+	state                     State[MD, T]    // contains the state of the replica
+	clock                     c.Clock[T]      // contains current time of replica (including actorID)
 	latest_timestamp_by_actor map[uuid.UUID]T // contains the latest timestamp of each actor
 }
 
@@ -32,7 +32,7 @@ func (tr *TreeReplica[MD, T]) ActorID() uuid.UUID {
 }
 
 func (tr *TreeReplica[MD, T]) CurrentTime() T {
-	return tr.clock.CurrentTime()
+	return tr.clock.Timestamp()
 }
 
 func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
@@ -47,14 +47,14 @@ func (tr *TreeReplica[MD, T]) Prepare(id uuid.UUID, newP uuid.UUID, metadata MD)
 // The `effect` method for the op-based CRDTs, applies an operation to the replica.
 // This creates the effect of the operation on the replica.
 func (tr *TreeReplica[MD, T]) Effect(op OpMove[MD, T]) {
-	tr.clock.Merge(op.Timestamp().(T))
-	
+	tr.clock.Merge(op.Timestamp())
+
 	id := op.Timestamp().ActorID()
 	// if the latest timestamp of the actor is less than the timestamp of the operation
-	if latest, exist := tr.latest_timestamp_by_actor[id]; !exist || latest.Compare(op.Timestamp().(T)) == -1 {
+	if latest, exist := tr.latest_timestamp_by_actor[id]; !exist || latest.Compare(op.Timestamp()) == -1 {
 		tr.latest_timestamp_by_actor[id] = op.Timestamp().Clone()
 	}
-	
+
 	tr.state.ApplyOp(op)
 }
 

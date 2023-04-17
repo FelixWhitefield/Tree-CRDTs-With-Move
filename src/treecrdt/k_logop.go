@@ -19,7 +19,7 @@ func (lop LogOpMove[MD, T]) OpMove() OpMove[MD, T] {
 }
 
 // Compares a LogOpMove with an OpMove
-// This is useful for the state 
+// This is useful for the state
 func (lop LogOpMove[MD, T]) CompareOp(other OpMove[MD, T]) int {
 	return lop.op.timestamp.Compare(other.timestamp)
 }

@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	RootUUID      = uuid.MustParse("00000000-0000-0000-0000-000000000001") 
-	TombstoneUUID = uuid.Nil 
+	RootUUID      = uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	TombstoneUUID = uuid.Nil
 )
 
 type Tree[MD Metadata] struct {

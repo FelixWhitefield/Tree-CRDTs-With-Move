@@ -19,7 +19,7 @@ func (tn TreeNode[MD]) Metadata() MD {
 	return tn.metadata
 }
 
-// defines a conflict (or multiple conflicts) 
+// defines a conflict (or multiple conflicts)
 // the conflict will be between the tree node to be inserted and the current state of the tree
 // if the node were to cause a conflict, the function should return true
 // the function should not modify the tree or the tree node

@@ -1,8 +1,8 @@
-package clocks 
+package clocks
 
 import (
-	"fmt"
 	"bytes"
+	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -29,9 +29,12 @@ func (l *Lamport) ActorID() uuid.UUID {
 // will return 0 if a == b, -1 if a < b, 1 if a > b
 func (l *Lamport) Compare(other *Lamport) int {
 	switch {
-	case l.counter < other.counter: return -1
-	case l.counter > other.counter: return 1
-	default: return bytes.Compare(l.actorID[:], other.actorID[:]) 
+	case l.counter < other.counter:
+		return -1
+	case l.counter > other.counter:
+		return 1
+	default:
+		return bytes.Compare(l.actorID[:], other.actorID[:])
 	}
 }
 
@@ -49,15 +52,15 @@ func (l *Lamport) Tick() *Lamport {
 func (l *Lamport) Merge(other *Lamport) {
 	if other.counter > l.counter {
 		l.counter = other.counter
-	} 
+	}
 }
 
 func (l *Lamport) Clone() *Lamport {
 	return &Lamport{actorID: l.actorID, counter: l.counter}
 }
 
-func (l *Lamport) CurrentTime() *Lamport {
-	return l.Clone();
+func (l *Lamport) Timestamp() *Lamport {
+	return l.Clone()
 }
 
 func (l *Lamport) String() string {

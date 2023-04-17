@@ -13,9 +13,9 @@ import (
 
 // Represents moving node with id childID to parent and metadata within newP
 type OpMove[MD Metadata, T opTimestamp[T]] struct {
-	timestamp   T
-	childID     uuid.UUID
-	newP    *TreeNode[MD]
+	timestamp T
+	childID   uuid.UUID
+	newP      *TreeNode[MD]
 }
 
 type opTimestamp[T any] interface {
@@ -28,7 +28,7 @@ func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, c
 	return &OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode(parentID, metadata)}
 }
 
-func (op OpMove[MD, T]) Timestamp() opTimestamp[T] {
+func (op OpMove[MD, T]) Timestamp() T {
 	return op.timestamp
 }
 

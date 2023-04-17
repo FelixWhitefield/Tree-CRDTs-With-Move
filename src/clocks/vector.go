@@ -9,14 +9,15 @@ type VectorTimestamp map[uuid.UUID]uint64
 
 type VectorClock struct {
 	timestamp VectorTimestamp
-	actorID uuid.UUID
+	actorID   uuid.UUID
 }
 
 func NewVectorTimestamp() *VectorTimestamp {
 	timestamp := make(VectorTimestamp)
 	return &timestamp
 }
-// Returns a new VectorClock with a random actorID or the given actorID 
+
+// Returns a new VectorClock with a random actorID or the given actorID
 func NewVectorClock(ids ...uuid.UUID) *VectorClock {
 	var actorID uuid.UUID
 	if len(ids) > 0 {
@@ -59,9 +60,12 @@ func (vt *VectorTimestamp) Compare(other *VectorTimestamp) int {
 	}
 
 	switch {
-	case isLess: return -1
-	case isGreater: return 1
-	default: return 0 // The two timestamps are the same
+	case isLess:
+		return -1
+	case isGreater:
+		return 1
+	default:
+		return 0 // The two timestamps are the same
 	}
 }
 
@@ -84,11 +88,11 @@ func (v *VectorClock) ActorID() uuid.UUID {
 
 func (v *VectorClock) Inc() *VectorTimestamp {
 	v.timestamp[v.actorID]++
-	return v.CurrentTime()
+	return v.Timestamp()
 }
 
 func (v *VectorClock) Tick() *VectorTimestamp {
-	vc := v.CurrentTime()
+	vc := v.Timestamp()
 	vc.Inc(v.actorID)
 	return vc
 }
@@ -101,7 +105,7 @@ func (v *VectorClock) Merge(other *VectorTimestamp) {
 	}
 }
 
-func (v *VectorClock) CurrentTime() *VectorTimestamp {
+func (v *VectorClock) Timestamp() *VectorTimestamp {
 	return v.timestamp.Clone()
 }
 
@@ -112,4 +116,3 @@ func (v *VectorClock) CompareTimestamp(other *VectorTimestamp) int {
 func (v *VectorClock) String() string {
 	return fmt.Sprintf("%v: %v", v.actorID, v.timestamp)
 }
-

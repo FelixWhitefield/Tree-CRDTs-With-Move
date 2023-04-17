@@ -1,11 +1,11 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
-	"container/list"
 )
 
 // uuid.NewUUID() for version 1's
@@ -13,7 +13,7 @@ import (
 
 func test(i *int) {
 	ni := 10
-	pni := &ni 
+	pni := &ni
 	*i = *pni
 }
 
@@ -29,15 +29,9 @@ func main() {
 
 	fmt.Println(*li.Front().Value.(*int))
 
-
-
-
-
-	i := 2;
+	i := 2
 	test(&i)
 	fmt.Println(i)
-
-
 
 	tree := treecrdt.NewTree[string]()
 	u1 := uuid.New()
@@ -61,7 +55,6 @@ func main() {
 	l2 := clocks.NewLamport()
 
 	fmt.Println(l1.Compare(l2))
-
 
 	v1 := clocks.NewVectorClock()
 	v1.Inc()
@@ -89,11 +82,9 @@ func main() {
 
 	fmt.Println(v.CompareTimestamp(v2.CurrentTime()))
 
-
 	newf := func(a int, b int) int {
 		return a + b
 	}
 	fmt.Println(newf(1, 2))
-
 
 }
