@@ -12,7 +12,6 @@ import (
 	//"errors"
 	"bytes"
 	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -45,7 +44,7 @@ func (t *Tree[MD]) Tombstone() uuid.UUID {
 
 // Returns the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
-	node, _ := t.nodes[id]
+	node := t.nodes[id]
 	return node
 }
 
@@ -155,7 +154,7 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 	}
 	for childID != RootUUID {
 		childID = t.nodes[childID].parentID
-		if bytes.Compare(childID[:], ancID[:]) == 0 {
+		if bytes.Equal(childID[:], ancID[:]) {
 			return true, nil
 		}
 	}

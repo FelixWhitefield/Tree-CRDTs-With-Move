@@ -60,8 +60,7 @@ func main() {
 	v1.Inc()
 	fmt.Println(v1)
 
-	var c *clocks.Lamport
-	c = clocks.NewLamport()
+	c := clocks.NewLamport()
 	c.Inc()
 	c.Inc()
 	c.Inc()
@@ -76,11 +75,11 @@ func main() {
 
 	fmt.Println("Before ", v)
 
-	v.Merge(v2.CurrentTime())
+	v.Merge(v2.Timestamp())
 
 	fmt.Println("After ", v)
 
-	fmt.Println(v.CompareTimestamp(v2.CurrentTime()))
+	fmt.Println(v.CompareTimestamp(v2.Timestamp()))
 
 	newf := func(a int, b int) int {
 		return a + b
