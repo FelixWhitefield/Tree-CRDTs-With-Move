@@ -10,7 +10,9 @@ package treecrdt
 
 import (
 	//"errors"
+	"bytes"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -152,7 +154,8 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 		return false, MissingNodeIDError{id: ancID}
 	}
 	for childID != RootUUID {
-		if childID = t.nodes[childID].parentID; childID == ancID {
+		childID = t.nodes[childID].parentID
+		if bytes.Compare(childID[:], ancID[:]) == 0 {
 			return true, nil
 		}
 	}

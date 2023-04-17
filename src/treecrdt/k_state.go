@@ -32,7 +32,8 @@ func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
 func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP := s.tree.GetNode(op.childID)
 
-	isAnc, _ := s.tree.IsAncestor(op.childID, op.newP.parentID)
+	// If the child is an ancestor of the newParent
+	isAnc, _ := s.tree.IsAncestor(op.newP.parentID, op.childID)
 	newParentIsSelf := op.childID == op.newP.parentID
 
 	// this is not in the algorithm.
@@ -98,6 +99,7 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 
 		// check if the op is already in the log (should not happen in normal operation)
 		if !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
+
 			logop := s.DoOp(op)
 			e = s.log.InsertAfter(logop, e)
 		}
