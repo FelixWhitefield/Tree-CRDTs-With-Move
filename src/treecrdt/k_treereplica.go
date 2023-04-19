@@ -39,7 +39,7 @@ func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
 	return tr.state.tree.GetChildren(u)
 }
 
-// The `prepare` method for the op-based CRDt, prepares an operation for the replica.
+// The `prepare` method for the op-based CRDTs, prepares an operation for the replica.
 func (tr *TreeReplica[MD, T]) Prepare(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
 	return NewOpMove(tr.clock.Tick(), newP, id, metadata)
 }
@@ -58,6 +58,7 @@ func (tr *TreeReplica[MD, T]) Effect(op OpMove[MD, T]) {
 	tr.state.ApplyOp(op)
 }
 
+// Applies multiple operations to the replica
 func (tr *TreeReplica[MD, T]) Effects(ops []OpMove[MD, T]) {
 	for _, op := range ops {
 		tr.Effect(op)
