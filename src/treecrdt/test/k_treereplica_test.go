@@ -1,7 +1,6 @@
 package treecrdt_test
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
@@ -18,7 +17,6 @@ func TestApplyOp(t *testing.T) {
 	tp.Effect(*op)
 
 	child, _:= tp.GetChildren(RootUUID)
-	fmt.Println(child)
 	if child[0] != uid {
 		t.Errorf("Invalid ID child of root %v, should be %v", child[0], uid)
 	}
