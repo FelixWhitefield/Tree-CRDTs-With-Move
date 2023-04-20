@@ -4,14 +4,18 @@ import (
 	"net"
 )
 
-type TCPConnection struct {
+type TCPConnection[OPID comparable] struct {
+	conn net.Conn
+}
+
+func NewTCPConnection[OP []byte, OPID comparable](conn net.Conn, p *TCPProvider[OP, OPID]) *TCPConnection[OPID] {
+	return &TCPConnection[OPID]{}
+}
+
+func (c *TCPConnection[OPID]) handle() {
 
 }
 
-func NewTCPConnection[OP []byte, OPID comparable](conn net.Conn, p *TCPProvider[OP, OPID]) *TCPConnection {
-	return &TCPConnection{}
-}
-
-func (c *TCPConnection) handle() {
-
+func (c *TCPConnection[OPID]) sendOp(opid OPID, op []byte) {
+	c.conn.Write(op)
 }

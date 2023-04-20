@@ -8,15 +8,35 @@ import (
 	"sync"
 )
 
+const (
+	Op = "OP"
+	OpAck = "OPACK"
+	Join = "JOIN"
+	Peers = "PEERS"
+)
+
+type OpMessage[OPID comparable] struct {
+	id OPID
+	op []byte
+}
+
+type InitialMessage struct {
+	id uuid.UUID
+}
+
+type PeersMessage struct {
+	peers map[uuid.UUID]net.TCPAddr
+}
+
 type TCPProvider[OP []byte, OPID comparable] struct {
 	peersMu        sync.RWMutex
-	peers          map[uuid.UUID]*TCPConnection
+	peers          map[uuid.UUID]*TCPConnection[OPID]
 	numPeers       int
 	deliveredMu    sync.RWMutex
 	delivered      map[OPID][]uuid.UUID
 	operations     map[OPID]OP
 	incomingOps    chan []byte
-	opsToBroadcast chan []byte
+	opsToBroadcast chan OpMessage[OPID]
 }
 
 func NewTCPProvider[OP []byte, OPID comparable](numPeers int) *TCPProvider[OP, OPID] {
@@ -40,7 +60,18 @@ func (p *TCPProvider[OP, OPID]) Listen(port int) {
 	}
 }
 
-func (p *TCPProvider[OP, OPID]) AddPeer(id uuid.UUID, conn *TCPConnection) {
+func (p *TCPProvider[OP, OPID]) handleBroadcast() {
+	for {
+		op := <-p.opsToBroadcast
+		p.peersMu.RLock()
+		for _, conn := range p.peers {
+			conn.sendOp(op.id, op.op)
+		}
+		p.peersMu.RUnlock()
+	}
+}
+
+func (p *TCPProvider[OP, OPID]) AddPeer(id uuid.UUID, conn *TCPConnection[OPID]) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
@@ -51,7 +82,7 @@ func (p *TCPProvider[OP, OPID]) RemovePeer(id uuid.UUID) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	delete(p.peers, id)
+	p.peers[id] = nil 
 }
 
 func (p *TCPProvider[OP, OPID]) AddOperation(op OP, id OPID) {
