@@ -1,4 +1,3 @@
 package treecrdt
 
-type Metadata interface {
-}
+type Metadata interface {}

@@ -9,7 +9,7 @@ import (
 
 func TestNewAndAdd(t *testing.T) {
 	uuid1 := u.New()
-	tr := NewTreeReplicaWithID[string](uuid1)
+	tr := NewTreeReplica[string](nil, uuid1)
 
 	if (tr == nil) {
 		t.Errorf("NewTreeReplicaWithID() returned nil")
@@ -21,7 +21,7 @@ func TestNewAndAdd(t *testing.T) {
 
 	uuid2 := u.New()
 	op := tr.Prepare(uuid2, RootUUID, "test")
-	tr.Effect(*op)
+	tr.Effect(op)
 
 	if c, _ := tr.GetChildren(RootUUID); c[0] != uuid2 {
 		t.Errorf("Effect() did not add node correctly")
@@ -37,7 +37,7 @@ func TestNewAndAdd(t *testing.T) {
 
 	uuid3 := u.New()
 	op = tr.Prepare(uuid3, uuid2, "test2")
-	tr.Effect(*op)
+	tr.Effect(op)
 
 	if c, _ := tr.GetChildren(RootUUID); contains(c, uuid2) && contains(c, uuid3) { 
 		t.Errorf("Effect() did not add node correctly")
@@ -54,11 +54,11 @@ func contains(s []u.UUID, e u.UUID) bool {
 }
 
 func TestTime(t *testing.T) {
-	tr := NewTreeReplica[string]()
+	tr := NewTreeReplica[string](nil)
 
 	uuid1 := u.New()
 	op := tr.Prepare(uuid1, RootUUID, "test")
-	tr.Effect(*op)
+	tr.Effect(op)
 
 	expectedTime := c.NewLamport(tr.ActorID())
 	expectedTime.Inc()

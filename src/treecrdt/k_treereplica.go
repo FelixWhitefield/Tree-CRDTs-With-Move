@@ -20,13 +20,22 @@ type TreeReplica[MD Metadata, T opTimestamp[T]] struct {
 }
 
 // Returns a new TreeReplica with a random actorID, using the Lamport clock
-func NewTreeReplica[MD Metadata]() *TreeReplica[MD, *c.Lamport] {
-	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
-}
+// func NewTreeReplica[MD Metadata]() *TreeReplica[MD, *c.Lamport] {
+// 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+// }
 
 // Returns a new TreeReplica with the given actorID, using the Lamport clock
-func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
-	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+// func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
+// 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+// }
+func NewTreeReplica[MD Metadata](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica[MD, *c.Lamport] {
+	var id uuid.UUID
+	if len(ids) > 0 {
+		id = ids[0]
+	} else {
+		id = uuid.New()
+	}
+	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](conf), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
 }
 
 func (tr *TreeReplica[MD, T]) ActorID() uuid.UUID {
@@ -52,7 +61,7 @@ func (tr *TreeReplica[MD, T]) Prepare(id uuid.UUID, newP uuid.UUID, metadata MD)
 
 // The `effect` method for the op-based CRDTs, applies an operation to the replica.
 // This creates the effect of the operation on the replica.
-func (tr *TreeReplica[MD, T]) Effect(op OpMove[MD, T]) {
+func (tr *TreeReplica[MD, T]) Effect(op *OpMove[MD, T]) {
 	tr.clock.Merge(op.Timestamp())
 
 	id := op.Timestamp().ActorID()
@@ -65,7 +74,7 @@ func (tr *TreeReplica[MD, T]) Effect(op OpMove[MD, T]) {
 }
 
 // Applies multiple operations to the replica
-func (tr *TreeReplica[MD, T]) Effects(ops []OpMove[MD, T]) {
+func (tr *TreeReplica[MD, T]) Effects(ops []*OpMove[MD, T]) {
 	for _, op := range ops {
 		tr.Effect(op)
 	}

@@ -22,14 +22,14 @@ type State[MD Metadata, T opTimestamp[T]] struct {
 	extraConflict *TNConflict[MD]
 }
 
-func NewState[MD Metadata, T opTimestamp[T]]() State[MD, T] {
-	return State[MD, T]{tree: *NewTree[MD](), log: list.New()}
+func NewState[MD Metadata, T opTimestamp[T]](conf *TNConflict[MD]) State[MD, T] {
+	return State[MD, T]{tree: *NewTree[MD](), log: list.New(), extraConflict: conf}
 }
 
 // 'do_op' from the paper
 // takes an op move, and applies it to the tree
 // if the move is invalid, then the op is not applied but still logged
-func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
+func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP := s.tree.GetNode(op.childID)
 
 	// If the child is an ancestor of the newParent
@@ -84,7 +84,7 @@ func (s *State[MD, T]) RedoOp(lop *LogOpMove[MD, T]) {
 // this implementation is iterative, and does not remove and then re-add the op to the logas - this would be inefficient
 // instead, a linked list is used to store the log, and the op is inserted in the correct place
 // the elements in the list are modified in place
-func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
+func (s *State[MD, T]) ApplyOp(op *OpMove[MD, T]) {
 	if s.log.Len() == 0 {
 		logop := s.DoOp(op)
 		s.log.PushBack(logop)
@@ -114,7 +114,7 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 // 'apply_ops' from the paper
 // applies a list of ops to the tree
 // the list of ops should be ordered, otherwise will be slow
-func (s *State[MD, T]) ApplyOps(ops []OpMove[MD, T]) {
+func (s *State[MD, T]) ApplyOps(ops []*OpMove[MD, T]) {
 	for _, op := range ops {
 		s.ApplyOp(op)
 	}

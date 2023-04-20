@@ -49,6 +49,6 @@ func (op OpMove[MD, T]) Metadata() MD {
 }
 
 // Compares two OpMoves by their timestamps
-func (op OpMove[MD, T]) Compare(other OpMove[MD, T]) int {
+func (op *OpMove[MD, T]) Compare(other *OpMove[MD, T]) int {
 	return op.timestamp.Compare(other.timestamp)
 }
