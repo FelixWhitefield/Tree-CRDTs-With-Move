@@ -1,11 +1,14 @@
 package treecrdt
 
+// Represents the errors which can occur when performing operations on the tree
+//
+// Usually errors can be ignored as they are part of normal operation
+
 import (
 	"fmt"
 	"github.com/google/uuid"
 )
 
-// n
 type MissingNodeIDError struct {
 	id uuid.UUID
 }

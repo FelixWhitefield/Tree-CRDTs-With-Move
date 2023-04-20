@@ -1,5 +1,9 @@
 package treecrdt
 
+// `OpMove` is a move operation
+//
+// Contains method to compare two operations 
+
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/google/uuid"

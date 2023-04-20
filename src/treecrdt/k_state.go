@@ -3,7 +3,7 @@ package treecrdt
 // Contains the CRDT state and implements the main algorithm
 //
 // `State` is independent of any peer, and should
-// be equal between peers which have seens the same operations
+// be equal between peers which have seen the same operations
 //
 // The op log is implemented as a linked list, as this allows for
 // easy insertions in the middle of the list,
@@ -39,8 +39,8 @@ func (s *State[MD, T]) DoOp(op OpMove[MD, T]) *LogOpMove[MD, T] {
 	// this is not in the algorithm.
 	// it allows the user to define a custom conflict function
 	conflict := false
-	if s.extraConflict != nil && (*s.extraConflict)(op.newP, &s.tree) {
-		conflict = true
+	if s.extraConflict != nil {
+		conflict = (*s.extraConflict)(op.newP, &s.tree)
 	}
 
 	if !isAnc && !newParentIsSelf && !conflict {
@@ -99,7 +99,6 @@ func (s *State[MD, T]) ApplyOp(op OpMove[MD, T]) {
 
 		// check if the op is already in the log (should not happen in normal operation)
 		if !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
-
 			logop := s.DoOp(op)
 			e = s.log.InsertAfter(logop, e)
 		}

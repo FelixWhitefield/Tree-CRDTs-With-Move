@@ -1,5 +1,9 @@
 package treecrdt
 
+// `TreeNode` is a node in the tree
+// 
+// `TreeNode` is a generic type, and so must be instantiated with a type for the metadata
+
 import "github.com/google/uuid"
 
 type TreeNode[MD Metadata] struct {

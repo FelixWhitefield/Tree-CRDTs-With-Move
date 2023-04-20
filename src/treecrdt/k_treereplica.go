@@ -1,6 +1,8 @@
 package treecrdt
 
-// `TreeReplica` is a replica of a tree CRDT. It contains the state of the replica and the clock of the replica.
+// `TreeReplica` is a replica of the tree CRDT. It contains the state of the replica and the clock of the replica.
+//
+// This struct is the CRDT for a certain actor, and contains the state of the CRDT for that actor.
 //
 // The replica is an implementation of a op-based CRDT, and contains `prepare` and `effect` methods
 // This is a layer above the `State` struct, which contains the actual CRDT state
@@ -37,6 +39,10 @@ func (tr *TreeReplica[MD, T]) CurrentTime() T {
 
 func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
 	return tr.state.tree.GetChildren(u)
+}
+
+func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) (*TreeNode[MD]) {
+	return tr.state.tree.GetNode(u)
 }
 
 // The `prepare` method for the op-based CRDTs, prepares an operation for the replica.

@@ -36,30 +36,26 @@ func (vt *VectorTimestamp) Compare(other *VectorTimestamp) int {
 	isLess := false
 	isGreater := false
 
-	for key, value := range *vt {
-		otherValue := (*other)[key]
-
-		if value < otherValue {
+	// loop through both maps and compare the values
+	for key := range *vt {
+		if (*vt)[key] < (*other)[key] {
 			isLess = true
-		} else if value > otherValue {
+		} else if (*vt)[key] > (*other)[key] {
 			isGreater = true
-		}
-
-		if isLess && isGreater {
-			return 2 // concurrent
 		}
 	}
 
-	if !isLess && !isGreater {
-		for key := range *other {
-			if _, exists := (*vt)[key]; !exists {
-				isGreater = true
-				break
-			}
+	for key := range *other {
+		if (*vt)[key] < (*other)[key] {
+			isLess = true
+		} else if (*vt)[key] > (*other)[key] {
+			isGreater = true
 		}
 	}
 
 	switch {
+	case isLess && isGreater:
+		return 2
 	case isLess:
 		return -1
 	case isGreater:

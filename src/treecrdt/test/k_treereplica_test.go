@@ -2,48 +2,68 @@ package treecrdt_test
 
 import (
 	"testing"
-
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
 )
 
-func TestApplyOp(t *testing.T) {
-	tp := NewTreeReplica[string]()
+func TestNewAndAdd(t *testing.T) {
+	uuid1 := u.New()
+	tr := NewTreeReplicaWithID[string](uuid1)
 
-	uid := u.New();
-	op := tp.Prepare(uid, RootUUID, "hello")
-
-	tp.Effect(*op)
-	tp.Effect(*op)
-
-	child, _:= tp.GetChildren(RootUUID)
-	if child[0] != uid {
-		t.Errorf("Invalid ID child of root %v, should be %v", child[0], uid)
+	if (tr == nil) {
+		t.Errorf("NewTreeReplicaWithID() returned nil")
 	}
 
-	id2 := u.New() 
-	op2 := tp.Prepare(id2, uid, "2nd")
-
-	tp.Effect(*op2)
-
-	child, _ = tp.GetChildren(uid)
-	if child[0] != id2 {
-		t.Errorf("Invalid ID child of root %v, should be %v", child[0], uid)
+	if (tr != nil && tr.ActorID() != uuid1) {
+		t.Errorf("NewTreeReplicaWithID() returned wrong ID")
 	}
 
-	op4 := tp.Prepare(uid, id2, "hello") 
-	tp.Effect(*op4)
+	uuid2 := u.New()
+	op := tr.Prepare(uuid2, RootUUID, "test")
+	tr.Effect(*op)
 
-	child, _ = tp.GetChildren(id2)
-	if len(child) > 0 {
-		t.Errorf("There is a cycle")
+	if c, _ := tr.GetChildren(RootUUID); c[0] != uuid2 {
+		t.Errorf("Effect() did not add node correctly")
 	}
 
-	// op3 := tp.Prepare(id2, TombstoneUUID, "2nd")
-	// tp.Effect(*op3)
+	if n := tr.GetNode(uuid2); n.ParentID() != RootUUID {
+		t.Errorf("Effect() did not add node correctly")
+	}
 
-	// child, _ = tp.GetChildren(uid)
-	// if len(child) != 0 {
-	// 	t.Errorf("Error deleting node")
-	// }
+	if n := tr.GetNode(uuid2); n.Metadata() != "test" {
+		t.Errorf("Effect() did not add node correctly")
+	}
+
+	uuid3 := u.New()
+	op = tr.Prepare(uuid3, uuid2, "test2")
+	tr.Effect(*op)
+
+	if c, _ := tr.GetChildren(RootUUID); contains(c, uuid2) && contains(c, uuid3) { 
+		t.Errorf("Effect() did not add node correctly")
+	}
+}
+
+func contains(s []u.UUID, e u.UUID) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func TestTime(t *testing.T) {
+	tr := NewTreeReplica[string]()
+
+	uuid1 := u.New()
+	op := tr.Prepare(uuid1, RootUUID, "test")
+	tr.Effect(*op)
+
+	expectedTime := c.NewLamport(tr.ActorID())
+	expectedTime.Inc()
+	
+	if (tr.CurrentTime().ActorID() != uuid1 &&  tr.CurrentTime().Compare(expectedTime) != 0) {
+		t.Errorf("CurrentTime() returned wrong time")
+	}
 }
