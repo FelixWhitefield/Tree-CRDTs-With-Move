@@ -112,3 +112,7 @@ func (v *VectorClock) CompareTimestamp(other *VectorTimestamp) int {
 func (v *VectorClock) String() string {
 	return fmt.Sprintf("%v: %v", v.actorID, v.timestamp)
 }
+
+func (v *VectorTimestamp) String() string {
+	return fmt.Sprintf("%v", *v)
+}

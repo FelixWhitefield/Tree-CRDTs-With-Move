@@ -6,10 +6,22 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
+	"encoding/gob"
+	"bytes"
 )
 
 // uuid.NewUUID() for version 1's
 // uuid.New() for V4
+
+type DataA struct {
+	DataA string 
+	Id1 int
+}
+
+type DataB struct {
+	Datab string 
+	Id2 int 
+}
 
 func test(i *int) {
 	ni := 10
@@ -17,7 +29,35 @@ func test(i *int) {
 	*i = *pni
 }
 
+type Person struct {
+	Name string 
+	Age int32 
+}
+
+type MapKey map[int]int
+
+func (mk MapKey) compareTo(other MapKey) bool {
+	return true
+}
+
+type Rand[T comparable] struct {
+	Item T
+}
+
 func main() {
+	var err error
+
+
+
+	dataA := DataA{"hi", 1}
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	err = encoder.Encode(dataA)
+	if err != nil {
+		panic(err)
+	}
+
+
 	li := list.New()
 	num := 10
 	ptr := &num
@@ -55,6 +95,7 @@ func main() {
 	l2 := clocks.NewLamport()
 
 	fmt.Println(l1.Compare(l2))
+
 
 	v1 := clocks.NewVectorClock()
 	v1.Inc()
