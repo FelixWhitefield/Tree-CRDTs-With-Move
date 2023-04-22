@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"errors"
 )
 
 const (
@@ -60,41 +61,26 @@ func (c *TCPConnection) handle() {
 			return
 		}
 
-		// Read the length of the message
-		// _, err := io.ReadFull(c.conn, lengthBuffer)
-		// if err == io.EOF || err == io.ErrUnexpectedEOF {
-		// 	log.Println("Connection closed for client:", c.id)
-		// 	return
-		// } else if err != nil {
-		// 	log.Printf("Error reading message length: %s; for client: %v", err.Error(), c.id)
-		// 	return
-		// }
-		// // Decode the length
-		// length := binary.BigEndian.Uint32(lengthBuffer)
-
-		// messageBuffer := dataBuffer[:length]
-		// // Read the message
-		// _, err = io.ReadFull(c.conn, messageBuffer)
-		// if err == io.EOF || err == io.ErrUnexpectedEOF {
-		// 	log.Println("Connection closed for client:", c.id)
-		// 	return
-		// } else if err != nil {
-		// 	log.Printf("Error reading message: %s; for client: %v", err.Error(), c.id)
-		// 	return
-		// }
-
 		// Handle the message
-		// (Decode into a protobuf message, etc.)
+		switch msg.Message.(type) {
+			case *Message_PeerAddresses:
+				// connect to peers who are not already connected
+			case *Message_Operation:
+				// Add the operation to the list of incoming operations
+		}
 
 	}
 }
 
-func MessageToID(msg []byte) (uuid.UUID, error) {
-	peerID := &PeerID{}
-	err := proto.Unmarshal(msg, peerID)
-	if err != nil {
-		return uuid.Nil, err
+// Takes a protobuf message and converts it into a uuid
+// This is used to convert the ID of a peer into a uuid
+func MessageToID(msg *Message) (uuid.UUID, error) {
+	peerId, ok := msg.Message.(*Message_PeerID)
+	if !ok {
+		return uuid.Nil, errors.New("Message is not a PeerID")
 	}
+	peerID := peerId.PeerID
+	
 	peerIDBytes := peerID.Id
 	peerIDUUID, err := uuid.FromBytes(peerIDBytes)
 	if err != nil {
@@ -103,7 +89,11 @@ func MessageToID(msg []byte) (uuid.UUID, error) {
 	return peerIDUUID, nil
 }
 
-func (c *TCPConnection) ReadMessage(lengthBuffer, dataBuffer []byte) ([]byte, error) {
+// Reads in a message from the connection
+// The message is prefixed with a 4 byte length header
+// The message is then read in and unmarshalled
+// This function takes in two buffers to be used for reading in the message
+func (c *TCPConnection) ReadMessage(lengthBuffer, dataBuffer []byte) (*Message, error) {
 	_, err := io.ReadFull(c.conn, lengthBuffer)
 	if err == io.EOF || err == io.ErrUnexpectedEOF {
 		log.Println("Connection closed for client:", c.id)
@@ -126,7 +116,14 @@ func (c *TCPConnection) ReadMessage(lengthBuffer, dataBuffer []byte) ([]byte, er
 		return nil, err
 	}
 
-	return messageBuffer, nil
+	message := &Message{}
+	err = proto.Unmarshal(messageBuffer, message)
+	if err != nil {
+		log.Printf("Error unmarshalling message: %s", err.Error())
+		return nil, err
+	}
+
+	return message, nil
 }
 
 // Sends a byte message to the connection

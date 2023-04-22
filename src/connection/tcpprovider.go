@@ -15,23 +15,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const (
-	Op = "OP"
-	OpAck = "OPACK"
-	Join = "JOIN"
-	Peers = "PEERS"
-)
-
 type Operation struct {
 	op []byte
-}
-
-type InitialMessage struct {
-	id uuid.UUID
-}
-
-type PeersMessage struct {
-	peers map[uuid.UUID]net.TCPAddr
 }
 
 type TCPProvider struct {
