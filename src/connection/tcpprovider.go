@@ -109,51 +109,51 @@ func (p *TCPProvider) handleBroadcast() {
 }
 
 // Errors if the peer already exists or the peer map is full
-func (p *TCPProvider) AddPeer(id uuid.UUID, tcpConn *TCPConnection) error {
+func (p *TCPProvider) AddPeer(peerId uuid.UUID, tcpConn *TCPConnection) error {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	if val, ok := p.peers[id]; ok && val != nil { // Check if the peer already exists
+	if val, ok := p.peers[peerId]; ok && val != nil { // Check if the peer already exists
 		return errors.New("peer already exists (not nil)")
 	} else if len(p.peers) == p.numPeers { // Check if the peer map is full
 		return errors.New("peer map is full")
 	}
 
-	p.peers[id] = tcpConn
+	p.peers[peerId] = tcpConn
 	return nil
 }
 
 // Sets the peer in map to nil
-func (p *TCPProvider) RemovePeer(id uuid.UUID) {
+func (p *TCPProvider) RemovePeer(peerId uuid.UUID) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	p.peers[id] = nil
+	p.peers[peerId] = nil
 }
 
-func (p *TCPProvider) AddOperation(op []byte, id uuid.UUID) {
+func (p *TCPProvider) AddOperation(op []byte, opId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
-	p.operations[id] = op
-	p.delivered[id] = make([]uuid.UUID, 0, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
+	p.operations[opId] = op
+	p.delivered[opId] = make([]uuid.UUID, 0, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
 }
 
-func (p *TCPProvider) AddDelivered(id uuid.UUID, peer uuid.UUID) {
+func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
-	if len(p.delivered[id]) == p.numPeers-1 { // This would be the last peer to receive the operation (No need to add it to the delivered map)
-		delete(p.operations, id)
-		delete(p.delivered, id)
+	if len(p.delivered[opId]) == p.numPeers-1 { // This would be the last peer to receive the operation (No need to add it to the delivered map)
+		delete(p.operations, opId)
+		delete(p.delivered, opId)
 	} else {
-		p.delivered[id] = append(p.delivered[id], peer)
+		p.delivered[opId] = append(p.delivered[opId], peerId)
 	}
 }
 
-func (p *TCPProvider) GetOperation(id uuid.UUID) []byte {
+func (p *TCPProvider) GetOperation(opId uuid.UUID) []byte {
 	p.deliveredMu.RLock()
 	defer p.deliveredMu.RUnlock()
 
-	return p.operations[id]
+	return p.operations[opId]
 }

@@ -25,7 +25,7 @@ func NewTCPConnection(conn net.Conn, p *TCPProvider) *TCPConnection {
 }
 
 func (c *TCPConnection) handle() {
-	defer c.conn.Close()   
+	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
 	peerID := &PeerID{Id: c.tcpProv.id[:]}
