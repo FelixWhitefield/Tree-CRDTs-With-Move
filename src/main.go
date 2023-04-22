@@ -44,10 +44,22 @@ type Rand[T comparable] struct {
 	Item T
 }
 
+
+
 func main() {
 	var err error
 
-
+	nmap := make(map[int]*int)
+	ill := 5
+	nmap[1] = &ill
+	_, ok := nmap[1] 
+	fmt.Println(ok)
+	nmap[1] = nil 
+	_, ok = nmap[1]
+	fmt.Println(ok)
+	delete(nmap, 1)
+	_, ok = nmap[1]
+	fmt.Println(ok)
 
 	dataA := DataA{"hi", 1}
 	var buffer bytes.Buffer

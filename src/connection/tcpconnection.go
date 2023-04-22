@@ -2,12 +2,12 @@ package connection
 
 import (
 	"encoding/binary"
+	"errors"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
-	"errors"
 )
 
 const (
@@ -25,6 +25,8 @@ func NewTCPConnection(conn net.Conn, p *TCPProvider) *TCPConnection {
 }
 
 func (c *TCPConnection) handle() {
+	defer c.conn.Close()   
+
 	// Send the ID to the client ----------------------------------
 	peerID := &PeerID{Id: c.tcpProv.id[:]}
 	peerIDBytes, err := proto.Marshal(peerID)
@@ -40,12 +42,12 @@ func (c *TCPConnection) handle() {
 	dataBuffer := make([]byte, MAX_MSG_SIZE)
 
 	// First message should be the ID of the peer
-	msg, err := c.ReadMessage(lengthBuffer, dataBuffer)
+	msg, err := c.ReadConnMsg(lengthBuffer, dataBuffer)
 	if err != nil {
 		log.Printf("Error reading initial message: %s", err.Error())
 		return
 	}
-	
+
 	peerIDUUID, err := MessageToID(msg) // Format the message into a UUID
 	if err != nil {
 		log.Printf("Error reading peer ID: %s", err.Error())
@@ -53,9 +55,16 @@ func (c *TCPConnection) handle() {
 	}
 	c.id = peerIDUUID // Add the ID to the connection
 
+	err = c.tcpProv.AddPeer(peerIDUUID, c) // Add the peer to the list of peers
+	if err != nil {
+		log.Printf("Error adding peer: %s", err.Error())
+		return
+	}
+	defer c.tcpProv.RemovePeer(peerIDUUID) // Remove the peer from the list of peers when the connection is closed
+
 	// Read messages from the connection
 	for {
-		msg, err = c.ReadMessage(lengthBuffer, dataBuffer)
+		msg, err = c.ReadConnMsg(lengthBuffer, dataBuffer)
 		if err != nil {
 			log.Printf("Error reading message: %s", err.Error())
 			return
@@ -63,10 +72,10 @@ func (c *TCPConnection) handle() {
 
 		// Handle the message
 		switch msg.Message.(type) {
-			case *Message_PeerAddresses:
-				// connect to peers who are not already connected
-			case *Message_Operation:
-				// Add the operation to the list of incoming operations
+		case *Message_PeerAddresses:
+			// connect to peers who are not already connected
+		case *Message_Operation:
+			// Add the operation to the list of incoming operations
 		}
 
 	}
@@ -80,7 +89,7 @@ func MessageToID(msg *Message) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("Message is not a PeerID")
 	}
 	peerID := peerId.PeerID
-	
+
 	peerIDBytes := peerID.Id
 	peerIDUUID, err := uuid.FromBytes(peerIDBytes)
 	if err != nil {
@@ -93,7 +102,7 @@ func MessageToID(msg *Message) (uuid.UUID, error) {
 // The message is prefixed with a 4 byte length header
 // The message is then read in and unmarshalled
 // This function takes in two buffers to be used for reading in the message
-func (c *TCPConnection) ReadMessage(lengthBuffer, dataBuffer []byte) (*Message, error) {
+func (c *TCPConnection) ReadConnMsg(lengthBuffer, dataBuffer []byte) (*Message, error) {
 	_, err := io.ReadFull(c.conn, lengthBuffer)
 	if err == io.EOF || err == io.ErrUnexpectedEOF {
 		log.Println("Connection closed for client:", c.id)
