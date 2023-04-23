@@ -1,7 +1,8 @@
 package k
+
 // `OpMove` is a move operation
 //
-// Contains method to compare two operations 
+// Contains method to compare two operations
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
@@ -16,9 +17,9 @@ import (
 
 // Represents moving node with id childID to parent and metadata within newP
 type OpMove[MD any, T opTimestamp[T]] struct {
-	timestamp T
-	childID   uuid.UUID
-	newP      *TreeNode[MD]
+	Timestmp T
+	ChldID   uuid.UUID
+	NewP     *TreeNode[MD]
 }
 
 type opTimestamp[T any] interface {
@@ -28,26 +29,26 @@ type opTimestamp[T any] interface {
 }
 
 func NewOpMove[MD any, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) *OpMove[MD, T] {
-	return &OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode(parentID, metadata)}
+	return &OpMove[MD, T]{Timestmp: timestamp, ChldID: childID, NewP: NewTreeNode(parentID, metadata)}
 }
 
 func (op OpMove[MD, T]) Timestamp() T {
-	return op.timestamp
+	return op.Timestmp
 }
 
 func (op OpMove[MD, T]) ParentID() uuid.UUID {
-	return op.newP.parentID
+	return op.NewP.PrntID
 }
 
 func (op OpMove[MD, T]) ChildID() uuid.UUID {
-	return op.childID
+	return op.ChldID
 }
 
 func (op OpMove[MD, T]) Metadata() MD {
-	return op.newP.metadata
+	return op.NewP.Meta
 }
 
 // Compares two OpMoves by their timestamps
 func (op *OpMove[MD, T]) Compare(other *OpMove[MD, T]) int {
-	return op.timestamp.Compare(other.timestamp)
+	return op.Timestmp.Compare(other.Timestmp)
 }

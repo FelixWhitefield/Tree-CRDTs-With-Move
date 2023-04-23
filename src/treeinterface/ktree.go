@@ -2,6 +2,7 @@ package treeinterface
 
 import (
 	"errors"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
@@ -17,7 +18,26 @@ type KTree[MD any] struct {
 }
 
 func NewKTree[MD any](connProv connection.ConnectionProvider) *KTree[MD] {
-	return &KTree[MD]{tree: k.NewTreeReplica[MD](nil), connProv: connProv}
+	go connProv.HandleBroadcast()
+	go connProv.Listen()
+
+	kt := &KTree[MD]{tree: k.NewTreeReplica[MD](nil), connProv: connProv}
+	go kt.ApplyOps(connProv.IncomingOpsChannel())
+	return kt
+}
+
+func (kt *KTree[MD]) ApplyOps(ops chan []byte) {
+	for {
+		opBytes := <-ops
+
+		var op k.OpMove[MD, *clocks.Lamport]
+		msgpack.Unmarshal(opBytes, &op)
+		kt.tree.Effect(&op)
+	}
+}
+
+func (kt *KTree[MD]) ConnectionProvider() connection.ConnectionProvider {
+	return kt.connProv
 }
 
 func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) {
@@ -27,12 +47,12 @@ func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 
 	id := uuid.New()
 	op := kt.tree.Prepare(id, parentID, metadata)
-	opBytes, err := msgpack.Marshal(op)
+	opBytes, err := msgpack.Marshal(*op)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	kt.tree.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.tree.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return id, nil
@@ -50,7 +70,7 @@ func (kt *KTree[MD]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	kt.tree.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.tree.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil
@@ -71,7 +91,7 @@ func (kt *KTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 		return err
 	}
 
-	kt.tree.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.tree.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil
@@ -89,7 +109,7 @@ func (kt *KTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 		return err
 	}
 
-	kt.tree.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.tree.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil

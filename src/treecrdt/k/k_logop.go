@@ -11,7 +11,7 @@ func NewLogOpMove[MD any, T opTimestamp[T]](op *OpMove[MD, T], oldP *TreeNode[MD
 }
 
 func (lop LogOpMove[MD, T]) Timestamp() opTimestamp[T] {
-	return lop.op.timestamp
+	return lop.op.Timestmp
 }
 
 func (lop LogOpMove[MD, T]) OpMove() OpMove[MD, T] {
@@ -21,5 +21,5 @@ func (lop LogOpMove[MD, T]) OpMove() OpMove[MD, T] {
 // Compares a LogOpMove with an OpMove
 // This is useful for the state
 func (lop LogOpMove[MD, T]) CompareOp(other *OpMove[MD, T]) int {
-	return lop.op.timestamp.Compare(other.timestamp)
+	return lop.op.Timestmp.Compare(other.Timestmp)
 }

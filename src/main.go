@@ -71,12 +71,28 @@ func main() {
 	
 	var ttree ti.Tree[LargePerson]
 
-	ktree := ti.NewKTree[LargePerson](connection.NewTCPProvider(3, 1122))
+	ktree := ti.NewKTree[LargePerson](connection.NewTCPProvider(1, 1122))
+	k2tree := ti.NewKTree[LargePerson](connection.NewTCPProvider(1, 1123))
+
+	k2tree.ConnectionProvider().Connect("localhost:1122")
+
+	time.Sleep(1 * time.Second)
 
 	ttree = ktree
 
-	ktree.Insert(ktree.Root(), LargePerson{Name: "Felix", Age: 20, Num2: "asd", Height: 180, Weight: 70, ShoeSize: 10, NumOfChildren: 0, NumOfPets: 0, NumOfCars: 0, NumOfHouses: 0, Num: 5})
+	kid, _ := ttree.Insert(ktree.Root(), LargePerson{Name: "Felix", Age: 20, Num2: "asd", Height: 180, Weight: 70, ShoeSize: 10, NumOfChildren: 0, NumOfPets: 0, NumOfCars: 0, NumOfHouses: 0, Num: 5})
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
+
+	node, _ := ttree.Get(kid)
+	fmt.Println(node)
+
+	time.Sleep(1 * time.Second)
+
+	node, err = k2tree.Get(kid)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(node)
 
 	return
 

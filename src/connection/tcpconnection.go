@@ -93,7 +93,6 @@ func (c *TCPConnection) handle() {
 			c.SendMsg(opAckBytes) // Send the operation ack to the client
 			c.tcpProv.incomingOps <- opMsg.GetOp()
 		case *Message_OperationAck:
-
 			opAck := msg.GetOperationAck()
 			ackId, err := uuid.FromBytes(opAck.GetId())
 			if err != nil {

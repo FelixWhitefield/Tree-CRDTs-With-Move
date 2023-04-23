@@ -1,26 +1,26 @@
 package k
 
 // `TreeNode` is a node in the tree
-// 
+//
 // `TreeNode` is a generic type, and so must be instantiated with a type for the metadata
 
 import "github.com/google/uuid"
 
 type TreeNode[MD any] struct {
-	parentID uuid.UUID
-	metadata MD
+	PrntID uuid.UUID
+	Meta   MD
 }
 
 func NewTreeNode[MD any](parentID uuid.UUID, metadata MD) *TreeNode[MD] {
-	return &TreeNode[MD]{parentID: parentID, metadata: metadata}
+	return &TreeNode[MD]{PrntID: parentID, Meta: metadata}
 }
 
 func (tn TreeNode[MD]) ParentID() uuid.UUID {
-	return tn.parentID
+	return tn.PrntID
 }
 
 func (tn TreeNode[MD]) Metadata() MD {
-	return tn.metadata
+	return tn.Meta
 }
 
 // defines a conflict (or multiple conflicts)

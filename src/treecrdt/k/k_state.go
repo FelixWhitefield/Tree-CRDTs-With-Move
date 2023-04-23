@@ -1,4 +1,5 @@
 package k
+
 // Contains the CRDT state and implements the main algorithm
 //
 // `State` is independent of any peer, and should
@@ -29,17 +30,17 @@ func NewState[MD any, T opTimestamp[T]](conf *TNConflict[MD]) State[MD, T] {
 // takes an op move, and applies it to the tree
 // if the move is invalid, then the op is not applied but still logged
 func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
-	oldP := s.tree.GetNode(op.childID)
+	oldP := s.tree.GetNode(op.ChldID)
 
 	// If the child is an ancestor of the newParent
-	isAnc, _ := s.tree.IsAncestor(op.newP.parentID, op.childID)
-	newParentIsSelf := op.childID == op.newP.parentID
+	isAnc, _ := s.tree.IsAncestor(op.NewP.PrntID, op.ChldID)
+	newParentIsSelf := op.ChldID == op.NewP.PrntID
 
 	// this is not in the algorithm.
 	// it allows the user to define a custom conflict function
 	conflict := false
 	if s.extraConflict != nil {
-		conflict = (*s.extraConflict)(op.newP, &s.tree)
+		conflict = (*s.extraConflict)(op.NewP, &s.tree)
 	}
 
 	if !isAnc && !newParentIsSelf && !conflict {
@@ -47,7 +48,7 @@ func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
 		// this ensures that the node will either be moved fully, or not at all
 		// removing then adding may cause the node to be removed, but not added
 		// which would cause the tree to be missing a node (which is unwanted)
-		err := s.tree.Move(op.childID, op.newP)
+		err := s.tree.Move(op.ChldID, op.NewP)
 
 		// errors will happen during concurrent operations
 		// this is normal, and will be resolved once the operations are applied in order
@@ -63,9 +64,9 @@ func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
 // takes a log move, and moves the child back to its old parent
 // if the old parent is nil, then the child is removed
 func (s *State[MD, T]) UndoOp(lop *LogOpMove[MD, T]) {
-	s.tree.Remove(lop.op.childID)
+	s.tree.Remove(lop.op.ChldID)
 	if !(lop.oldP == nil) {
-		s.tree.Add(lop.op.childID, lop.oldP)
+		s.tree.Add(lop.op.ChldID, lop.oldP)
 	}
 }
 
@@ -122,7 +123,7 @@ func (s *State[MD, T]) ApplyOps(ops []*OpMove[MD, T]) {
 func (s *State[MD, T]) TruncateLogBefore(t T) {
 	// oldest op is at the front of the list
 	e := s.log.Front()
-	for ; e != nil && e.Value.(LogOpMove[MD, T]).op.timestamp.Compare(t) == -1; e = e.Next() {
+	for ; e != nil && e.Value.(LogOpMove[MD, T]).op.Timestmp.Compare(t) == -1; e = e.Next() {
 		s.log.Remove(e)
 	}
 }

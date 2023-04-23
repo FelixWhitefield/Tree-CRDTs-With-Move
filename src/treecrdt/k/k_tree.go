@@ -12,6 +12,7 @@ import (
 	//"errors"
 	"bytes"
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -61,15 +62,15 @@ func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 	if _, exists := t.nodes[id]; exists { // if already exists, there may be duplicate data
 		return IDAlreadyExistsError{id: id}
 	}
-	if _, exists := t.nodes[node.parentID]; !exists {
-		return MissingNodeIDError{id: node.parentID}
+	if _, exists := t.nodes[node.PrntID]; !exists {
+		return MissingNodeIDError{id: node.PrntID}
 	}
 
 	t.nodes[id] = node
-	if _, exists := t.children[node.parentID]; !exists {
-		t.children[node.parentID] = []uuid.UUID{id}
+	if _, exists := t.children[node.PrntID]; !exists {
+		t.children[node.PrntID] = []uuid.UUID{id}
 	} else {
-		t.children[node.parentID] = append(t.children[node.parentID], id)
+		t.children[node.PrntID] = append(t.children[node.PrntID], id)
 	}
 	return nil
 }
@@ -85,7 +86,7 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 		return InvalidNodeDeletionError{id: id}
 	}
 
-	parentID := t.nodes[id].parentID
+	parentID := t.nodes[id].PrntID
 	for i, childID := range t.children[parentID] { // remove child from parent's children
 		if childID == id {
 			t.children[parentID] = append(t.children[parentID][:i], t.children[parentID][i+1:]...)
@@ -105,8 +106,8 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 // Errors if the new parent does not exist.
 // Errors if the node is the root or deleted node.
 func (t *Tree[MD]) Move(id uuid.UUID, node *TreeNode[MD]) error {
-	if _, exists := t.nodes[node.parentID]; !exists {
-		return MissingNodeIDError{id: node.parentID}
+	if _, exists := t.nodes[node.PrntID]; !exists {
+		return MissingNodeIDError{id: node.PrntID}
 	}
 	if id == RootUUID || id == TombstoneUUID {
 		return InvalidNodeDeletionError{id: id}
@@ -153,7 +154,7 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 		return false, MissingNodeIDError{id: ancID}
 	}
 	for childID != RootUUID {
-		childID = t.nodes[childID].parentID
+		childID = t.nodes[childID].PrntID
 		if bytes.Equal(childID[:], ancID[:]) {
 			return true, nil
 		}
