@@ -66,8 +66,13 @@ func main() {
 
 	go tcpprov.Connect("localhost:1112")
 
+	go tcpprov.HandleBroadcast()
+
 	time.Sleep(1 * time.Second)
 
+	tcpprov.GetOpsToBroadcastChan() <- connection.Operation{Op: []byte("hi")}
+
+	time.Sleep(1 * time.Second)
 	
 	tcpprov.CloseAll()
 

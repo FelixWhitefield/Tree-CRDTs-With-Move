@@ -19,7 +19,7 @@ import (
 )
 
 type Operation struct {
-	op []byte
+	Op []byte
 }
 
 type TCPProvider struct {
@@ -84,15 +84,15 @@ func (p *TCPProvider) Listen() {
 }
 
 // Broadcasts an operation to all peers
-func (p *TCPProvider) handleBroadcast() {
+func (p *TCPProvider) HandleBroadcast() {
 	for {
 		opToSend := <-p.opsToBroadcast
 
 		// Generate a new ID for the operation
-		newOpId := uuid.Must(uuid.NewUUID())
-		p.AddOperation(opToSend.op, newOpId)
+		newOpId := uuid.New()
+		p.AddOperation(opToSend.Op, newOpId)
 
-		opMsg := OperationMsg{Id: newOpId[:], Op: opToSend.op}
+		opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: newOpId[:], Op: opToSend.Op}}}
 		opData, err := proto.Marshal(&opMsg)
 		if err != nil {
 			log.Println("Error marshalling operation: ", err.Error())
