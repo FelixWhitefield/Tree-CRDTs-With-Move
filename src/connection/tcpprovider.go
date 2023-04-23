@@ -23,6 +23,7 @@ type Operation struct {
 }
 
 type TCPProvider struct {
+	port 		   int
 	Id             uuid.UUID
 	numPeers       int
 	peersMu        sync.RWMutex
@@ -55,6 +56,7 @@ func (p *TCPProvider) CloseAll() {
 }
 
 func (p *TCPProvider) Listen(port int) {
+	p.port = port
 	address := net.JoinHostPort("::", strconv.Itoa(port))
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
@@ -80,29 +82,6 @@ func (p *TCPProvider) Listen(port int) {
 	}
 }
 
-func (p *TCPProvider) Connect(addr string) {
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		log.Printf("Error resolving address: %s", err.Error())
-	}
-	// If we already have this peer, don't connect again
-	if p.peerAddrs[tcpAddr] {
-		return
-	}
-
-	go p.ConnectToPeer(tcpAddr)
-}
-
-// Connecting is done within a goroutine
-func (p *TCPProvider) ConnectToPeer(tcpAddr *net.TCPAddr) {
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err != nil {
-		log.Printf("Error connecting to peer: %s", err.Error())
-	}
-
-	go NewTCPConnection(conn, p).handle()
-}
-
 // Broadcasts an operation to all peers
 func (p *TCPProvider) handleBroadcast() {
 	for {
@@ -126,6 +105,52 @@ func (p *TCPProvider) handleBroadcast() {
 		p.peersMu.RUnlock()
 	}
 }
+
+// Attempts to connect to a peer
+func (p *TCPProvider) Connect(addr string) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		log.Printf("Error resolving address: %s", err.Error())
+	}
+	// If we already have this peer, don't connect again
+	if p.peerAddrs[tcpAddr] {
+		return
+	}
+
+	p.ConnectToPeer(tcpAddr)
+}
+
+// Connects to many peers
+func (p *TCPProvider) ConnectMany(addrs []string) {
+	for _, addr := range addrs {
+		tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+		if err != nil {
+			log.Printf("Error resolving address: %s", err.Error())
+		}
+		// If we already have this peer, don't connect again
+		if p.peerAddrs[tcpAddr] {
+			continue
+		}
+
+		p.ConnectToPeer(tcpAddr)
+	}
+}
+
+// Connects to a peer and adds it to the peer map
+// And starts new goroutine to handle the connection
+func (p *TCPProvider) ConnectToPeer(tcpAddr *net.TCPAddr) {
+	// Check if addr is local address and port is the same as ours
+	if tcpAddr.IP.IsLoopback() && tcpAddr.Port == p.port {
+		return
+	}
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		log.Printf("Error connecting to peer: %s", err.Error())
+	}
+
+	go NewTCPConnection(conn, p).handle()
+}
+
 
 func (p *TCPProvider) GetPeerAddrs() []net.Addr {
 	p.peersMu.RLock()

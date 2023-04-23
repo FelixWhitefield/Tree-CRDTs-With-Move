@@ -60,7 +60,7 @@ func (c *TCPConnection) handle() {
 		log.Printf("Error adding peer: %s", err.Error())
 		return
 	}
-	log.Println("Added peer:", c.peerId.String())
+	log.Println("Added peer:", c.peerId)
 	defer c.tcpProv.RemovePeer(c) // Remove the peer from the list of peers when the connection is closed
 
 	c.SharePeers() // Share the list of peers with the new peer
@@ -81,10 +81,7 @@ func (c *TCPConnection) handle() {
 		case *Message_PeerAddresses:
 			// connect to peers who are not already connected
 			peers := msg.GetPeerAddresses().PeerAddrs
-			for _, peer := range peers {
-				c.tcpProv.Connect(peer)
-			}
-
+			go c.tcpProv.ConnectMany(peers)
 		case *Message_Operation:
 			// Add the operation to the list of incoming operations
 		default:
@@ -95,10 +92,14 @@ func (c *TCPConnection) handle() {
 
 func (c *TCPConnection) SharePeers() {
 	peerAddrs := c.tcpProv.GetPeerAddrs()
-	peerAddrsStr := make([]string, len(peerAddrs))
+	peerAddrsStr := make([]string, 0, len(peerAddrs))
 	for i, addr := range peerAddrs {
+		if addr == c.conn.RemoteAddr() { // Don't send the peer their own address
+			continue
+		}
 		peerAddrsStr[i] = addr.String()
 	}
+
 	peerAddrsMsg := &Message{Message: &Message_PeerAddresses{PeerAddresses: &PeerAddresses{PeerAddrs: peerAddrsStr}}}
 	peerAddrsBytes, err := proto.Marshal(peerAddrsMsg)
 	if err != nil {
