@@ -84,7 +84,7 @@ func main() {
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
 
 	node, _ := ttree.Get(kid)
-	fmt.Println(node)
+	fmt.Println("Tree 1:", node)
 
 	time.Sleep(1 * time.Second)
 
@@ -92,7 +92,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(node)
+	fmt.Println("Tree 2:", node)
 
 	return
 

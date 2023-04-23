@@ -26,7 +26,7 @@ type TCPProvider struct {
 	peers          map[uuid.UUID]*TCPConnection // peerID -> connection : When deleted, will set value to nil (The total peer set should not change)
 	peerAddrs      map[net.Addr]bool            // Set of peer addresses
 	deliveredMu    sync.RWMutex                 // Mutex for the delivered map (Also locked when accessing the operations map, removes need for a separate mutex)
-	delivered      map[uuid.UUID][]uuid.UUID    // opID -> list of peerIDs that have been delivered the op + acked
+	delivered      map[uuid.UUID]map[uuid.UUID]bool    // opID -> set of peerIDs that have been delivered the op + acked
 	operations     map[uuid.UUID][]byte         // opID -> op
 	incomingOps    chan []byte
 	opsToBroadcast chan []byte
@@ -43,7 +43,7 @@ func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 		id:             id,
 		peers:          make(map[uuid.UUID]*TCPConnection, numPeers),
 		peerAddrs:      make(map[net.Addr]bool, numPeers),
-		delivered:      make(map[uuid.UUID][]uuid.UUID),
+		delivered:      make(map[uuid.UUID]map[uuid.UUID]bool),
 		operations:     make(map[uuid.UUID][]byte),
 		incomingOps:    make(chan []byte, 10),
 		opsToBroadcast: make(chan []byte, 10),
@@ -90,7 +90,6 @@ func (p *TCPProvider) HandleBroadcast() {
 
 		// Generate a new ID for the operation
 		newOpId := uuid.New()
-		p.AddOperation(opToSend, newOpId)
 
 		opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: newOpId[:], Op: opToSend}}}
 		opData, err := proto.Marshal(&opMsg)
@@ -98,6 +97,9 @@ func (p *TCPProvider) HandleBroadcast() {
 			log.Println("Error marshalling operation: ", err.Error())
 			continue
 		}
+
+		p.AddOperation(opToSend, newOpId)
+		log.Println("Broadcasting operation:", newOpId.String())
 
 		p.peersMu.RLock()
 		for _, conn := range p.peers {
@@ -204,7 +206,7 @@ func (p *TCPProvider) AddOperation(op []byte, opId uuid.UUID) {
 	defer p.deliveredMu.Unlock()
 
 	p.operations[opId] = op
-	p.delivered[opId] = make([]uuid.UUID, 0, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
+	p.delivered[opId] = make(map[uuid.UUID]bool, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
 }
 
 func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
@@ -213,11 +215,12 @@ func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
 
 	// This would be the last peer to receive the operation (No need to add it to the delivered map)
 	// If final peer and not in delivered map, delete entries
-	if _, exists := p.delivered[opId]; len(p.delivered[opId]) == p.numPeers-1 && !exists {
+	if _, exists := p.delivered[opId][peerId]; len(p.delivered[opId]) == p.numPeers-1 && !exists {
 		delete(p.operations, opId)
 		delete(p.delivered, opId)
+		log.Println("All ACKs received for:", opId.String())
 	} else {
-		p.delivered[opId] = append(p.delivered[opId], peerId)
+		p.delivered[opId][peerId] = true
 	}
 }
 
