@@ -60,9 +60,11 @@ func main() {
 
 	tcpprov := connection.NewTCPProvider(2, uuid.New(), 1111)
 	tcpprov2 := connection.NewTCPProvider(2, uuid.New(), 1112)
+	//tcpprov3 := connection.NewTCPProvider(2, uuid.New(), 1113)
 
 	go tcpprov.Listen()
 	go tcpprov2.Listen()
+	//go tcpprov3.Listen()
 
 	go tcpprov.Connect("localhost:1112")
 
@@ -70,11 +72,19 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	tcpprov.GetOpsToBroadcastChan() <- connection.Operation{Op: []byte("hi")}
+	start := time.Now()
+	fmt.Println("Sending 1 Mil ops")
+	for i := 0; i < 2; i++ {
+		tcpprov.GetOpsToBroadcastChan() <- connection.Operation{Op: []byte("hi")}
+	}
+	fmt.Println("Done sending ops")
+	fmt.Println("Time taken:", time.Since(start))
+
 
 	time.Sleep(1 * time.Second)
 	
 	tcpprov.CloseAll()
+	tcpprov2.CloseAll()
 
 	time.Sleep(3 * time.Second)
 

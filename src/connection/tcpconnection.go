@@ -93,6 +93,7 @@ func (c *TCPConnection) handle() {
 			c.SendMsg(opAckBytes) // Send the operation ack to the client
 			c.tcpProv.incomingOps <- opMsg.GetOp()
 		case *Message_OperationAck:
+
 			opAck := msg.GetOperationAck()
 			ackId, err := uuid.FromBytes(opAck.GetId())
 			if err != nil {
@@ -183,12 +184,16 @@ func (c *TCPConnection) ReadConnMsg(lengthBuffer, dataBuffer []byte) (*Message, 
 // Sends a byte message to the connection
 // The message is prefixed with a 4 byte length header
 // which describes the length of the message
+// This could use a buffer pool to reduce allocations (TODO)
 func (c *TCPConnection) SendMsg(data []byte) {
-	length := make([]byte, 4) // 4 bytes for length (up to 4GB, max length for protobuf)
-	binary.BigEndian.PutUint32(length, uint32(len(data)))
+	message := make([]byte, 4+len(data)) // 4 bytes for length (up to 4GB, max length for protobuf)
+	binary.BigEndian.PutUint32(message, uint32(len(data)))
 
-	// Write the length and then the data, using a single write call (to ensure they are sent together)
-	_, err := c.conn.Write(append(length, data...))
+	//Write the length and then the data, using a single write call (to ensure they are sent together)
+	copy(message[4:], data)
+
+
+	_, err := c.conn.Write(message)
 	if err != nil {
 		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.peerId)
 	}
