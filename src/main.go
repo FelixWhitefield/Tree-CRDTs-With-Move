@@ -59,14 +59,17 @@ func main() {
     }()
 
 	tcpprov := connection.NewTCPProvider(2, uuid.New())
-
 	tcpprov2 := connection.NewTCPProvider(2, uuid.New())
 
 	go tcpprov.Listen(1111)
-
 	go tcpprov2.Listen(1112)
 
 	go tcpprov.Connect("localhost:1112")
+
+	time.Sleep(1 * time.Second)
+
+	fmt.Println("Closing for:" , tcpprov.Id)
+	tcpprov.CloseAll()
 
 	time.Sleep(3 * time.Second)
 

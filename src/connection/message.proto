@@ -5,7 +5,7 @@ package mprot;
 option go_package="github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection";
 
 message PeerAddresses {
-    repeated string peerAddr = 1;
+    repeated string peerAddrs = 1;
 }
 
 message PeerID {

@@ -4,6 +4,8 @@ package connection
 //
 // When a peer connects, they should exchange their ID (This should always be the first message sent)
 // And then after that, they should exchange their peers
+//
+// This will share peers with other peers. Whenever a new connection is made, peer addresses are shared with the new peer.
 
 import (
 	"errors"
@@ -21,10 +23,11 @@ type Operation struct {
 }
 
 type TCPProvider struct {
-	id             uuid.UUID
+	Id             uuid.UUID
 	numPeers       int
 	peersMu        sync.RWMutex
 	peers          map[uuid.UUID]*TCPConnection // peerID -> connection : When deleted, will set value to nil (The total peer set should not change)
+	peerAddrs      map[net.Addr]bool            // Set of peer addresses
 	deliveredMu    sync.RWMutex                 // Mutex for the delivered map (Also locked when accessing the operations map, removes need for a separate mutex)
 	delivered      map[uuid.UUID][]uuid.UUID    // opID -> list of peerIDs that have been delivered the op + acked
 	operations     map[uuid.UUID][]byte         // opID -> op
@@ -35,12 +38,19 @@ type TCPProvider struct {
 func NewTCPProvider(numPeers int, id uuid.UUID) *TCPProvider {
 	return &TCPProvider{
 		numPeers:       numPeers,
-		id:             id,
+		Id:             id,
 		peers:          make(map[uuid.UUID]*TCPConnection, numPeers),
+		peerAddrs:      make(map[net.Addr]bool, numPeers),
 		delivered:      make(map[uuid.UUID][]uuid.UUID),
 		operations:     make(map[uuid.UUID][]byte),
 		incomingOps:    make(chan []byte, 10),
 		opsToBroadcast: make(chan Operation, 10),
+	}
+}
+
+func (p *TCPProvider) CloseAll() {
+	for _, peer := range p.peers {
+		peer.conn.Close()
 	}
 }
 
@@ -66,19 +76,28 @@ func (p *TCPProvider) Listen(port int) {
 		}
 
 		log.Println("Accepted connection from:", conn.RemoteAddr())
-
 		go NewTCPConnection(conn, p).handle()
 	}
 }
 
 func (p *TCPProvider) Connect(addr string) {
-	tcp, err := net.ResolveTCPAddr("tcp", addr)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
-		panic(err)
+		log.Printf("Error resolving address: %s", err.Error())
 	}
-	conn, err := net.DialTCP("tcp", nil, tcp)
+	// If we already have this peer, don't connect again
+	if p.peerAddrs[tcpAddr] {
+		return
+	}
+
+	go p.ConnectToPeer(tcpAddr)
+}
+
+// Connecting is done within a goroutine
+func (p *TCPProvider) ConnectToPeer(tcpAddr *net.TCPAddr) {
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
-		panic(err)
+		log.Printf("Error connecting to peer: %s", err.Error())
 	}
 
 	go NewTCPConnection(conn, p).handle()
@@ -108,27 +127,42 @@ func (p *TCPProvider) handleBroadcast() {
 	}
 }
 
+func (p *TCPProvider) GetPeerAddrs() []net.Addr {
+	p.peersMu.RLock()
+	defer p.peersMu.RUnlock()
+
+	peerAddrs := make([]net.Addr, 0, len(p.peers))
+	for addr := range p.peerAddrs {
+		peerAddrs = append(peerAddrs, addr)
+	}
+
+	return peerAddrs
+}
+
+// This should only be called after after peer id has been received
 // Errors if the peer already exists or the peer map is full
-func (p *TCPProvider) AddPeer(peerId uuid.UUID, tcpConn *TCPConnection) error {
+func (p *TCPProvider) AddPeer(tcpConn *TCPConnection) error {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	if val, ok := p.peers[peerId]; ok && val != nil { // Check if the peer already exists
+	if val, ok := p.peers[tcpConn.peerId]; ok && val != nil { // Check if the peer already exists
 		return errors.New("peer already exists (not nil)")
 	} else if len(p.peers) == p.numPeers { // Check if the peer map is full
 		return errors.New("peer map is full")
 	}
 
-	p.peers[peerId] = tcpConn
+	p.peerAddrs[tcpConn.conn.RemoteAddr()] = true
+	p.peers[tcpConn.peerId] = tcpConn
 	return nil
 }
 
 // Sets the peer in map to nil
-func (p *TCPProvider) RemovePeer(peerId uuid.UUID) {
+func (p *TCPProvider) RemovePeer(tcpConn *TCPConnection) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	p.peers[peerId] = nil
+	delete(p.peerAddrs, tcpConn.conn.RemoteAddr())
+	p.peers[tcpConn.peerId] = nil
 }
 
 func (p *TCPProvider) AddOperation(op []byte, opId uuid.UUID) {
@@ -143,7 +177,9 @@ func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
-	if len(p.delivered[opId]) == p.numPeers-1 { // This would be the last peer to receive the operation (No need to add it to the delivered map)
+	// This would be the last peer to receive the operation (No need to add it to the delivered map)
+	// If final peer and not in delivered map, delete entries
+	if _, exists := p.delivered[opId]; len(p.delivered[opId]) == p.numPeers-1 && !exists {
 		delete(p.operations, opId)
 		delete(p.delivered, opId)
 	} else {

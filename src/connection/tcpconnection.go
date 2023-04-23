@@ -3,11 +3,12 @@ package connection
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/google/uuid"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
+
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 
 type TCPConnection struct {
 	conn    net.Conn
-	peerId      uuid.UUID
+	peerId  uuid.UUID
 	tcpProv *TCPProvider
 }
 
@@ -28,7 +29,7 @@ func (c *TCPConnection) handle() {
 	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
-	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.id[:]}}}
+	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.Id[:]}}}
 	peerIDBytes, err := proto.Marshal(peerIdMsg)
 	if err != nil {
 		log.Printf("Error marshalling peer ID: %s", err.Error())
@@ -54,18 +55,19 @@ func (c *TCPConnection) handle() {
 		return
 	}
 
-	err = c.tcpProv.AddPeer(c.peerId, c) // Add the peer to the list of peers
+	err = c.tcpProv.AddPeer(c) // Add the peer to the list of peers
 	if err != nil {
 		log.Printf("Error adding peer: %s", err.Error())
 		return
 	}
 	log.Println("Added peer:", c.peerId.String())
-	defer c.tcpProv.RemovePeer(c.peerId) // Remove the peer from the list of peers when the connection is closed
+	defer c.tcpProv.RemovePeer(c) // Remove the peer from the list of peers when the connection is closed
 
+	c.SharePeers() // Share the list of peers with the new peer
 	// Read messages from the connection
 	for {
 		msg, err = c.ReadConnMsg(lengthBuffer, dataBuffer)
-		if err == io.EOF {
+		if err == io.EOF || errors.Is(err, net.ErrClosed) {
 			log.Printf("Connection closed by peer: %s", c.peerId.String())
 			return
 		}
@@ -78,13 +80,32 @@ func (c *TCPConnection) handle() {
 		switch msg.Message.(type) {
 		case *Message_PeerAddresses:
 			// connect to peers who are not already connected
-			
+			peers := msg.GetPeerAddresses().PeerAddrs
+			for _, peer := range peers {
+				c.tcpProv.Connect(peer)
+			}
+
 		case *Message_Operation:
 			// Add the operation to the list of incoming operations
 		default:
 			log.Printf("Unknown message type: %s", msg.String())
 		}
 	}
+}
+
+func (c *TCPConnection) SharePeers() {
+	peerAddrs := c.tcpProv.GetPeerAddrs()
+	peerAddrsStr := make([]string, len(peerAddrs))
+	for i, addr := range peerAddrs {
+		peerAddrsStr[i] = addr.String()
+	}
+	peerAddrsMsg := &Message{Message: &Message_PeerAddresses{PeerAddresses: &PeerAddresses{PeerAddrs: peerAddrsStr}}}
+	peerAddrsBytes, err := proto.Marshal(peerAddrsMsg)
+	if err != nil {
+		log.Printf("Error marshalling peer addresses: %s", err.Error())
+		return
+	}
+	c.SendMsg(peerAddrsBytes)
 }
 
 // Takes a protobuf message and converts it into a uuid
