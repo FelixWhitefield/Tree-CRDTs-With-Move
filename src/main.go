@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 	"encoding/gob"
 	"bytes"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
+	"time"
+	_ "net/http/pprof"
+	"net/http"
+	"log"
 )
 
 // uuid.NewUUID() for version 1's
@@ -48,6 +53,25 @@ type Rand[T comparable] struct {
 
 func main() {
 	var err error
+
+	go func() {
+        log.Println(http.ListenAndServe("localhost:6060", nil))
+    }()
+
+	tcpprov := connection.NewTCPProvider(2, uuid.New())
+
+	tcpprov2 := connection.NewTCPProvider(2, uuid.New())
+
+	go tcpprov.Listen(1111)
+
+	go tcpprov2.Listen(1112)
+
+	go tcpprov.Connect("localhost:1112")
+
+	time.Sleep(3 * time.Second)
+
+	return
+	
 
 	nmap := make(map[int]*int)
 	ill := 5

@@ -16,7 +16,7 @@ const (
 
 type TCPConnection struct {
 	conn    net.Conn
-	id      uuid.UUID
+	peerId      uuid.UUID
 	tcpProv *TCPProvider
 }
 
@@ -28,8 +28,8 @@ func (c *TCPConnection) handle() {
 	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
-	peerID := &PeerID{Id: c.tcpProv.id[:]}
-	peerIDBytes, err := proto.Marshal(peerID)
+	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.id[:]}}}
+	peerIDBytes, err := proto.Marshal(peerIdMsg)
 	if err != nil {
 		log.Printf("Error marshalling peer ID: %s", err.Error())
 		return
@@ -48,25 +48,29 @@ func (c *TCPConnection) handle() {
 		return
 	}
 
-	peerIDUUID, err := MessageToID(msg) // Format the message into a UUID
+	c.peerId, err = MessageToID(msg) // Format the message into a UUID
 	if err != nil {
 		log.Printf("Error reading peer ID: %s", err.Error())
 		return
 	}
-	c.id = peerIDUUID // Add the ID to the connection
 
-	err = c.tcpProv.AddPeer(peerIDUUID, c) // Add the peer to the list of peers
+	err = c.tcpProv.AddPeer(c.peerId, c) // Add the peer to the list of peers
 	if err != nil {
 		log.Printf("Error adding peer: %s", err.Error())
 		return
 	}
-	defer c.tcpProv.RemovePeer(peerIDUUID) // Remove the peer from the list of peers when the connection is closed
+	log.Println("Added peer:", c.peerId.String())
+	defer c.tcpProv.RemovePeer(c.peerId) // Remove the peer from the list of peers when the connection is closed
 
 	// Read messages from the connection
 	for {
 		msg, err = c.ReadConnMsg(lengthBuffer, dataBuffer)
+		if err == io.EOF {
+			log.Printf("Connection closed by peer: %s", c.peerId.String())
+			return
+		}
 		if err != nil {
-			log.Printf("Error reading message: %s", err.Error())
+			log.Printf("Error reading message: %s. Connection closed for %s", err.Error(), c.peerId.String())
 			return
 		}
 
@@ -74,10 +78,12 @@ func (c *TCPConnection) handle() {
 		switch msg.Message.(type) {
 		case *Message_PeerAddresses:
 			// connect to peers who are not already connected
+			
 		case *Message_Operation:
 			// Add the operation to the list of incoming operations
+		default:
+			log.Printf("Unknown message type: %s", msg.String())
 		}
-
 	}
 }
 
@@ -105,10 +111,8 @@ func MessageToID(msg *Message) (uuid.UUID, error) {
 func (c *TCPConnection) ReadConnMsg(lengthBuffer, dataBuffer []byte) (*Message, error) {
 	_, err := io.ReadFull(c.conn, lengthBuffer)
 	if err == io.EOF || err == io.ErrUnexpectedEOF {
-		log.Println("Connection closed for client:", c.id)
 		return nil, err
 	} else if err != nil {
-		log.Printf("Error reading message length: %s; for client: %v", err.Error(), c.id)
 		return nil, err
 	}
 	// Decode the length
@@ -118,17 +122,14 @@ func (c *TCPConnection) ReadConnMsg(lengthBuffer, dataBuffer []byte) (*Message, 
 	// Read the message
 	_, err = io.ReadFull(c.conn, messageBuffer)
 	if err == io.EOF || err == io.ErrUnexpectedEOF {
-		log.Println("Connection closed for client:", c.id)
 		return nil, err
 	} else if err != nil {
-		log.Printf("Error reading message: %s; for client: %v", err.Error(), c.id)
 		return nil, err
 	}
 
 	message := &Message{}
 	err = proto.Unmarshal(messageBuffer, message)
 	if err != nil {
-		log.Printf("Error unmarshalling message: %s", err.Error())
 		return nil, err
 	}
 
@@ -145,6 +146,6 @@ func (c *TCPConnection) SendMsg(data []byte) {
 	// Write the length and then the data, using a single write call (to ensure they are sent together)
 	_, err := c.conn.Write(append(length, data...))
 	if err != nil {
-		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.id)
+		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.peerId)
 	}
 }
