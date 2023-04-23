@@ -118,6 +118,10 @@ func (c *TCPConnection) SharePeers() {
 		peerAddrsStr[i] = addr.String()
 	}
 
+	if len(peerAddrsStr) == 0 { // Don't send an empty list of peers
+		return
+	}
+
 	peerAddrsMsg := &Message{Message: &Message_PeerAddresses{PeerAddresses: &PeerAddresses{PeerAddrs: peerAddrsStr}}}
 	peerAddrsBytes, err := proto.Marshal(peerAddrsMsg)
 	if err != nil {
