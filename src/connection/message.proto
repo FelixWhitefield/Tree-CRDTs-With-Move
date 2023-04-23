@@ -17,11 +17,17 @@ message OperationMsg {
     bytes op = 2; // Will be a protobuf encoded operation
 }
 
+message OperationAck {
+    bytes id = 1;
+    bool ack = 2;
+}
+
 message Message {
     oneof message {
         PeerID peerID = 1;
         PeerAddresses peerAddresses = 2;
         OperationMsg operation = 3;
+        OperationAck operationAck = 4;
     }
 }
 

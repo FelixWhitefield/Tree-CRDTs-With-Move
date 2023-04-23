@@ -58,11 +58,11 @@ func main() {
         log.Println(http.ListenAndServe("localhost:6060", nil))
     }()
 
-	tcpprov := connection.NewTCPProvider(2, uuid.New())
-	tcpprov2 := connection.NewTCPProvider(2, uuid.New())
+	tcpprov := connection.NewTCPProvider(2, uuid.New(), 1111)
+	tcpprov2 := connection.NewTCPProvider(2, uuid.New(), 1112)
 
-	go tcpprov.Listen(1111)
-	go tcpprov2.Listen(1112)
+	go tcpprov.Listen()
+	go tcpprov2.Listen()
 
 	go tcpprov.Connect("localhost:1112")
 

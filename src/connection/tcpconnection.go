@@ -72,7 +72,7 @@ func (c *TCPConnection) handle() {
 			return
 		}
 		if err != nil {
-			log.Printf("Error reading message: %s. Connection closed for %s", err.Error(), c.peerId.String())
+			log.Printf("Malformed message: %s. Connection closed for %s", err.Error(), c.peerId.String())
 			return
 		}
 
@@ -83,7 +83,25 @@ func (c *TCPConnection) handle() {
 			peers := msg.GetPeerAddresses().PeerAddrs
 			go c.tcpProv.ConnectMany(peers)
 		case *Message_Operation:
-			// Add the operation to the list of incoming operations
+			opMsg := msg.GetOperation()
+			opAck := &Message{Message: &Message_OperationAck{OperationAck: &OperationAck{Id: opMsg.GetId(), Ack: true}}}
+			opAckBytes, err := proto.Marshal(opAck)
+			if err != nil {
+				log.Printf("Error marshalling operation ack: %s", err.Error())
+			}
+
+			c.SendMsg(opAckBytes) // Send the operation ack to the client
+			c.tcpProv.incomingOps <- opMsg.GetOp()
+		case *Message_OperationAck:
+			opAck := msg.GetOperationAck()
+			ackId, err := uuid.FromBytes(opAck.GetId())
+			if err != nil {
+				log.Printf("Error converting ack ID to UUID: %s", err.Error())
+				continue
+			}
+			if opAck.GetAck() {
+				c.tcpProv.AddDelivered(ackId, c.peerId)
+			} 
 		default:
 			log.Printf("Unknown message type: %s", msg.String())
 		}
