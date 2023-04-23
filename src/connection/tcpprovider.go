@@ -23,8 +23,8 @@ type Operation struct {
 }
 
 type TCPProvider struct {
-	port 		   int
-	Id             uuid.UUID
+	port           int
+	id             uuid.UUID
 	numPeers       int
 	peersMu        sync.RWMutex
 	peers          map[uuid.UUID]*TCPConnection // peerID -> connection : When deleted, will set value to nil (The total peer set should not change)
@@ -36,10 +36,11 @@ type TCPProvider struct {
 	opsToBroadcast chan Operation
 }
 
-func NewTCPProvider(numPeers int, id uuid.UUID) *TCPProvider {
+func NewTCPProvider(numPeers int, id uuid.UUID, port int) *TCPProvider {
 	return &TCPProvider{
+		port:           port,
 		numPeers:       numPeers,
-		Id:             id,
+		id:             id,
 		peers:          make(map[uuid.UUID]*TCPConnection, numPeers),
 		peerAddrs:      make(map[net.Addr]bool, numPeers),
 		delivered:      make(map[uuid.UUID][]uuid.UUID),
@@ -55,9 +56,9 @@ func (p *TCPProvider) CloseAll() {
 	}
 }
 
-func (p *TCPProvider) Listen(port int) {
-	p.port = port
-	address := net.JoinHostPort("::", strconv.Itoa(port))
+// This should be called in a goroutine after appropriate setup - Setting up channels
+func (p *TCPProvider) Listen() {
+	address := net.JoinHostPort("::", strconv.Itoa(p.port))
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		log.Fatalf("Error resolving address: %s", err.Error())
@@ -106,6 +107,14 @@ func (p *TCPProvider) handleBroadcast() {
 	}
 }
 
+func (p *TCPProvider) GetIncomOpsChan() chan []byte {
+	return p.incomingOps
+}
+
+func (p *TCPProvider) GetOpsToBroadcastChan() chan Operation {
+	return p.opsToBroadcast
+}
+
 // Attempts to connect to a peer
 func (p *TCPProvider) Connect(addr string) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
@@ -146,11 +155,11 @@ func (p *TCPProvider) ConnectToPeer(tcpAddr *net.TCPAddr) {
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
 		log.Printf("Error connecting to peer: %s", err.Error())
+		return
 	}
 
 	go NewTCPConnection(conn, p).handle()
 }
-
 
 func (p *TCPProvider) GetPeerAddrs() []net.Addr {
 	p.peersMu.RLock()

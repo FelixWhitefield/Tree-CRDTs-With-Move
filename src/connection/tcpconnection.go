@@ -29,7 +29,7 @@ func (c *TCPConnection) handle() {
 	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
-	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.Id[:]}}}
+	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.id[:]}}}
 	peerIDBytes, err := proto.Marshal(peerIdMsg)
 	if err != nil {
 		log.Printf("Error marshalling peer ID: %s", err.Error())

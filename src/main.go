@@ -68,7 +68,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	fmt.Println("Closing for:" , tcpprov.Id)
+	
 	tcpprov.CloseAll()
 
 	time.Sleep(3 * time.Second)
