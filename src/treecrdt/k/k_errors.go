@@ -1,4 +1,4 @@
-package treecrdt
+package k
 
 // Represents the errors which can occur when performing operations on the tree
 //

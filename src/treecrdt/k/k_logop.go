@@ -1,12 +1,12 @@
-package treecrdt
+package k
 
 // Represents a log of the move `op`, and the old parent `oldP`
-type LogOpMove[MD Metadata, T opTimestamp[T]] struct {
+type LogOpMove[MD any, T opTimestamp[T]] struct {
 	op   *OpMove[MD, T]
 	oldP *TreeNode[MD]
 }
 
-func NewLogOpMove[MD Metadata, T opTimestamp[T]](op *OpMove[MD, T], oldP *TreeNode[MD]) *LogOpMove[MD, T] {
+func NewLogOpMove[MD any, T opTimestamp[T]](op *OpMove[MD, T], oldP *TreeNode[MD]) *LogOpMove[MD, T] {
 	return &LogOpMove[MD, T]{op: op, oldP: oldP}
 }
 

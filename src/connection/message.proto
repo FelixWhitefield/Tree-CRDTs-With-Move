@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package mprot;
+package connection;
 
 option go_package="github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection";
 

@@ -3,7 +3,7 @@ package treecrdt_test
 import (
 	"testing"
 	"github.com/google/uuid"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 )
 
 func TestTreeNode(t *testing.T) {
@@ -28,7 +28,7 @@ func TestTreeNode(t *testing.T) {
 }
 
 func TestTreeNodeConflict(t *testing.T) {
-	tnc := TNConflict[Metadata](func(tn *TreeNode[Metadata], t *Tree[Metadata]) bool {
+	tnc := TNConflict[string](func(tn *TreeNode[string], t *Tree[string]) bool {
 		children, ok := t.GetChildren(tn.ParentID())
 		if !ok {
 			return false
@@ -41,10 +41,10 @@ func TestTreeNodeConflict(t *testing.T) {
 		return false;
 	})
 
-	tn1 := NewTreeNode[Metadata](RootUUID, "test")
-	tn2 := NewTreeNode[Metadata](RootUUID, "test")
+	tn1 := NewTreeNode(RootUUID, "test")
+	tn2 := NewTreeNode(RootUUID, "test")
 
-	tree := NewTree[Metadata]()
+	tree := NewTree[string]()
 	u1 := uuid.New()
 	tree.Add(u1, tn1)
 

@@ -1,4 +1,4 @@
-package treecrdt
+package k
 
 // `Tree` holds the current state of the tree.
 //
@@ -17,17 +17,17 @@ import (
 
 var (
 	RootUUID      = uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	TombstoneUUID = uuid.Nil
+	TombstoneUUID = uuid.MustParse("00000000-0000-0000-0000-000000000002")
 )
 
-type Tree[MD Metadata] struct {
+type Tree[MD any] struct {
 	nodes    map[uuid.UUID]*TreeNode[MD] // node id -> tree node
 	children map[uuid.UUID][]uuid.UUID   // node id -> []child id
 }
 
 // Creates a new tree with the root and tombstone nodes
 // This is the proper way to create a new tree.
-func NewTree[MD Metadata]() *Tree[MD] {
+func NewTree[MD any]() *Tree[MD] {
 	tree := Tree[MD]{nodes: make(map[uuid.UUID]*TreeNode[MD]), children: make(map[uuid.UUID][]uuid.UUID)}
 	tree.nodes[RootUUID] = &TreeNode[MD]{}
 	tree.nodes[TombstoneUUID] = &TreeNode[MD]{}

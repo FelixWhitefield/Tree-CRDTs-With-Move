@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ktree;
+
+
+
+option go_package="github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface";
+
+message Operation {
+    bytes id = 1;
+    bytes parent = 2;
+    bytes metadata = 3;
+}

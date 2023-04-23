@@ -1,5 +1,4 @@
-package treecrdt
-
+package k
 // `OpMove` is a move operation
 //
 // Contains method to compare two operations 
@@ -16,7 +15,7 @@ import (
 // Move Op: Has all childID, parentID and metadata
 
 // Represents moving node with id childID to parent and metadata within newP
-type OpMove[MD Metadata, T opTimestamp[T]] struct {
+type OpMove[MD any, T opTimestamp[T]] struct {
 	timestamp T
 	childID   uuid.UUID
 	newP      *TreeNode[MD]
@@ -28,7 +27,7 @@ type opTimestamp[T any] interface {
 	ActorID() uuid.UUID
 }
 
-func NewOpMove[MD Metadata, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) *OpMove[MD, T] {
+func NewOpMove[MD any, T opTimestamp[T]](timestamp T, parentID uuid.UUID, childID uuid.UUID, metadata MD) *OpMove[MD, T] {
 	return &OpMove[MD, T]{timestamp: timestamp, childID: childID, newP: NewTreeNode(parentID, metadata)}
 }
 

@@ -1,5 +1,4 @@
-package treecrdt
-
+package k
 // Contains the CRDT state and implements the main algorithm
 //
 // `State` is independent of any peer, and should
@@ -14,7 +13,7 @@ import (
 	"log"
 )
 
-type State[MD Metadata, T opTimestamp[T]] struct {
+type State[MD any, T opTimestamp[T]] struct {
 	tree Tree[MD]   // state of the tree
 	log  *list.List // ascending list of log moves
 	// the log differs from the paper, as the paper states it should be descending
@@ -22,7 +21,7 @@ type State[MD Metadata, T opTimestamp[T]] struct {
 	extraConflict *TNConflict[MD]
 }
 
-func NewState[MD Metadata, T opTimestamp[T]](conf *TNConflict[MD]) State[MD, T] {
+func NewState[MD any, T opTimestamp[T]](conf *TNConflict[MD]) State[MD, T] {
 	return State[MD, T]{tree: *NewTree[MD](), log: list.New(), extraConflict: conf}
 }
 

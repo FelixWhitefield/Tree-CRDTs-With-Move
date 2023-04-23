@@ -18,10 +18,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type Operation struct {
-	Op []byte
-}
-
 type TCPProvider struct {
 	port           int
 	id             uuid.UUID
@@ -33,10 +29,14 @@ type TCPProvider struct {
 	delivered      map[uuid.UUID][]uuid.UUID    // opID -> list of peerIDs that have been delivered the op + acked
 	operations     map[uuid.UUID][]byte         // opID -> op
 	incomingOps    chan []byte
-	opsToBroadcast chan Operation
+	opsToBroadcast chan []byte
 }
 
-func NewTCPProvider(numPeers int, id uuid.UUID, port int) *TCPProvider {
+func NewTCPProvider(numPeers int, port int) *TCPProvider {
+	return NewTCPProviderWID(numPeers, port, uuid.New())
+}
+
+func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 	return &TCPProvider{
 		port:           port,
 		numPeers:       numPeers,
@@ -46,7 +46,7 @@ func NewTCPProvider(numPeers int, id uuid.UUID, port int) *TCPProvider {
 		delivered:      make(map[uuid.UUID][]uuid.UUID),
 		operations:     make(map[uuid.UUID][]byte),
 		incomingOps:    make(chan []byte, 10),
-		opsToBroadcast: make(chan Operation, 10),
+		opsToBroadcast: make(chan []byte, 10),
 	}
 }
 
@@ -90,9 +90,9 @@ func (p *TCPProvider) HandleBroadcast() {
 
 		// Generate a new ID for the operation
 		newOpId := uuid.New()
-		p.AddOperation(opToSend.Op, newOpId)
+		p.AddOperation(opToSend, newOpId)
 
-		opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: newOpId[:], Op: opToSend.Op}}}
+		opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: newOpId[:], Op: opToSend}}}
 		opData, err := proto.Marshal(&opMsg)
 		if err != nil {
 			log.Println("Error marshalling operation: ", err.Error())
@@ -107,11 +107,11 @@ func (p *TCPProvider) HandleBroadcast() {
 	}
 }
 
-func (p *TCPProvider) GetIncomOpsChan() chan []byte {
+func (p *TCPProvider) IncomingOpsChannel() chan []byte {
 	return p.incomingOps
 }
 
-func (p *TCPProvider) GetOpsToBroadcastChan() chan Operation {
+func (p *TCPProvider) BroadcastChannel() chan []byte {
 	return p.opsToBroadcast
 }
 

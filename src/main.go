@@ -4,7 +4,8 @@ import (
 	"container/list"
 	"fmt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
+	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
 	"encoding/gob"
 	"bytes"
@@ -49,17 +50,43 @@ type Rand[T comparable] struct {
 	Item T
 }
 
+type LargePerson struct {
+	Name string
+	Age int32
+	Height int32
+	Weight int32
+	ShoeSize int32
+	NumOfChildren int32
+	NumOfPets int32
+	NumOfCars int32
+	NumOfHouses int32
+    Num int32
+	Num2 string
+}
+
 
 
 func main() {
 	var err error
+	
+	var ttree ti.Tree[LargePerson]
+
+	ktree := ti.NewKTree[LargePerson](connection.NewTCPProvider(3, 1122))
+
+	ttree = ktree
+
+	ktree.Insert(ktree.Root(), LargePerson{Name: "Felix", Age: 20, Num2: "asd", Height: 180, Weight: 70, ShoeSize: 10, NumOfChildren: 0, NumOfPets: 0, NumOfCars: 0, NumOfHouses: 0, Num: 5})
+	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
+
+	return
+
 
 	go func() {
         log.Println(http.ListenAndServe("localhost:6060", nil))
     }()
 
-	tcpprov := connection.NewTCPProvider(2, uuid.New(), 1111)
-	tcpprov2 := connection.NewTCPProvider(2, uuid.New(), 1112)
+	tcpprov := connection.NewTCPProvider(2, 1111)
+	tcpprov2 := connection.NewTCPProvider(2, 1112)
 	//tcpprov3 := connection.NewTCPProvider(2, uuid.New(), 1113)
 
 	go tcpprov.Listen()
@@ -75,7 +102,7 @@ func main() {
 	start := time.Now()
 	fmt.Println("Sending 1 Mil ops")
 	for i := 0; i < 2; i++ {
-		tcpprov.GetOpsToBroadcastChan() <- connection.Operation{Op: []byte("hi")}
+		tcpprov.BroadcastChannel() <-  []byte("hi")
 	}
 	fmt.Println("Done sending ops")
 	fmt.Println("Time taken:", time.Since(start))
@@ -127,11 +154,11 @@ func main() {
 	test(&i)
 	fmt.Println(i)
 
-	tree := treecrdt.NewTree[string]()
+	tree := k.NewTree[string]()
 	u1 := uuid.New()
-	tree.Add(u1, treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
+	tree.Add(u1, k.NewTreeNode(k.RootUUID, "hi"))
 	u2 := uuid.New()
-	tree.Add(u2, treecrdt.NewTreeNode(u1, "hi2"))
+	tree.Add(u2, k.NewTreeNode(u1, "hi2"))
 
 	fmt.Println(tree)
 

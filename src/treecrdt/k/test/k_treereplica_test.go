@@ -2,7 +2,7 @@ package treecrdt_test
 
 import (
 	"testing"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
 )

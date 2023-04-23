@@ -1,4 +1,4 @@
-package treecrdt
+package k
 
 // `TreeReplica` is a replica of the tree CRDT. It contains the state of the replica and the clock of the replica.
 //
@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type TreeReplica[MD Metadata, T opTimestamp[T]] struct {
+type TreeReplica[MD any, T opTimestamp[T]] struct {
 	state                     State[MD, T]    // contains the state of the replica
 	clock                     c.Clock[T]      // contains current time of replica (including actorID)
 	latest_timestamp_by_actor map[uuid.UUID]T // contains the latest timestamp of each actor
@@ -28,7 +28,7 @@ type TreeReplica[MD Metadata, T opTimestamp[T]] struct {
 // func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
 // 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
 // }
-func NewTreeReplica[MD Metadata](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica[MD, *c.Lamport] {
+func NewTreeReplica[MD any](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica[MD, *c.Lamport] {
 	var id uuid.UUID
 	if len(ids) > 0 {
 		id = ids[0]
@@ -36,6 +36,14 @@ func NewTreeReplica[MD Metadata](conf *TNConflict[MD], ids ...uuid.UUID) *TreeRe
 		id = uuid.New()
 	}
 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](conf), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+}
+
+func (tr *TreeReplica[MD, T]) RootID() uuid.UUID {
+	return tr.state.tree.Root()
+}
+
+func (tr *TreeReplica[MD, T]) TombstoneID() uuid.UUID {
+	return tr.state.tree.Tombstone()
 }
 
 func (tr *TreeReplica[MD, T]) ActorID() uuid.UUID {
