@@ -2,6 +2,7 @@ package treeinterface
 
 import (
 	"errors"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
@@ -61,7 +62,7 @@ func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 		return uuid.Nil, err
 	}
 
-	kt.crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
@@ -84,7 +85,7 @@ func (kt *KTree[MD]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	kt.crdt.Effect(op)                             // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
@@ -110,7 +111,7 @@ func (kt *KTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 		return err
 	}
 
-	kt.crdt.Effect(op)                             // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil
@@ -132,7 +133,7 @@ func (kt *KTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 		return err
 	}
 
-	kt.crdt.Effect(op)                             // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil

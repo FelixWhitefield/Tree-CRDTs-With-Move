@@ -630,8 +630,89 @@ The design is split into four packages, which helps to keep the code modular and
 The system takes advantage of concurrency to allow for increased performance and scalability. Message passing will be used to reduce the need for locks, which can otherwise cause performance issues. The use of multiple threads also allows for the system to be more responsive, as it can handle multiple requests at once. Each thread will be responsible for a single task, which will help to keep the code easy to understand. \par
 
 
-\chapter{Implemegontation}\label{sec:implementation}
-The CRDT implementations attempt to allow for fast read and write operations from the tree. This requires that the implementations are altered from the algorithms in the literature. However, they are functionality equivalent. \par
+\chapter{Implementation}\label{sec:implementation}
+This section will explain the difficulties in implementing the system, and how they were overcome. As well as the differences between the design and the implementation. \par
+The main struggle in the implementation was using Go to implement the system. Go does not have explicit implementations of interfaces, and uses composition instead of inheritance. There are also no classes in Go, instead there are types which can have functions. This meant that the design had to be changed to accommodate this. \par
+
+\section{Clocks}
+The clocks package was the first to be implemented, and contains the most inheritance. Initially, it was a struggle to understand how to use Go's generics, however this was overcome. The interfaces define the rules for the clocks, and the classes implement them. As shown by Figure \ref{fig:clockimpl}, there are a few main differences between the design:
+
+\begin{itemize}
+    \item \texttt{uuid.UUID} are used in place of \texttt{int} for the node ID. This allows for better unique IDs.
+    \item The compare methods return \texttt{int} instead of the enums defined in the design. This is more idiomatic in Go.
+    \item The \texttt{Clock} interface has two extra methods, \texttt{ActorID} and \texttt{Timestamp}. It was realised that these methods were needed for the CRDTs, and so they were added to the interface. The \texttt{Timestamp} method returns a clone of the timestamp.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{images/clocks_impl.jpg}
+    \caption{UML class diagram for the clocks package.}
+    \label{fig:clockimpl}
+\end{figure}
+
+
+\section{CRDTs}
+The CRDT algorithms were the largest part of the implementation as they contain the most parts. Although the implementation was following the algorithms, there were some issues which arose that were not in the algorithms. The CRDT implementations are not thread-safe.
+
+\subsection{Kleppmann's Algorithm}
+The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, which were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, and that contributes to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. \par
+
+Overall, the algorithm was relatively simple to implement and was composed of the following parts:
+\begin{itemize}
+    \item \texttt{OpMove}: This contains a move operation, which is the child id, parent id, metadata and a timestamp.
+    \item \texttt{LogOpMove}: This contains a move operation, and its previous parent id and metadata. This is used for the log.
+    \item \texttt{TreeNode}: This contains the node's parent id and metadata.
+    \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s, representing the triples. As well as a map of node ids to their children, for easy access to the children of a node.
+    \item \texttt{State}: This contains the state of the CRDT. It contains a \texttt{Tree} and a log of operations. The state contains the main algorithm for applying operations.
+    \item \texttt{TreeReplica}: This represents the state of the CRDT for a single replica. It contains a \texttt{State} and a \texttt{Clock}. This struct implements the \textit{prepare} and \textit{effect} functions from the literature.
+\end{itemize}
+
+Rudimentary performance testing was conducted during implementation, which helped inform the data structures chosen. It led to the log of operations being implemented as a linked list, as it is faster for altering the middle of the list and frequent appending. The tree struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is queried for a certain node when applying an operation. \par
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm]{images/kcrdt_impl.jpg} 
+    \caption{UML class diagram for the Kleppmann CRDT.}
+    \label{fig:kcrdt} 
+\end{figure} 
+
+
+
+\section{Network}
+The network package was the most difficult to implement, as it is a peer-to-peer network with a reliable broadcast protocol. It has to deal with concurrency, and keep track of which nodes have received which operation. This requires that the nodes exchange their ids and share their peers. \par
+
+As shown by Figure \ref{fig:networkimpl}, the network package only consists of two structs. It works as follows: 
+\begin{itemize}
+    \item The \texttt{TCPProvider} runs \texttt{Listen()} in a seperate goroutine to listen for incoming connections. When a new peer connects a \texttt{TCPConnection} is spawned in a new goroutine.
+    \item The \texttt{TCPConnection} sends the other peer the current node's ID and a list of peers. Once an ID is received from the peer, it is added to the \textit{peers} map in \texttt{TCPProvider}. (Before then the ID is unknown, and so the peer cannot be added to the map)
+    \item The \texttt{TCPConnection} will also send all the operations which the newly connected peer has not seen to it.
+    \item The \texttt{TCPConnection} then listens for incoming messages. When a message is received, its type is determined and the appropriate code is run. There are 4 message types:
+    \begin{itemize}
+        \item The first is the \textit{node\_id} message, which is sent at the start of a connection. 
+        \item The second is the \textit{peer\_list} message, which is sent after the node id message. 
+        \item The third is the \textit{operation} message, which sends the operation to the \texttt{incommingOps} channel for processing, and an ack is sent back to the peer.
+        \item The fourth is the \textit{op\_ack} message, which adds the node to the list of nodes that have received the operation.
+    \end{itemize} 
+    \item The \texttt{TCPProvider} also runs the \texttt{handleBroadcast()} function in a goroutine. This listens on the \texttt{opsToBroadcast} channel for operations to broadcast. When an operation is received, it is sent to all peers. 
+
+
+\end{itemize}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\textwidth]{images/network_impl.jpg}
+    \caption{UML class diagram for the connection package.}
+    \label{fig:networkimpl}
+\end{figure}
+
+
+\section{Tree Interface}
+The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time. \par
+The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. 
+
+
+
 
 
 \chapter{Testing}

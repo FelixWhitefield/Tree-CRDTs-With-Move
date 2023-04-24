@@ -22,8 +22,8 @@ var (
 )
 
 type Tree[MD any] struct {
-	nodes    map[uuid.UUID]*TreeNode[MD] // node id -> tree node
-	children map[uuid.UUID]map[uuid.UUID]bool   // node id -> set child id
+	nodes    map[uuid.UUID]*TreeNode[MD]      // node id -> tree node
+	children map[uuid.UUID]map[uuid.UUID]bool // node id -> set child id
 }
 
 // Creates a new tree with the root and tombstone nodes
@@ -97,7 +97,7 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 
 	parentID := t.nodes[id].PrntID
 
-	delete(t.children[parentID], id) // remove child from parent's children
+	delete(t.children[parentID], id)    // remove child from parent's children
 	if len(t.children[parentID]) == 0 { // cleanup parent entry if no children
 		delete(t.children, parentID)
 	}

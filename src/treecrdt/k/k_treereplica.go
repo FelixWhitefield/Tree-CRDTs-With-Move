@@ -25,9 +25,10 @@ type TreeReplica[MD any, T opTimestamp[T]] struct {
 // }
 
 // Returns a new TreeReplica with the given actorID, using the Lamport clock
-// func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
-// 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
-// }
+//
+//	func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
+//		return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+//	}
 func NewTreeReplica[MD any](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica[MD, *c.Lamport] {
 	var id uuid.UUID
 	if len(ids) > 0 {
@@ -58,7 +59,7 @@ func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
 	return tr.state.tree.GetChildren(u)
 }
 
-func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) (*TreeNode[MD]) {
+func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
 	return tr.state.tree.GetNode(u)
 }
 

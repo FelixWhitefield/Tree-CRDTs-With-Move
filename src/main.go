@@ -79,11 +79,11 @@ func main() {
 
 	ktree := ti.NewKTree[string](connection.NewTCPProvider(1, 1122))
 	k2tree := ti.NewKTree[string](connection.NewTCPProvider(1, 1123))
-	
+
 	time.Sleep(1 * time.Second)
-	
+
 	ttree = ktree
-	
+
 	// INSERT 1 million nodes
 	start := time.Now()
 	for i := 0; i < 10000; i++ {
@@ -91,10 +91,10 @@ func main() {
 		k2tree.Insert(k2tree.Root(), "Felix")
 	}
 	// for i := 0; i < 10000; i++ {
-		// 	k2tree.Insert(k2tree.Root(), "Felix")
-		// }
-		fmt.Println("Insert 1 Mil ops EACH:", time.Since(start))
-		
+	// 	k2tree.Insert(k2tree.Root(), "Felix")
+	// }
+	fmt.Println("Insert 1 Mil ops EACH:", time.Since(start))
+
 	k2tree.ConnectionProvider().Connect("localhost:1122")
 
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
