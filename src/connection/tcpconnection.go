@@ -26,6 +26,11 @@ func NewTCPConnection(conn net.Conn, p *TCPProvider) *TCPConnection {
 }
 
 func (c *TCPConnection) handle() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("Connection Panicked:", err)
+		}
+	}()
 	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
@@ -104,7 +109,7 @@ func (c *TCPConnection) handle() {
 			}
 			if opAck.GetAck() {
 				c.tcpProv.AddDelivered(ackId, c.peerId)
-			} 
+			}
 		default:
 			log.Printf("Unknown message type: %s", msg.String())
 		}
@@ -193,7 +198,6 @@ func (c *TCPConnection) SendMsg(data []byte) {
 
 	//Write the length and then the data, using a single write call (to ensure they are sent together)
 	copy(message[4:], data)
-
 
 	_, err := c.conn.Write(message)
 	if err != nil {

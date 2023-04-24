@@ -22,13 +22,13 @@ import (
 // uuid.New() for V4
 
 type DataA struct {
-	DataA string 
-	Id1 int
+	DataA string
+	Id1   int
 }
 
 type DataB struct {
-	Datab string 
-	Id2 int 
+	Datab string
+	Id2   int
 }
 
 func test(i *int) {
@@ -38,8 +38,8 @@ func test(i *int) {
 }
 
 type Person struct {
-	Name string 
-	Age int32 
+	Name string
+	Age  int32
 }
 
 type MapKey map[int]int
@@ -53,30 +53,28 @@ type Rand[T comparable] struct {
 }
 
 type LargePerson struct {
-	Name string
-	Age int32
-	Height int32
-	Weight int32
-	ShoeSize int32
+	Name          string
+	Age           int32
+	Height        int32
+	Weight        int32
+	ShoeSize      int32
 	NumOfChildren int32
-	NumOfPets int32
-	NumOfCars int32
-	NumOfHouses int32
-    Num int32
-	Num2 string
+	NumOfPets     int32
+	NumOfCars     int32
+	NumOfHouses   int32
+	Num           int32
+	Num2          string
 }
-
-
 
 func main() {
 	go func() {
-        log.Println(http.ListenAndServe("localhost:6060", nil))
-    }()
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	runtime.SetBlockProfileRate(1)
 
 	var err error
-	
+
 	var ttree ti.Tree[string]
 
 	ktree := ti.NewKTree[string](connection.NewTCPProvider(1, 1122))
@@ -109,8 +107,6 @@ func main() {
 
 	return
 
-
-
 	tcpprov := connection.NewTCPProvider(2, 1111)
 	tcpprov2 := connection.NewTCPProvider(2, 1112)
 	//tcpprov3 := connection.NewTCPProvider(2, uuid.New(), 1113)
@@ -128,28 +124,26 @@ func main() {
 	start = time.Now()
 	fmt.Println("Sending 1 Mil ops")
 	for i := 0; i < 2; i++ {
-		tcpprov.BroadcastChannel() <-  []byte("hi")
+		tcpprov.BroadcastChannel() <- []byte("hi")
 	}
 	fmt.Println("Done sending ops")
 	fmt.Println("Time taken:", time.Since(start))
 
-
 	time.Sleep(1 * time.Second)
-	
+
 	tcpprov.CloseAll()
 	tcpprov2.CloseAll()
 
 	time.Sleep(3 * time.Second)
 
 	return
-	
 
 	nmap := make(map[int]*int)
 	ill := 5
 	nmap[1] = &ill
-	_, ok := nmap[1] 
+	_, ok := nmap[1]
 	fmt.Println(ok)
-	nmap[1] = nil 
+	nmap[1] = nil
 	_, ok = nmap[1]
 	fmt.Println(ok)
 	delete(nmap, 1)
@@ -163,7 +157,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	li := list.New()
 	num := 10
@@ -202,7 +195,6 @@ func main() {
 	l2 := clocks.NewLamport()
 
 	fmt.Println(l1.Compare(l2))
-
 
 	v1 := clocks.NewVectorClock()
 	v1.Inc()
