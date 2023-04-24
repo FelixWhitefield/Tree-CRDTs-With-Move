@@ -45,8 +45,8 @@ func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 		peerAddrs:      make(map[net.Addr]bool, numPeers),
 		delivered:      make(map[uuid.UUID]map[uuid.UUID]bool),
 		operations:     make(map[uuid.UUID][]byte),
-		incomingOps:    make(chan []byte, 100),
-		opsToBroadcast: make(chan []byte, 100),
+		incomingOps:    make(chan []byte, 10),
+		opsToBroadcast: make(chan []byte, 10),
 	}
 }
 
@@ -101,12 +101,16 @@ func (p *TCPProvider) HandleBroadcast() {
 		p.AddOperation(opToSend, newOpId)
 		//log.Println("Broadcasting operation:", newOpId.String())
 
-		p.peersMu.RLock()
-		for _, conn := range p.peers {
-			conn.SendMsg(opData)
-		}
-		p.peersMu.RUnlock()
+		p.BroadcastOp(opData)
 	}
+}
+
+func (p *TCPProvider) BroadcastOp(opData []byte) {
+	p.peersMu.RLock()
+	for _, conn := range p.peers {
+		conn.SendMsg(opData)
+	}
+	p.peersMu.RUnlock()
 }
 
 func (p *TCPProvider) IncomingOpsChannel() chan []byte {

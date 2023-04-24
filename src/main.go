@@ -88,17 +88,18 @@ func main() {
 
 	// INSERT 1 million nodes
 	start := time.Now()
-	for i := 0; i < 5000; i++ {
+	for i := 0; i < 10000; i++ {
 		ttree.Insert(ktree.Root(), "Felix")
-	}
-	for i := 0; i < 5000; i++ {
 		k2tree.Insert(k2tree.Root(), "Felix")
 	}
+	// for i := 0; i < 10000; i++ {
+	// 	k2tree.Insert(k2tree.Root(), "Felix")
+	// }
 	fmt.Println("Insert 1 Mil ops EACH:", time.Since(start))
 
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Millisecond)
 
 	nodes, _ := k2tree.GetChildren(k2tree.Root())
 	fmt.Println("Nodes under root in Tree 2:", len(nodes))

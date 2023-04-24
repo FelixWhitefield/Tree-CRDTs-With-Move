@@ -93,14 +93,19 @@ func (s *State[MD, T]) ApplyOp(op *OpMove[MD, T]) {
 		// This ignores the case where CompareOp returns 0, which is not defined in the paper
 		// This should not happen in normal operation, if it does then the state is in an undefined state
 		// loops while log op is greater than op
-		for ; e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
+		for ; e != nil && e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
 			s.UndoOp(e.Value.(*LogOpMove[MD, T]))
 		}
 
 		// check if the op is already in the log (should not happen in normal operation)
-		if !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
+		// or if we have moved to the front of the list
+		if e == nil || !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
 			logop := s.DoOp(op)
-			e = s.log.InsertAfter(logop, e)
+			if e == nil { // If we have moved to the front of the list
+				e = s.log.PushFront(logop)
+			} else {
+				e = s.log.InsertAfter(logop, e)
+			}
 		}
 		e = e.Next()
 

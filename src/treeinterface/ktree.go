@@ -20,10 +20,10 @@ type KTree[MD any] struct {
 }
 
 func NewKTree[MD any](connProv connection.ConnectionProvider) *KTree[MD] {
+	kt := &KTree[MD]{crdt: k.NewTreeReplica[MD](nil), connProv: connProv}
+
 	go connProv.HandleBroadcast()
 	go connProv.Listen()
-
-	kt := &KTree[MD]{crdt: k.NewTreeReplica[MD](nil), connProv: connProv}
 	go kt.ApplyOps(connProv.IncomingOpsChannel())
 	return kt
 }
