@@ -113,6 +113,35 @@ func (p *TCPProvider) BroadcastOp(opData []byte) {
 	p.peersMu.RUnlock()
 }
 
+// Send operations to a peer that haven't received acks from that peer
+func (p *TCPProvider) SendMissingOps(peerId uuid.UUID) {
+	p.deliveredMu.RLock()
+	defer p.deliveredMu.RUnlock()
+
+	p.peersMu.RLock()
+	if p.peers[peerId] == nil {
+		log.Println("Attempted to send missing ops to a nil peer")
+		p.peersMu.RUnlock()
+		return
+	}
+	peerConn := p.peers[peerId] // Take it from the map so we don't have to lock it again
+	p.peersMu.RUnlock()
+
+	for opId := range p.delivered {
+		if !p.delivered[opId][peerId] {
+			// Send the operation to the peer
+			opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: opId[:], Op: p.operations[opId]}}}
+			opData, err := proto.Marshal(&opMsg)
+			if err != nil {
+				log.Println("Error marshalling operation: ", err.Error())
+				continue
+			}
+
+			peerConn.SendMsg(opData)
+		}
+	}
+}
+
 func (p *TCPProvider) IncomingOpsChannel() chan []byte {
 	return p.incomingOps
 }

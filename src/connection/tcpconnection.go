@@ -69,6 +69,7 @@ func (c *TCPConnection) handle() {
 	defer c.tcpProv.RemovePeer(c) // Remove the peer from the list of peers when the connection is closed
 
 	c.SharePeers() // Share the list of peers with the new peer
+	c.tcpProv.SendMissingOps(c.peerId) // Send any missing operations to the new peer
 	// Read messages from the connection
 	for {
 		msg, err = c.ReadConnMsg(lengthBuffer, dataBuffer)
