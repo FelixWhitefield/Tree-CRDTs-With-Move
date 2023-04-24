@@ -23,13 +23,13 @@ var (
 
 type Tree[MD any] struct {
 	nodes    map[uuid.UUID]*TreeNode[MD] // node id -> tree node
-	children map[uuid.UUID][]uuid.UUID   // node id -> []child id
+	children map[uuid.UUID]map[uuid.UUID]bool   // node id -> set child id
 }
 
 // Creates a new tree with the root and tombstone nodes
 // This is the proper way to create a new tree.
 func NewTree[MD any]() *Tree[MD] {
-	tree := Tree[MD]{nodes: make(map[uuid.UUID]*TreeNode[MD]), children: make(map[uuid.UUID][]uuid.UUID)}
+	tree := Tree[MD]{nodes: make(map[uuid.UUID]*TreeNode[MD]), children: make(map[uuid.UUID]map[uuid.UUID]bool)}
 	tree.nodes[RootUUID] = &TreeNode[MD]{}
 	tree.nodes[TombstoneUUID] = &TreeNode[MD]{}
 	return &tree
@@ -52,7 +52,15 @@ func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
 // Returns the children of the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 	children, exists := t.children[id]
-	return children, exists
+	if !exists {
+		return nil, false
+	}
+
+	result := make([]uuid.UUID, 0, len(children))
+	for k := range children {
+		result = append(result, k)
+	}
+	return result, exists
 }
 
 // Adds a node to the tree.
@@ -67,10 +75,11 @@ func (t *Tree[MD]) Add(id uuid.UUID, node *TreeNode[MD]) error {
 	}
 
 	t.nodes[id] = node
-	if _, exists := t.children[node.PrntID]; !exists {
-		t.children[node.PrntID] = []uuid.UUID{id}
-	} else {
-		t.children[node.PrntID] = append(t.children[node.PrntID], id)
+	if _, exists := t.children[node.PrntID]; !exists { // If no children set, create one
+		t.children[node.PrntID] = make(map[uuid.UUID]bool)
+		t.children[node.PrntID][id] = true
+	} else { // otherwise add to existing
+		t.children[node.PrntID][id] = true
 	}
 	return nil
 }
@@ -87,12 +96,8 @@ func (t *Tree[MD]) Remove(id uuid.UUID) error {
 	}
 
 	parentID := t.nodes[id].PrntID
-	for i, childID := range t.children[parentID] { // remove child from parent's children
-		if childID == id {
-			t.children[parentID] = append(t.children[parentID][:i], t.children[parentID][i+1:]...)
-			break
-		}
-	}
+
+	delete(t.children[parentID], id) // remove child from parent's children
 	if len(t.children[parentID]) == 0 { // cleanup parent entry if no children
 		delete(t.children, parentID)
 	}
@@ -130,7 +135,7 @@ func (t *Tree[MD]) DeleteSubTree(id uuid.UUID) error {
 	}
 
 	// remove children
-	for _, childID := range t.children[id] {
+	for childID := range t.children[id] {
 		err := t.DeleteSubTree(childID)
 		if err != nil {
 			return err

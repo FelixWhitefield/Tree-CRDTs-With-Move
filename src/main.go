@@ -1,19 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"container/list"
+	"encoding/gob"
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"runtime"
+	"time"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
-	"encoding/gob"
-	"bytes"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
-	"time"
-	_ "net/http/pprof"
-	"net/http"
-	"log"
 )
 
 // uuid.NewUUID() for version 1's
@@ -67,6 +69,12 @@ type LargePerson struct {
 
 
 func main() {
+	go func() {
+        log.Println(http.ListenAndServe("localhost:6060", nil))
+    }()
+
+	runtime.SetBlockProfileRate(1)
+
 	var err error
 	
 	var ttree ti.Tree[string]
@@ -80,32 +88,28 @@ func main() {
 
 	ttree = ktree
 
-	kid, _ := ttree.Insert(ktree.Root(), "Felix")
-	kid2, _ := ttree.Insert(ktree.Root(), "asasd")
-	ttree.Insert(ktree.Root(), "123123")
-	ttree.Insert(ktree.Root(), "vcxvxcv")
+	// INSERT 1 million nodes
+	start := time.Now()
+	for i := 0; i < 5000; i++ {
+		ttree.Insert(ktree.Root(), "Felix")
+	}
+	for i := 0; i < 5000; i++ {
+		k2tree.Insert(k2tree.Root(), "Felix")
+	}
+	fmt.Println("Insert 1 Mil ops EACH:", time.Since(start))
+
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
 
-	fmt.Println(kid)
-	fmt.Println(kid2)
+	time.Sleep(5 * time.Second)
 
-	node, _ := ttree.Get(kid)
-	fmt.Println("Tree 1:", node)
-
-	time.Sleep(2 * time.Second)
-
-	nodec, err := k2tree.GetChildren(ktree.Root())
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Tree 2:", nodec)
+	nodes, _ := k2tree.GetChildren(k2tree.Root())
+	fmt.Println("Nodes under root in Tree 2:", len(nodes))
+	nodes1, _ := ktree.GetChildren(ktree.Root())
+	fmt.Println("Nodes under root in Tree 1:", len(nodes1))
 
 	return
 
 
-	go func() {
-        log.Println(http.ListenAndServe("localhost:6060", nil))
-    }()
 
 	tcpprov := connection.NewTCPProvider(2, 1111)
 	tcpprov2 := connection.NewTCPProvider(2, 1112)
@@ -121,7 +125,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	start := time.Now()
+	start = time.Now()
 	fmt.Println("Sending 1 Mil ops")
 	for i := 0; i < 2; i++ {
 		tcpprov.BroadcastChannel() <-  []byte("hi")

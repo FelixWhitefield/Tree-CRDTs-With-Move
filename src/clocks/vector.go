@@ -8,8 +8,8 @@ import (
 type VectorTimestamp map[uuid.UUID]uint64
 
 type VectorClock struct {
-	Timestmp VectorTimestamp
-	ActID    uuid.UUID
+	Vector VectorTimestamp
+	ActID  uuid.UUID
 }
 
 func NewVectorTimestamp() *VectorTimestamp {
@@ -26,7 +26,7 @@ func NewVectorClock(ids ...uuid.UUID) *VectorClock {
 		actorID = uuid.New()
 	}
 
-	return &VectorClock{Timestmp: *NewVectorTimestamp(), ActID: actorID}
+	return &VectorClock{Vector: *NewVectorTimestamp(), ActID: actorID}
 }
 
 /* ----- VectorTimestamp ------ */
@@ -83,7 +83,7 @@ func (v *VectorClock) ActorID() uuid.UUID {
 }
 
 func (v *VectorClock) Inc() *VectorTimestamp {
-	v.Timestmp[v.ActID]++
+	v.Vector[v.ActID]++
 	return v.Timestamp()
 }
 
@@ -95,22 +95,22 @@ func (v *VectorClock) Tick() *VectorTimestamp {
 
 func (v *VectorClock) Merge(other *VectorTimestamp) {
 	for key, value := range *other {
-		if value > v.Timestmp[key] {
-			v.Timestmp[key] = value
+		if value > v.Vector[key] {
+			v.Vector[key] = value
 		}
 	}
 }
 
 func (v *VectorClock) Timestamp() *VectorTimestamp {
-	return v.Timestmp.Clone()
+	return v.Vector.Clone()
 }
 
 func (v *VectorClock) CompareTimestamp(other *VectorTimestamp) int {
-	return v.Timestmp.Compare(other)
+	return v.Vector.Compare(other)
 }
 
 func (v *VectorClock) String() string {
-	return fmt.Sprintf("%v: %v", v.ActID, v.Timestmp)
+	return fmt.Sprintf("%v: %v", v.ActID, v.Vector)
 }
 
 func (v *VectorTimestamp) String() string {

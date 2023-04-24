@@ -45,8 +45,8 @@ func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 		peerAddrs:      make(map[net.Addr]bool, numPeers),
 		delivered:      make(map[uuid.UUID]map[uuid.UUID]bool),
 		operations:     make(map[uuid.UUID][]byte),
-		incomingOps:    make(chan []byte, 10),
-		opsToBroadcast: make(chan []byte, 10),
+		incomingOps:    make(chan []byte, 100),
+		opsToBroadcast: make(chan []byte, 100),
 	}
 }
 
@@ -99,7 +99,7 @@ func (p *TCPProvider) HandleBroadcast() {
 		}
 
 		p.AddOperation(opToSend, newOpId)
-		log.Println("Broadcasting operation:", newOpId.String())
+		//log.Println("Broadcasting operation:", newOpId.String())
 
 		p.peersMu.RLock()
 		for _, conn := range p.peers {
@@ -218,7 +218,6 @@ func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	if _, exists := p.delivered[opId][peerId]; len(p.delivered[opId]) == p.numPeers-1 && !exists {
 		delete(p.operations, opId)
 		delete(p.delivered, opId)
-		log.Println("All ACKs received for:", opId.String())
 	} else {
 		p.delivered[opId][peerId] = true
 	}

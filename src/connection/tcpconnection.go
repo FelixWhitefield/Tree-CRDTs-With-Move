@@ -79,12 +79,12 @@ func (c *TCPConnection) handle() {
 		// Handle the message
 		switch msg.Message.(type) {
 		case *Message_PeerAddresses:
-			log.Println("Received peer addresses")
+			//log.Println("Received peer addresses")
 			// connect to peers who are not already connected
 			peers := msg.GetPeerAddresses().PeerAddrs
 			go c.tcpProv.ConnectMany(peers)
 		case *Message_Operation:
-			log.Println("Received Operation")
+			//log.Println("Received Operation")
 			opMsg := msg.GetOperation()
 			opAck := &Message{Message: &Message_OperationAck{OperationAck: &OperationAck{Id: opMsg.GetId(), Ack: true}}}
 			opAckBytes, err := proto.Marshal(opAck)
@@ -95,7 +95,7 @@ func (c *TCPConnection) handle() {
 			c.SendMsg(opAckBytes) // Send the operation ack to the client
 			c.tcpProv.incomingOps <- opMsg.GetOp()
 		case *Message_OperationAck:
-			log.Println("Received Op ACK")
+			//log.Println("Received Op ACK")
 			opAck := msg.GetOperationAck()
 			ackId, err := uuid.FromBytes(opAck.GetId())
 			if err != nil {
