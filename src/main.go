@@ -69,10 +69,10 @@ type LargePerson struct {
 func main() {
 	var err error
 	
-	var ttree ti.Tree[LargePerson]
+	var ttree ti.Tree[string]
 
-	ktree := ti.NewKTree[LargePerson](connection.NewTCPProvider(1, 1122))
-	k2tree := ti.NewKTree[LargePerson](connection.NewTCPProvider(1, 1123))
+	ktree := ti.NewKTree[string](connection.NewTCPProvider(1, 1122))
+	k2tree := ti.NewKTree[string](connection.NewTCPProvider(1, 1123))
 
 	k2tree.ConnectionProvider().Connect("localhost:1122")
 
@@ -80,19 +80,25 @@ func main() {
 
 	ttree = ktree
 
-	kid, _ := ttree.Insert(ktree.Root(), LargePerson{Name: "Felix", Age: 20, Num2: "asd", Height: 180, Weight: 70, ShoeSize: 10, NumOfChildren: 0, NumOfPets: 0, NumOfCars: 0, NumOfHouses: 0, Num: 5})
+	kid, _ := ttree.Insert(ktree.Root(), "Felix")
+	kid2, _ := ttree.Insert(ktree.Root(), "asasd")
+	ttree.Insert(ktree.Root(), "123123")
+	ttree.Insert(ktree.Root(), "vcxvxcv")
 	//ktree.Insert(uuid.Nil, "Felixadadasdsasad")
+
+	fmt.Println(kid)
+	fmt.Println(kid2)
 
 	node, _ := ttree.Get(kid)
 	fmt.Println("Tree 1:", node)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
-	node, err = k2tree.Get(kid)
+	nodec, err := k2tree.GetChildren(ktree.Root())
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Tree 2:", node)
+	fmt.Println("Tree 2:", nodec)
 
 	return
 

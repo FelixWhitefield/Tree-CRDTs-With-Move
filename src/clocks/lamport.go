@@ -7,8 +7,8 @@ import (
 )
 
 type Lamport struct {
-	actorID uuid.UUID
-	counter uint64
+	ActID   uuid.UUID
+	Counter uint64
 }
 
 func NewLamport(ids ...uuid.UUID) *Lamport {
@@ -19,44 +19,44 @@ func NewLamport(ids ...uuid.UUID) *Lamport {
 		actorID = uuid.New()
 	}
 
-	return &Lamport{actorID: actorID, counter: 0}
+	return &Lamport{ActID: actorID, Counter: 0}
 }
 
 func (l *Lamport) ActorID() uuid.UUID {
-	return l.actorID
+	return l.ActID
 }
 
 // will return 0 if a == b, -1 if a < b, 1 if a > b
 func (l *Lamport) Compare(other *Lamport) int {
 	switch {
-	case l.counter < other.counter:
+	case l.Counter < other.Counter:
 		return -1
-	case l.counter > other.counter:
+	case l.Counter > other.Counter:
 		return 1
 	default:
-		return bytes.Compare(l.actorID[:], other.actorID[:])
+		return bytes.Compare(l.ActID[:], other.ActID[:])
 	}
 }
 
 // increments the counter and returns a new Lamport clock with the same actorID
 func (l *Lamport) Inc() *Lamport {
-	l.counter++
-	return &Lamport{actorID: l.actorID, counter: l.counter}
+	l.Counter++
+	return &Lamport{ActID: l.ActID, Counter: l.Counter}
 }
 
 // returns a new Lamport clock with the same actorID and a counter incremented by 1 (doesn't update clock)
 func (l *Lamport) Tick() *Lamport {
-	return &Lamport{actorID: l.actorID, counter: l.counter + 1}
+	return &Lamport{ActID: l.ActID, Counter: l.Counter + 1}
 }
 
 func (l *Lamport) Merge(other *Lamport) {
-	if other.counter > l.counter {
-		l.counter = other.counter
+	if other.Counter > l.Counter {
+		l.Counter = other.Counter
 	}
 }
 
 func (l *Lamport) Clone() *Lamport {
-	return &Lamport{actorID: l.actorID, counter: l.counter}
+	return &Lamport{ActID: l.ActID, Counter: l.Counter}
 }
 
 func (l *Lamport) Timestamp() *Lamport {
@@ -64,5 +64,5 @@ func (l *Lamport) Timestamp() *Lamport {
 }
 
 func (l *Lamport) String() string {
-	return fmt.Sprintf("%v: %v", l.actorID, l.counter)
+	return fmt.Sprintf("%v: %v", l.ActID, l.Counter)
 }
