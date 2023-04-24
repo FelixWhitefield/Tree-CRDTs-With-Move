@@ -23,11 +23,11 @@ type TCPProvider struct {
 	id             uuid.UUID
 	numPeers       int
 	peersMu        sync.RWMutex
-	peers          map[uuid.UUID]*TCPConnection // peerID -> connection : When deleted, will set value to nil (The total peer set should not change)
-	peerAddrs      map[net.Addr]bool            // Set of peer addresses
-	deliveredMu    sync.RWMutex                 // Mutex for the delivered map (Also locked when accessing the operations map, removes need for a separate mutex)
-	delivered      map[uuid.UUID]map[uuid.UUID]bool    // opID -> set of peerIDs that have been delivered the op + acked
-	operations     map[uuid.UUID][]byte         // opID -> op
+	peers          map[uuid.UUID]*TCPConnection     // peerID -> connection : When deleted, will set value to nil (The total peer set should not change)
+	peerAddrs      map[net.Addr]bool                // Set of peer addresses
+	deliveredMu    sync.RWMutex                     // Mutex for the delivered map (Also locked when accessing the operations map, removes need for a separate mutex)
+	delivered      map[uuid.UUID]map[uuid.UUID]bool // opID -> set of peerIDs that have been delivered the op + acked
+	operations     map[uuid.UUID][]byte             // opID -> op
 	incomingOps    chan []byte
 	opsToBroadcast chan []byte
 }
@@ -98,14 +98,14 @@ func (p *TCPProvider) HandleBroadcast() {
 			continue
 		}
 
-		p.AddOperation(opToSend, newOpId)
+		p.addOperation(opToSend, newOpId)
 		//log.Println("Broadcasting operation:", newOpId.String())
 
-		p.BroadcastOp(opData)
+		p.broadcastOp(opData)
 	}
 }
 
-func (p *TCPProvider) BroadcastOp(opData []byte) {
+func (p *TCPProvider) broadcastOp(opData []byte) {
 	p.peersMu.RLock()
 	for _, conn := range p.peers {
 		conn.SendMsg(opData)
@@ -114,7 +114,7 @@ func (p *TCPProvider) BroadcastOp(opData []byte) {
 }
 
 // Send operations to a peer that haven't received acks from that peer
-func (p *TCPProvider) SendMissingOps(peerId uuid.UUID) {
+func (p *TCPProvider) sendMissingOps(peerId uuid.UUID) {
 	p.deliveredMu.RLock()
 	defer p.deliveredMu.RUnlock()
 
@@ -161,7 +161,7 @@ func (p *TCPProvider) Connect(addr string) {
 		return
 	}
 
-	p.ConnectToPeer(tcpAddr)
+	p.connectToPeer(tcpAddr)
 }
 
 // Connects to many peers
@@ -176,13 +176,13 @@ func (p *TCPProvider) ConnectMany(addrs []string) {
 			continue
 		}
 
-		p.ConnectToPeer(tcpAddr)
+		p.connectToPeer(tcpAddr)
 	}
 }
 
 // Connects to a peer and adds it to the peer map
 // And starts new goroutine to handle the connection
-func (p *TCPProvider) ConnectToPeer(tcpAddr *net.TCPAddr) {
+func (p *TCPProvider) connectToPeer(tcpAddr *net.TCPAddr) {
 	// Check if addr is local address and port is the same as ours
 	if tcpAddr.IP.IsLoopback() && tcpAddr.Port == p.port {
 		return
@@ -210,7 +210,7 @@ func (p *TCPProvider) GetPeerAddrs() []net.Addr {
 
 // This should only be called after after peer id has been received
 // Errors if the peer already exists or the peer map is full
-func (p *TCPProvider) AddPeer(tcpConn *TCPConnection) error {
+func (p *TCPProvider) addPeer(tcpConn *TCPConnection) error {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
@@ -226,7 +226,7 @@ func (p *TCPProvider) AddPeer(tcpConn *TCPConnection) error {
 }
 
 // Sets the peer in map to nil
-func (p *TCPProvider) RemovePeer(tcpConn *TCPConnection) {
+func (p *TCPProvider) removePeer(tcpConn *TCPConnection) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
@@ -234,7 +234,7 @@ func (p *TCPProvider) RemovePeer(tcpConn *TCPConnection) {
 	p.peers[tcpConn.peerId] = nil
 }
 
-func (p *TCPProvider) AddOperation(op []byte, opId uuid.UUID) {
+func (p *TCPProvider) addOperation(op []byte, opId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
@@ -242,7 +242,7 @@ func (p *TCPProvider) AddOperation(op []byte, opId uuid.UUID) {
 	p.delivered[opId] = make(map[uuid.UUID]bool, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
 }
 
-func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
+func (p *TCPProvider) addDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
@@ -256,9 +256,13 @@ func (p *TCPProvider) AddDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	}
 }
 
-func (p *TCPProvider) GetOperation(opId uuid.UUID) []byte {
+func (p *TCPProvider) getOperation(opId uuid.UUID) []byte {
 	p.deliveredMu.RLock()
 	defer p.deliveredMu.RUnlock()
 
 	return p.operations[opId]
+}
+
+func (p *TCPProvider) NumPeers() int {
+	return p.numPeers
 }

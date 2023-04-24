@@ -104,3 +104,11 @@ func (tr *TreeReplica[MD, T]) TruncateLog() {
 		tr.state.TruncateLogBefore(*threshold)
 	}
 }
+
+// Should be used to truncate log from outside
+// The log should only be truncated if state has seen all other peers
+// func (tr *TreeReplica[MD, T]) TruncateLogMinPeers(n int) {
+// 	if len(tr.latest_timestamp_by_actor) >= n {
+// 		tr.TruncateLog()
+// 	}
+// }

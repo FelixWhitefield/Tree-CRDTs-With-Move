@@ -6,4 +6,5 @@ type ConnectionProvider interface {
 	Connect(addr string)
 	HandleBroadcast()
 	Listen()
+	NumPeers() int
 }

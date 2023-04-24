@@ -128,7 +128,7 @@ func (s *State[MD, T]) ApplyOps(ops []*OpMove[MD, T]) {
 func (s *State[MD, T]) TruncateLogBefore(t T) {
 	// oldest op is at the front of the list
 	e := s.log.Front()
-	for ; e != nil && e.Value.(LogOpMove[MD, T]).op.Timestmp.Compare(t) == -1; e = e.Next() {
+	for ; e != nil && e.Value.(*LogOpMove[MD, T]).op.Timestmp.Compare(t) == -1; e = e.Next() {
 		s.log.Remove(e)
 	}
 }

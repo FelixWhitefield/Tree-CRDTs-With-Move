@@ -48,7 +48,7 @@ func (c *TCPConnection) handle() {
 	dataBuffer := make([]byte, MAX_MSG_SIZE)
 
 	// First message should be the ID of the peer
-	msg, err := c.ReadConnMsg(lengthBuffer, dataBuffer)
+	msg, err := c.readConnMsg(lengthBuffer, dataBuffer)
 	if err != nil {
 		log.Printf("Error reading initial message: %s", err.Error())
 		return
@@ -60,19 +60,19 @@ func (c *TCPConnection) handle() {
 		return
 	}
 
-	err = c.tcpProv.AddPeer(c) // Add the peer to the list of peers
+	err = c.tcpProv.addPeer(c) // Add the peer to the list of peers
 	if err != nil {
 		log.Printf("Error adding peer: %s", err.Error())
 		return
 	}
 	log.Println("Added peer:", c.peerId)
-	defer c.tcpProv.RemovePeer(c) // Remove the peer from the list of peers when the connection is closed
+	defer c.tcpProv.removePeer(c) // Remove the peer from the list of peers when the connection is closed
 
-	c.SharePeers() // Share the list of peers with the new peer
-	c.tcpProv.SendMissingOps(c.peerId) // Send any missing operations to the new peer
+	c.SharePeers()                     // Share the list of peers with the new peer
+	c.tcpProv.sendMissingOps(c.peerId) // Send any missing operations to the new peer
 	// Read messages from the connection
 	for {
-		msg, err = c.ReadConnMsg(lengthBuffer, dataBuffer)
+		msg, err = c.readConnMsg(lengthBuffer, dataBuffer)
 		if err == io.EOF || errors.Is(err, net.ErrClosed) {
 			log.Printf("Connection closed by peer: %s", c.peerId.String())
 			return
@@ -109,7 +109,7 @@ func (c *TCPConnection) handle() {
 				continue
 			}
 			if opAck.GetAck() {
-				c.tcpProv.AddDelivered(ackId, c.peerId)
+				c.tcpProv.addDelivered(ackId, c.peerId)
 			}
 		default:
 			log.Printf("Unknown message type: %s", msg.String())
@@ -161,7 +161,7 @@ func MessageToID(msg *Message) (uuid.UUID, error) {
 // The message is prefixed with a 4 byte length header
 // The message is then read in and unmarshalled
 // This function takes in two buffers to be used for reading in the message
-func (c *TCPConnection) ReadConnMsg(lengthBuffer, dataBuffer []byte) (*Message, error) {
+func (c *TCPConnection) readConnMsg(lengthBuffer, dataBuffer []byte) (*Message, error) {
 	_, err := io.ReadFull(c.conn, lengthBuffer)
 	if err == io.EOF || err == io.ErrUnexpectedEOF {
 		return nil, err
