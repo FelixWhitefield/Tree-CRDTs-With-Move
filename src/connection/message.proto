@@ -14,7 +14,7 @@ message PeerID {
 
 message OperationMsg {
     bytes id = 1; 
-    bytes op = 2; // Will be a protobuf encoded operation
+    bytes op = 2; // Will be a msgpack encoded operation
 }
 
 message OperationAck {

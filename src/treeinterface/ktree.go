@@ -25,11 +25,11 @@ func NewKTree[MD any](connProv connection.ConnectionProvider) *KTree[MD] {
 
 	go connProv.HandleBroadcast()
 	go connProv.Listen()
-	go kt.ApplyOps(connProv.IncomingOpsChannel())
+	go kt.applyOps(connProv.IncomingOpsChannel())
 	return kt
 }
 
-func (kt *KTree[MD]) ApplyOps(ops chan []byte) {
+func (kt *KTree[MD]) applyOps(ops chan []byte) {
 	for {
 		opBytes := <-ops
 

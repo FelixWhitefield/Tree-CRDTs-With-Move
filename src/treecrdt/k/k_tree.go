@@ -45,12 +45,22 @@ func (t *Tree[MD]) Tombstone() uuid.UUID {
 
 // Returns the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
+	// If Tombstone node is an ancestor of the node, return nil
+	if isAnc, _ := t.IsAncestor(id, TombstoneUUID); isAnc {
+		return nil
+	}
+	
 	node := t.nodes[id]
 	return node
 }
 
 // Returns the children of the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
+	// If Tombstone node is an ancestor of the node, return nil, and false
+	if isAnc, _ := t.IsAncestor(id, TombstoneUUID); isAnc {
+		return nil, false
+	}
+
 	children, exists := t.children[id]
 	if !exists {
 		return nil, false
@@ -158,7 +168,7 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 	if _, exists := t.nodes[ancID]; !exists {
 		return false, MissingNodeIDError{id: ancID}
 	}
-	for childID != RootUUID {
+	for childID != RootUUID && childID != TombstoneUUID {
 		childID = t.nodes[childID].PrntID
 		if bytes.Equal(childID[:], ancID[:]) {
 			return true, nil

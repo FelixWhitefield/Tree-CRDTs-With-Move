@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"runtime"
+	//"runtime"
 	"time"
 
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
@@ -71,7 +71,6 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	runtime.SetBlockProfileRate(1)
 
 	var err error
 
@@ -79,6 +78,14 @@ func main() {
 
 	ktree := ti.NewKTree[string](connection.NewTCPProvider(1, 1122))
 	k2tree := ti.NewKTree[string](connection.NewTCPProvider(1, 1123))
+
+	id, _ := k2tree.Insert(k2tree.Root(), "Felix")
+	k2tree.Delete(id)
+
+	fmt.Println(k2tree.GetChildren(id))
+
+	return 
+
 
 	time.Sleep(1 * time.Second)
 

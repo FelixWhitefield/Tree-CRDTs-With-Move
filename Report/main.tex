@@ -11,8 +11,10 @@
 \usepackage[parfill]{parskip} 
 \usepackage[htt]{hyphenat}
 \usepackage{caption}
-
-\begin{document}
+\usepackage{listings}
+\usepackage{protobuf/lang}  % include language definition for protobuf
+\usepackage{protobuf/style} % include custom style for proto declarations. 
+\begin{document} 
 
 \pagenumbering{roman}
 \setcounter{page}{1}
@@ -152,10 +154,11 @@ contains plagiarised material, and for quality assurance purposes.
 
 % STATEMENT OF ORIGINALITY ------------------------------------------------------------
 \newpage
-\section*{Achknowledgements}
+\chapter*{Acknowledgements}
 \addcontentsline{toc}{section}{Acknowledgements}
 
-some new stuff here
+I would like to express my sincere gratitude to the authors of the paper "A highly-available move operation for replicated
+trees"\cite{9563274} and "A coordination-free, convergent, and safe replicated tree"\cite{https://doi.org/10.48550/arxiv.2103.04828} for their work. The algorithms which they have proposed has been an essential part of this report, and I am truly grateful for their efforts.
 
 
 
@@ -632,47 +635,45 @@ The system takes advantage of concurrency to allow for increased performance and
 
 \chapter{Implementation}\label{sec:implementation}
 This section will explain the difficulties in implementing the system, and how they were overcome. As well as the differences between the design and the implementation. \par
-The main struggle in the implementation was using Go to implement the system. Go does not have explicit implementations of interfaces, and uses composition instead of inheritance. There are also no classes in Go, instead there are types which can have functions. This meant that the design had to be changed to accommodate this. \par
+The main struggle in the implementation was using Go to implement the system. Go does not have explicit implementations of interfaces, and uses composition instead of inheritance. There are also no classes in Go, instead there are types and structs which can have functions. This caused some initial difficulties in the implementation. \par
 
 \section{Clocks}
-The clocks package was the first to be implemented, and contains the most inheritance. Initially, it was a struggle to understand how to use Go's generics, however this was overcome. The interfaces define the rules for the clocks, and the classes implement them. As shown by Figure \ref{fig:clockimpl}, there are a few main differences between the design:
+The clocks package was the first to be implemented. Initially, it was a struggle to understand how to use Go's generics and to understand Go's implicit interface implementation, however this was overcome. It is also idiomatic in Go for a function's return type to be simple and generic, with the documentation explaining the return value and how to use it. Therefore, the implementation contains comments explaining the return values of functions. As shown by Figure \ref{fig:clockimpl}, there are a few main differences between the design:
 
 \begin{itemize}
-    \item \texttt{uuid.UUID} are used in place of \texttt{int} for the node ID. This allows for better unique IDs.
-    \item The compare methods return \texttt{int} instead of the enums defined in the design. This is more idiomatic in Go.
+    \item \texttt{uuid.UUID}s are used in place of \texttt{int} for the node ID. This allows for better unique IDs.
+    \item The compare methods return \texttt{int} instead of the enums defined in the design. This is more idiomatic in Go, as Go does not have enums.
     \item The \texttt{Clock} interface has two extra methods, \texttt{ActorID} and \texttt{Timestamp}. It was realised that these methods were needed for the CRDTs, and so they were added to the interface. The \texttt{Timestamp} method returns a clone of the timestamp.
 \end{itemize}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=1\textwidth]{images/clocks_impl.jpg}
-    \caption{UML class diagram for the clocks package.}
+    \caption{Class diagram for the clocks package.}
     \label{fig:clockimpl}
 \end{figure}
 
 
 \section{CRDTs}
-The CRDT algorithms were the largest part of the implementation as they contain the most parts. Although the implementation was following the algorithms, there were some issues which arose that were not in the algorithms. The CRDT implementations are not thread-safe.
+The CRDT algorithms were the largest part of the implementation as they contain the most parts, but were based off the algorithms from the papers. The CRDT implementations are not thread-safe.
 
 \subsection{Kleppmann's Algorithm}
-The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, which were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, and that contributes to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. \par
-
-Overall, the algorithm was relatively simple to implement and was composed of the following parts:
+The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, that were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, which that contributes to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. Overall, the algorithm was relatively simple to implement and was composed of the following parts:
 \begin{itemize}
     \item \texttt{OpMove}: This contains a move operation, which is the child id, parent id, metadata and a timestamp.
     \item \texttt{LogOpMove}: This contains a move operation, and its previous parent id and metadata. This is used for the log.
     \item \texttt{TreeNode}: This contains the node's parent id and metadata.
     \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s, representing the triples. As well as a map of node ids to their children, for easy access to the children of a node.
     \item \texttt{State}: This contains the state of the CRDT. It contains a \texttt{Tree} and a log of operations. The state contains the main algorithm for applying operations.
-    \item \texttt{TreeReplica}: This represents the state of the CRDT for a single replica. It contains a \texttt{State} and a \texttt{Clock}. This struct implements the \textit{prepare} and \textit{effect} functions from the literature.
+    \item \texttt{TreeReplica}: This represents the state of the CRDT for a single replica. It contains a \texttt{State} and a \texttt{Clock}. This struct implements the \textit{prepare} and \textit{effect} functions from the literature on CmRDTs.
 \end{itemize}
 
-Rudimentary performance testing was conducted during implementation, which helped inform the data structures chosen. It led to the log of operations being implemented as a linked list, as it is faster for altering the middle of the list and frequent appending. The tree struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is queried for a certain node when applying an operation. \par
+The log of operations being implemented as a linked list, as it is faster for altering the middle of the list and frequent appending. The tree struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is queried for a certain node when applying an operation. Which is O(1) for a set, compared to O(n) for a slice. \par
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=13cm]{images/kcrdt_impl.jpg} 
-    \caption{UML class diagram for the Kleppmann CRDT.}
+    \caption{Class diagram for the Kleppmann CRDT.}
     \label{fig:kcrdt} 
 \end{figure} 
 
@@ -694,25 +695,28 @@ As shown by Figure \ref{fig:networkimpl}, the network package only consists of t
         \item The fourth is the \textit{op\_ack} message, which adds the node to the list of nodes that have received the operation.
     \end{itemize} 
     \item The \texttt{TCPProvider} also runs the \texttt{handleBroadcast()} function in a goroutine. This listens on the \texttt{opsToBroadcast} channel for operations to broadcast. When an operation is received, it is sent to all peers. 
-
-
 \end{itemize}
-
+Protocol Buffers\footnote{https://protobuf.dev/} are used to serialise the messages. They were chosen as they are smaller, faster and more efficient than other methods. Also, using their \texttt{oneof} feature, the message type can be easily determined. More information on the protocol buffers used can be found in Appendix \ref{app:protobuf}. \par
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.1\textwidth]{images/network_impl.jpg}
-    \caption{UML class diagram for the connection package.}
+    \includegraphics[width=1\textwidth]{images/network_impl.jpg}
+    \caption{Class diagram for the connection package.}
     \label{fig:networkimpl}
 \end{figure}
 
 
 \section{Tree Interface}
 The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time. \par
-The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. 
+The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. 
 
 
-
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{images/ktree_impl.jpg}
+    \caption{Class diagram for the tree interface.}
+    \label{fig:treeimpl}
+\end{figure}
 
 
 \chapter{Testing}
@@ -835,6 +839,52 @@ then implementing the separate parts to create a cohesive application. Once
 implemented, the system will be tested for reliability and performance. This
 testing will inform the final evaluation of system, where it will be compared
 to existing solutions.
+
+\chapter{Implementation}
+
+This chapter details the interesting parts of the implementation. It contains some code snippets, however for a more detailed look at the code, the source code and associated comments should be consulted. The source code can be found at \url{github.com/FelixWhitefield/Tree-CRDTs-With-Move}
+
+\newpage
+\section{Protocol Buffers}\label{app:protobuf}
+
+The 'message.proto' file is shown below. The message \texttt{Message} is the only message which is sent between peers. The \texttt{oneof} is used to allow for different types of messages to be sent. The \textit{repeated} keyword in the \texttt{PeerAddresses} message is used to define a list of strings. The messages are relatively simple, and using protocol buffers the messages can be understood by any language which has protocol buffer support 
+
+\begin{lstlisting}[language=protobuf3, style=protobuf]{message.proto}
+syntax = "proto3";
+
+package connection;
+option go_package="github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection";
+
+message PeerAddresses {
+    repeated string peerAddrs = 1;
+}
+
+message PeerID {
+    bytes id = 1;
+}
+
+message OperationMsg {
+    bytes id = 1; 
+    bytes op = 2; // Will be a msgpack encoded operation
+}
+
+message OperationAck {
+    bytes id = 1;
+    bool ack = 2;
+}
+
+message Message {
+    oneof message {
+        PeerID peerID = 1;
+        PeerAddresses peerAddresses = 2;
+        OperationMsg operation = 3;
+        OperationAck operationAck = 4;
+    }
+}
+\end{lstlisting}
+
+
+
 
 %TC:endignore
 \end{document}
