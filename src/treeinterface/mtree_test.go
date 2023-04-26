@@ -83,7 +83,7 @@ func TestMTreeCycleMove(t *testing.T) {
 
 	time.Sleep(1 * time.Second) // Time for communication to occur
 
-	//check both trees have the nodes 
+	//check both trees have the nodes
 	if _, err := tree2.Get(id1); err != nil {
 		t.Errorf("Node was not inserted %v, with id: %v", err, id1)
 	}
@@ -101,13 +101,13 @@ func TestMTreeCycleMove(t *testing.T) {
 	//  id1    id2
 
 	// Move nodes in a cycle
-	tree1.Move(id1, id2) 
-	tree2.Move(id2, id1) 
+	tree1.Move(id1, id2)
+	tree2.Move(id2, id1)
 
 	// Tree will either be:
 	//     Root
-	//    /    
-	//  id2    
+	//    /
+	//  id2
 	//  id1
 	// or
 	//     Root

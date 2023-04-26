@@ -40,7 +40,6 @@ func (vt *VectorTimestamp) Compare(other *VectorTimestamp) int {
 	} else if vt == nil || len(*vt) == 0 || other == nil || len(*other) == 0 {
 		return 2
 	}
-	
 
 	isLess := false
 	isGreater := false

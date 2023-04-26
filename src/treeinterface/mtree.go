@@ -174,7 +174,7 @@ func (kt *MTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	if op == nil {
 		return errors.New("error preparing move")
 	}
-	
+
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return err

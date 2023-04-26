@@ -752,10 +752,10 @@ As shown by Figure \ref{fig:networkimpl}, the network package only consists of t
     \item The \texttt{TCPConnection} will also send all the operations which the newly connected peer has not seen to it.
     \item The \texttt{TCPConnection} then listens for incoming messages. When a message is received, its type is determined and the appropriate code is run. There are 4 message types:
     \begin{itemize}
-        \item The first is the \textit{node\_id} message, which is sent at the start of a connection. 
-        \item The second is the \textit{peer\_list} message, which is sent after the node id message. 
+        \item The first is the \textit{peer\_id} message, which is sent at the start of a connection. 
+        \item The second is the \textit{peer\_addresses} message, which is sent after the node id message. 
         \item The third is the \textit{operation} message, which sends the operation to the \texttt{incommingOps} channel for processing, and an ack is sent back to the peer.
-        \item The fourth is the \textit{op\_ack} message, which adds the node to the list of nodes that have received the operation.
+        \item The fourth is the \textit{operation\_ack} message, which adds the node to the list of nodes that have received the operation.
     \end{itemize} 
     \item The \texttt{TCPProvider} also runs the \texttt{handleBroadcast()} function in a goroutine. This listens on the \texttt{opsToBroadcast} channel for operations to broadcast. When an operation is received, it is sent to all peers. 
 \end{itemize}
@@ -924,6 +924,7 @@ message PeerAddresses {
 
 message PeerID {
     bytes id = 1;
+    string addr = 2;
 }
 
 message OperationMsg {

@@ -1,13 +1,17 @@
 package connection
 
+// This is the TCP connection handler
+//
+// This represents a connection to a peer, and handles the receiving of messages
+
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
-	"github.com/google/uuid"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -126,7 +130,7 @@ func (c *TCPConnection) handle() {
 func (c *TCPConnection) SharePeers() {
 	peerAddrs := c.tcpProv.GetPeerAddrs()
 	peerAddrsStr := make([]string, 0, len(peerAddrs))
-	
+
 	for _, addr := range peerAddrs {
 		if addr == c.remoteListenAddr { // Don't send the peer their own address
 			continue

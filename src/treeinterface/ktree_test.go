@@ -62,7 +62,6 @@ func TestKTreeCycleMove(t *testing.T) {
 	id2, _ := tree1.Insert(tree1.Root(), "meta1")
 
 	time.Sleep(1 * time.Second) // Time for communication to occur
-	
 
 	// Tree is now:
 	//     Root
@@ -70,13 +69,13 @@ func TestKTreeCycleMove(t *testing.T) {
 	//  id1    id2
 
 	// Move nodes in a cycle
-	tree1.Move(id1, id2) 
-	tree2.Move(id2, id1) 
+	tree1.Move(id1, id2)
+	tree2.Move(id2, id1)
 
 	// Tree will either be:
 	//     Root
-	//    /    
-	//  id2    
+	//    /
+	//  id2
 	//  id1
 	// or
 	//     Root

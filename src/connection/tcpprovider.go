@@ -1,8 +1,8 @@
 package connection
 
+// This is the TCP Provider, and makes connections using TCP
 //
-//
-// When a peer connects, they should exchange their ID (This should always be the first message sent)
+// When a peer connects, they should exchange their ID and Addr (This should always be the first message sent)
 // And then after that, they should exchange their peers
 //
 // This will share peers with other peers. Whenever a new connection is made, peer addresses are shared with the new peer.
@@ -19,7 +19,7 @@ import (
 )
 
 type TCPProvider struct {
-	laddr 		   *net.TCPAddr	
+	laddr          *net.TCPAddr
 	port           int
 	id             uuid.UUID
 	numPeers       int
@@ -48,7 +48,7 @@ func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 	}
 
 	return &TCPProvider{
-		laddr: 			tcpAddr,
+		laddr:          tcpAddr,
 		port:           port,
 		numPeers:       numPeers,
 		id:             id,
@@ -70,7 +70,7 @@ func (p *TCPProvider) CloseAll() {
 // This should be called in a goroutine after appropriate setup - Setting up channels
 // This should be the first thing called after creating a new TCPProvider
 func (p *TCPProvider) Listen() {
-	listener, err := net.Listen("tcp", "0.0.0.0:" + strconv.Itoa(p.port))
+	listener, err := net.Listen("tcp", "0.0.0.0:"+strconv.Itoa(p.port))
 	if err != nil {
 		log.Fatalf("Error listening: %s", err.Error())
 	}

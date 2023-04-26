@@ -1,4 +1,4 @@
-package connection 
+package connection
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ func TestTCPProviderConnecting(t *testing.T) {
 	// Test two peers can connect
 	if len(tcpProvider1.peers) != 1 && len(tcpProvider2.peers) != 1 {
 		t.Errorf("Expected 1 peer, got %d and %d", len(tcpProvider1.peers), len(tcpProvider2.peers))
-	} 
+	}
 
 	// Test peer sharing
 	tcpProvider3 := NewTCPProvider(2, 1513)

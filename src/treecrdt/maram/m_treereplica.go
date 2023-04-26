@@ -43,7 +43,7 @@ func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
 }
 
 // Prepares an add operation
-func (tr *TreeReplica[MD, T]) PrepareAdd(childId uuid.UUID,parentId uuid.UUID, metadata MD) *OpAdd[MD, T] {
+func (tr *TreeReplica[MD, T]) PrepareAdd(childId uuid.UUID, parentId uuid.UUID, metadata MD) *OpAdd[MD, T] {
 	if !tr.state.tree.Contains(parentId) {
 		return nil
 	}
@@ -90,6 +90,6 @@ func (tr *TreeReplica[MD, T]) State() *State[MD, T] {
 	return &tr.state
 }
 
-func (tr *TreeReplica[MD, T]) Equals (other *TreeReplica[MD, T]) bool {
+func (tr *TreeReplica[MD, T]) Equals(other *TreeReplica[MD, T]) bool {
 	return tr.state.Equals(&other.state)
 }

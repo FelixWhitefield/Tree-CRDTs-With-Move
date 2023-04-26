@@ -103,7 +103,7 @@ func (tr *TreeReplica[MD, T]) TruncateLog() {
 	}
 }
 
-func (tr *TreeReplica[MD, T]) Equals (other *TreeReplica[MD, T]) bool {
+func (tr *TreeReplica[MD, T]) Equals(other *TreeReplica[MD, T]) bool {
 	return tr.state.Equals(&other.state)
 }
 
