@@ -65,7 +65,7 @@ func (c *TCPConnection) handle() {
 		log.Printf("Error adding peer: %s", err.Error())
 		return
 	}
-	log.Println("Added peer:", c.peerId)
+	log.Printf("Connected to: %v; at %v", c.peerId.String(), c.conn.RemoteAddr())
 	defer c.tcpProv.removePeer(c) // Remove the peer from the list of peers when the connection is closed
 
 	c.SharePeers()                     // Share the list of peers with the new peer
@@ -193,6 +193,9 @@ func (c *TCPConnection) readConnMsg(lengthBuffer, dataBuffer []byte) (*Message, 
 // which describes the length of the message
 // This could use a buffer pool to reduce allocations (TODO)
 func (c *TCPConnection) SendMsg(data []byte) {
+	if c == nil {
+		return
+	}
 	message := make([]byte, 4+len(data)) // 4 bytes for length (up to 4GB, max length for protobuf)
 	binary.BigEndian.PutUint32(message, uint32(len(data)))
 

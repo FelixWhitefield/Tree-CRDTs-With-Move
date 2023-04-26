@@ -1,18 +1,18 @@
 package treeinterface
 
 import (
+	"log"
 	"testing"
 	"time"
 
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
-	"github.com/google/uuid"
 )
 
-func TestKTreeOperationTransmits(t *testing.T) {
-	tree1 := NewKTree[string](connection.NewTCPProvider(1, 1111))
-	tree2 := NewKTree[string](connection.NewTCPProvider(1, 1112))
+func TestMTreeOperationTransmits(t *testing.T) {
+	tree1 := NewMTree[string](connection.NewTCPProvider(1, 2221))
+	tree2 := NewMTree[string](connection.NewTCPProvider(1, 2222))
 
-	tree1.ConnectionProvider().Connect("localhost:1112")
+	tree1.ConnectionProvider().Connect("localhost:2222")
 
 	nodeId, err := tree1.Insert(tree1.Root(), "meta")
 	if err != nil {
@@ -21,7 +21,7 @@ func TestKTreeOperationTransmits(t *testing.T) {
 
 	time.Sleep(1 * time.Second) // Time for communication to occur
 
-	if id, _ := tree2.Get(nodeId); id == nil {
+	if id, _ := tree2.Get(nodeId); id != nil {
 		t.Errorf("Node was not inserted")
 	}
 
@@ -48,15 +48,9 @@ func TestKTreeOperationTransmits(t *testing.T) {
 	}
 
 	if len(rootChildren) != 4 && !contains(rootChildren, nodeId1) && !contains(rootChildren, nodeId2) && !contains(rootChildren, nodeId3) && !contains(rootChildren, nodeId) {
+		log.Println(rootChildren)
+		tree1Children, _ := tree1.GetChildren(tree1.Root())
+		log.Println(tree1Children)
 		t.Errorf("Expected 4 children, got %d", len(rootChildren))
 	}
-}
-
-func contains(arr []uuid.UUID, val uuid.UUID) bool {
-	for _, v := range arr {
-		if v == val {
-			return true
-		}
-	}
-	return false
 }

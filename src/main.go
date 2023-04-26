@@ -31,7 +31,7 @@ type DataA struct {
 
 type DataB struct {
 	Datab string
-	Id2   int
+	Id2   uint64
 }
 
 func test(i *int) {

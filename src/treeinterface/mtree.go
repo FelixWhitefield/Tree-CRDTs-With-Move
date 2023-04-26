@@ -3,13 +3,14 @@ package treeinterface
 import (
 	"container/list"
 	"errors"
+	"sync"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
-	"sync"
 )
 
 type MTree[MD any] struct {
@@ -81,7 +82,8 @@ func (kt *MTree[MD]) applyOps(ops chan []byte) {
 		front := kt.opBuffer.Front()
 		kt.crdtMu.Lock()
 		for front != nil && (front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
-			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1) {
+			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
+			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == 0) {
 			if front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
 				opToApp := front.Value.(maram.Operation[*clocks.VectorTimestamp])
 				kt.crdt.Effect(opToApp)
@@ -114,7 +116,6 @@ func (kt *MTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 
 	id := uuid.New()
 	op := kt.crdt.PrepareAdd(parentID, metadata)
-
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return uuid.Nil, err

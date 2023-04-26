@@ -80,7 +80,6 @@ func (p *TCPProvider) Listen() {
 			log.Println("Error accepting connection: ", err.Error())
 		}
 
-		log.Println("Accepted connection from:", conn.RemoteAddr())
 		go NewTCPConnection(conn, p).handle()
 	}
 }
@@ -110,6 +109,10 @@ func (p *TCPProvider) HandleBroadcast() {
 func (p *TCPProvider) broadcastOp(opData []byte) {
 	p.peersMu.RLock()
 	for _, conn := range p.peers {
+		if conn == nil {
+			log.Println("Attempted to broadcast to a nil peer")
+			continue
+		}
 		conn.SendMsg(opData)
 	}
 	p.peersMu.RUnlock()
@@ -241,7 +244,7 @@ func (p *TCPProvider) addOperation(op []byte, opId uuid.UUID) {
 	defer p.deliveredMu.Unlock()
 
 	p.operations[opId] = op
-	p.delivered[opId] = make(map[uuid.UUID]bool, p.numPeers-1) // Size is numPeers-1 because final peer won't store the operation in the delivered map
+	p.delivered[opId] = make(map[uuid.UUID]bool, p.numPeers)
 }
 
 func (p *TCPProvider) addDelivered(opId uuid.UUID, peerId uuid.UUID) {
