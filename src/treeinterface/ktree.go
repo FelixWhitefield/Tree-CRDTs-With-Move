@@ -55,6 +55,9 @@ func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 
 	id := uuid.New()
 	op := kt.crdt.Prepare(id, parentID, metadata)
+	if op == nil {
+		return uuid.Nil, errors.New("could not prepare operation")
+	}
 
 	opBytes, err := msgpack.Marshal(*op)
 	if err != nil {
@@ -78,6 +81,9 @@ func (kt *KTree[MD]) Delete(id uuid.UUID) error {
 	}
 
 	op := kt.crdt.Prepare(id, kt.crdt.TombstoneID(), kt.crdt.GetNode(id).Metadata())
+	if op == nil {
+		return errors.New("could not prepare operation")
+	}
 
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
@@ -104,6 +110,9 @@ func (kt *KTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	}
 
 	op := kt.crdt.Prepare(id, newParentID, kt.crdt.GetNode(id).Metadata())
+	if op == nil {
+		return errors.New("could not prepare operation")
+	}
 
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
@@ -126,6 +135,9 @@ func (kt *KTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	}
 
 	op := kt.crdt.Prepare(id, kt.crdt.GetNode(id).ParentID(), newMetadata)
+	if op == nil {
+		return errors.New("could not prepare operation")
+	}
 
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {

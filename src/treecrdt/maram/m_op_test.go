@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestOpInherits(t *testing.T) {
+func TestMaramOpInherits(t *testing.T) {
 	var op Operation[*c.VectorTimestamp]
 	var timestamp *c.VectorTimestamp
 
@@ -32,7 +32,7 @@ func TestOpInherits(t *testing.T) {
 	}
 }
 
-func TestMoveOps(t *testing.T) {
+func TestMaramMoveOps(t *testing.T) {
 	opMov := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: NewTreeNode(uuid.New(), "meta"), Priotity: *c.NewLamport()}
 	opMov.Timestamp().Inc(uuid.New())
 

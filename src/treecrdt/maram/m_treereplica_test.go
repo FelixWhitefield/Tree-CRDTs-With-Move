@@ -1,4 +1,4 @@
-package kleppmann
+package maram
 
 import (
 	"testing"
@@ -8,9 +8,9 @@ import (
 	u "github.com/google/uuid"
 )
 
-func TestKleppTreeReplicaPrepareAndEffect(t *testing.T) {
+func TestMaramTreeReplicaPrepareAndEffect(t *testing.T) {
 	uuid1 := u.New()
-	tr := NewTreeReplica[string](nil, uuid1)
+	tr := NewTreeReplica[string](uuid1)
 
 	if tr == nil {
 		t.Errorf("NewTreeReplicaWithID() returned nil")
@@ -21,7 +21,7 @@ func TestKleppTreeReplicaPrepareAndEffect(t *testing.T) {
 	}
 
 	uuid2 := u.New()
-	op := tr.Prepare(uuid2, RootUUID, "test")
+	op := tr.PrepareAdd(uuid2, RootUUID, "test")
 	tr.Effect(op)
 
 	if c, _ := tr.GetChildren(RootUUID); c[0] != uuid2 {
@@ -37,7 +37,7 @@ func TestKleppTreeReplicaPrepareAndEffect(t *testing.T) {
 	}
 
 	uuid3 := u.New()
-	op = tr.Prepare(uuid3, uuid2, "test2")
+	op = tr.PrepareAdd(uuid3, uuid2, "test2")
 	tr.Effect(op)
 
 	if c, _ := tr.GetChildren(RootUUID); contains(c, uuid2) && contains(c, uuid3) {
@@ -54,17 +54,17 @@ func contains(s []u.UUID, e u.UUID) bool {
 	return false
 }
 
-func TestKleppTreeReplicaTime(t *testing.T) {
-	tr := NewTreeReplica[string](nil)
+func TestMaramTreeReplicaTime(t *testing.T) {
+	tr := NewTreeReplica[string]()
 
 	uuid1 := u.New()
-	op := tr.Prepare(uuid1, RootUUID, "test")
+	op := tr.PrepareAdd(uuid1, RootUUID, "test")
 	tr.Effect(op)
 
-	expectedTime := c.NewLamport(tr.ActorID())
-	expectedTime.Inc()
+	expectedTime := c.NewVectorTimestamp()
+	expectedTime.Inc(tr.ActorID())
 
-	if tr.CurrentTime().ActorID() != uuid1 && tr.CurrentTime().Compare(expectedTime) != 0 {
+	if tr.CurrentTime().Compare(expectedTime) != 0 {
 		t.Errorf("CurrentTime() returned wrong time")
 	}
 }

@@ -115,7 +115,11 @@ func (kt *MTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 	}
 
 	id := uuid.New()
-	op := kt.crdt.PrepareAdd(parentID, metadata)
+	op := kt.crdt.PrepareAdd(id, parentID, metadata)
+	if op == nil {
+		return uuid.Nil, errors.New("error preparing add")
+	}
+
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return uuid.Nil, err
@@ -138,6 +142,9 @@ func (kt *MTree[MD]) Delete(id uuid.UUID) error {
 	}
 
 	op := kt.crdt.PrepareRemove(id)
+	if op == nil {
+		return errors.New("error preparing remove")
+	}
 
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
@@ -163,8 +170,11 @@ func (kt *MTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 		return errors.New("new parent node does not exist")
 	}
 
-	op := kt.crdt.PrepareMove(id, newParentID, kt.crdt.GetNode(id).Metadata())
-
+	op := kt.crdt.PrepareMove(id, newParentID, node.Metadata())
+	if op == nil {
+		return errors.New("error preparing move")
+	}
+	
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return err
@@ -186,6 +196,9 @@ func (kt *MTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	}
 
 	op := kt.crdt.PrepareMove(id, kt.crdt.GetNode(id).ParentID(), newMetadata)
+	if op == nil {
+		return errors.New("error preparing edit")
+	}
 
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {

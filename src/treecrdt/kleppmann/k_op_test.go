@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestOpNewAndCompareOp(t *testing.T) {
+func TestKleppOpNewAndCompareOp(t *testing.T) {
 	u1 := uuid.New()
 	l := c.NewLamport()
 

@@ -2,7 +2,6 @@ package maram
 
 import (
 	"container/list"
-
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
@@ -47,8 +46,8 @@ func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 // and undo's and redo's operations accordingly (Similar to Kleppmann's algorithm)
 func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	if s.moveLog.Len() == 0 {
-		s.tree.Move(opMov.ChldID, opMov.NewP)
-		s.moveLog.PushBack(opMov.ChldID)
+		logop := s.DoMoveOp(opMov)
+		s.moveLog.PushBack(logop)
 		return
 	}
 	e := s.moveLog.Back()
@@ -60,12 +59,11 @@ func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	if e == nil || !(e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 0) { // Got to the front of the list and not in tree
 		logop := s.DoMoveOp(opMov)
 		if e == nil {
-			s.moveLog.PushFront(logop)
+			e = s.moveLog.PushFront(logop)
 		} else {
-			s.moveLog.InsertAfter(logop, e)
+			e = s.moveLog.InsertAfter(logop, e)
 		}
 	}
-
 	e = e.Next()
 
 	// redo ops until the end of the log
