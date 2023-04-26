@@ -133,3 +133,21 @@ func (s *State[MD, T]) TruncateLogBefore(t T) {
 		s.log.Remove(e)
 	}
 }
+
+func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
+	treeEq := s.tree.Equals(&other.tree)
+	if !treeEq {
+		return false
+	}
+	if s.log.Len() != other.log.Len() {
+		return false
+	}
+	e1 := s.log.Front()
+	e2 := other.log.Front()
+	for ; e1 != nil && e2 != nil; e1, e2 = e1.Next(), e2.Next() {
+		if e1.Value.(*LogOpMove[MD, T]).CompareOp(e2.Value.(*LogOpMove[MD, T]).op) != 0 {
+			return false
+		}
+	}
+	return true
+}

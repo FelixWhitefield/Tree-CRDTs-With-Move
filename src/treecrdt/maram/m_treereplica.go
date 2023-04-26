@@ -90,3 +90,7 @@ func (tr *TreeReplica[MD, T]) Effects(op []Operation[T]) {
 func (tr *TreeReplica[MD, T]) State() *State[MD, T] {
 	return &tr.state
 }
+
+func (tr *TreeReplica[MD, T]) Equals (other *TreeReplica[MD, T]) bool {
+	return tr.state.Equals(&other.state)
+}

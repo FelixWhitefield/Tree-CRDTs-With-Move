@@ -103,6 +103,10 @@ func (tr *TreeReplica[MD, T]) TruncateLog() {
 	}
 }
 
+func (tr *TreeReplica[MD, T]) Equals (other *TreeReplica[MD, T]) bool {
+	return tr.state.Equals(&other.state)
+}
+
 // Should be used to truncate log from outside
 // The log should only be truncated if state has seen all other peers
 // func (tr *TreeReplica[MD, T]) TruncateLogMinPeers(n int) {
