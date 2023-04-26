@@ -42,6 +42,7 @@ func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
 	return tr.state.tree.GetNode(u)
 }
 
+// Prepares an add operation
 func (tr *TreeReplica[MD, T]) PrepareAdd(parentId uuid.UUID, metadata MD) *OpAdd[MD, T] {
 	if !tr.state.tree.Contains(parentId) {
 		return nil
@@ -50,6 +51,7 @@ func (tr *TreeReplica[MD, T]) PrepareAdd(parentId uuid.UUID, metadata MD) *OpAdd
 	return &OpAdd[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: parentId, Meta: metadata}}
 }
 
+// Prepares a remove operation
 func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
 	if !tr.state.tree.Contains(id) {
 		return nil
@@ -57,6 +59,7 @@ func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
 	return &OpRemove[T]{Timestmp: tr.clock.Tick(), ChldID: id}
 }
 
+// Prepares a move operation
 func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
 	childIsAnc, _ := tr.state.tree.IsAncestor(newP, id)
 	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP)|| id != newP || id != tr.state.tree.Root() || !childIsAnc {
@@ -65,6 +68,7 @@ func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata
 	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
 }
 
+// Applies an operation to the tree, and updates the clock
 func (tr *TreeReplica[MD, T]) Effect(op Operation[T]) {
 	tr.clock.Merge(op.Timestamp())
 
@@ -76,6 +80,7 @@ func (tr *TreeReplica[MD, T]) Effect(op Operation[T]) {
 	tr.state.ApplyOp(op)
 }
 
+// Applies a list of operations to the tree
 func (tr *TreeReplica[MD, T]) Effects(op []Operation[T]) {
 	for _, o := range op {
 		tr.Effect(o)

@@ -4,6 +4,7 @@ import (
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
+// Represents a log of the move `op`, and the old parent `oldP`
 type LogOpMove[MD any, T opTimestamp[T]] struct {
 	op   *OpMove[MD, T]
 	oldP *TreeNode[MD]
@@ -27,10 +28,13 @@ func (lop *LogOpMove[MD, T]) CompareOp(other *OpMove[MD, T]) int {
 	return lop.op.Timestmp.Compare(other.Timestmp)
 }
 
+// Compares a LogOpMove's priority with an OpMove's priority
+// This is used for determining the order of concurrent operations
 func (lop *LogOpMove[MD, T]) ComparePriority(other *OpMove[MD, T]) int {
 	return lop.op.Priotity.Compare(&other.Priotity)
 }
 
+// Checks if two LogOpMoves are equal
 func (lop *LogOpMove[MD, T]) Equals(other *LogOpMove[MD, T]) bool {
 	return lop.op.Timestmp.Compare(other.op.Timestmp) == 0 && lop.op.Priotity.Compare(&other.op.Priotity) == 0
 }

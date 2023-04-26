@@ -6,8 +6,9 @@ import (
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
+// Represents the state of the CRDT
 type State[MD any, T opTimestamp[T]] struct {
-	tree    Tree[MD]
+	tree    Tree[MD]   
 	moveLog *list.List // List of move operations
 }
 
@@ -15,6 +16,7 @@ func NewState[MD any, T opTimestamp[T]]() *State[MD, T] {
 	return &State[MD, T]{tree: *NewTree[MD](), moveLog: list.New()}
 }
 
+// Applies an operation to the state
 func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 	switch op := op.(type) {
 	case *OpMove[MD, T]:
@@ -38,13 +40,11 @@ func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 	}
 }
 
-func (s *State[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) {
-	s.tree.Remove(lop.op.ChldID)
-	if lop.oldP != nil {
-		s.tree.Add(lop.op.ChldID, lop.oldP)
-	}
-}
-
+// Applies a move operation to the tree
+// This differs from the algorithm in the paper, as it does not implement the conflict
+// resolution policy the same way.
+// This instead uses the priority to determine a total order of concurrent operations
+// and undo's and redo's operations accordingly (Similar to Kleppmann's algorithm)
 func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	if s.moveLog.Len() == 0 {
 		s.tree.Move(opMov.ChldID, opMov.NewP)
@@ -74,11 +74,22 @@ func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	}
 }
 
+// Undo's the log operation
+func (s *State[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) {
+	s.tree.Remove(lop.op.ChldID)
+	if lop.oldP != nil {
+		s.tree.Add(lop.op.ChldID, lop.oldP)
+	}
+}
+
+// Redo's the log operation
 func (s *State[MD, T]) RedoMoveOp(lopMov *LogOpMove[MD, T]) {
 	logop := s.DoMoveOp(lopMov.op)
 	*lopMov = *logop
 }
 
+// Does the move operation
+// This checks if the move operation is valid and then executes it
 func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP := s.tree.GetNode(opMov.ChldID)
 	childIsRoot := opMov.ChldID == s.tree.Root()
@@ -95,6 +106,7 @@ func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	return NewLogOpMove(opMov, oldP)
 }
 
+// Checks if the state is equal to another state
 func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
 	treeEq := s.tree.Equals(&other.tree) 
 	if !treeEq {
@@ -113,6 +125,7 @@ func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
 	return true
 }
 
+// Attempted implementation of algorithm from the paper
 // func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 // 	if s.moveLog.Len() == 0 {
 // 		s.tree.Move(opMov.ChldID, opMov.NewP)
