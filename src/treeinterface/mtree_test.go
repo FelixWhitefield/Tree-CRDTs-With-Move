@@ -1,7 +1,6 @@
 package treeinterface
 
 import (
-	"log"
 	"testing"
 	"time"
 
@@ -9,8 +8,8 @@ import (
 )
 
 func TestMTreeOperationTransmits(t *testing.T) {
-	tree1 := NewMTree[string](connection.NewTCPProvider(1, 2221))
-	tree2 := NewMTree[string](connection.NewTCPProvider(1, 2222))
+	tree1 := NewMTree[string](connection.NewTCPProvider(2, 2221))
+	tree2 := NewMTree[string](connection.NewTCPProvider(2, 2222))
 
 	tree1.ConnectionProvider().Connect("localhost:2222")
 
@@ -48,11 +47,23 @@ func TestMTreeOperationTransmits(t *testing.T) {
 	}
 
 	if len(rootChildren) != 4 && !contains(rootChildren, nodeId1) && !contains(rootChildren, nodeId2) && !contains(rootChildren, nodeId3) && !contains(rootChildren, nodeId) {
-		log.Println(rootChildren)
-		tree1Children, _ := tree1.GetChildren(tree1.Root())
-		log.Println(tree1Children)
 		t.Errorf("Expected 4 children, got %d", len(rootChildren))
 	}
+
+	tree3 := NewMTree[string](connection.NewTCPProvider(2, 2223))
+	tree3.ConnectionProvider().Connect("localhost:2221")
+
+	time.Sleep(2 * time.Second) // Time for communication to occur
+
+	rootChildren3, err := tree3.GetChildren(tree3.Root())
+	if err != nil {
+		t.Errorf("Could not get children")
+	}
+
+	if len(rootChildren3) != 4 && !contains(rootChildren3, nodeId1) && !contains(rootChildren3, nodeId2) && !contains(rootChildren3, nodeId3) && !contains(rootChildren3, nodeId) {
+		t.Errorf("Expected 4 children, got %d", len(rootChildren3))
+	}
+
 }
 
 func TestMTreeCycleMove(t *testing.T) {
@@ -80,8 +91,9 @@ func TestMTreeCycleMove(t *testing.T) {
 		t.Errorf("Node was not inserted %v", err)
 	}
 	children2, _ := tree2.GetChildren(tree2.Root())
-	log.Println(children2)
-	
+	if len(children2) != 2 {
+		t.Errorf("Expected 2 children, got %d", len(children2))
+	}
 
 	// Tree is now:
 	//     Root

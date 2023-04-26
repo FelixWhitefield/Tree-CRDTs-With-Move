@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net"
-
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
@@ -16,9 +15,10 @@ const (
 )
 
 type TCPConnection struct {
-	conn    net.Conn
-	peerId  uuid.UUID
-	tcpProv *TCPProvider
+	conn             net.Conn
+	remoteListenAddr net.Addr
+	peerId           uuid.UUID
+	tcpProv          *TCPProvider
 }
 
 func NewTCPConnection(conn net.Conn, p *TCPProvider) *TCPConnection {
@@ -34,7 +34,7 @@ func (c *TCPConnection) handle() {
 	defer c.conn.Close()
 
 	// Send the ID to the client ----------------------------------
-	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.id[:]}}}
+	peerIdMsg := &Message{Message: &Message_PeerID{PeerID: &PeerID{Id: c.tcpProv.id[:], Addr: c.tcpProv.laddr.String()}}}
 	peerIDBytes, err := proto.Marshal(peerIdMsg)
 	if err != nil {
 		log.Printf("Error marshalling peer ID: %s", err.Error())
@@ -54,12 +54,19 @@ func (c *TCPConnection) handle() {
 		return
 	}
 
-	c.peerId, err = MessageToID(msg) // Format the message into a UUID
+	newPeerId, remoteListenStr, err := MessageToID(msg) // Format the message into a UUID
+	c.peerId = newPeerId
 	if err != nil {
 		log.Printf("Error reading peer ID: %s", err.Error())
 		return
 	}
+	remoteAddr, err := net.ResolveTCPAddr("tcp", remoteListenStr)
+	if err != nil {
+		log.Printf("Error resolving remote address: %s", err.Error())
+		return
+	}
 
+	c.remoteListenAddr = remoteAddr
 	err = c.tcpProv.addPeer(c) // Add the peer to the list of peers
 	if err != nil {
 		log.Printf("Error adding peer: %s", err.Error())
@@ -119,11 +126,12 @@ func (c *TCPConnection) handle() {
 func (c *TCPConnection) SharePeers() {
 	peerAddrs := c.tcpProv.GetPeerAddrs()
 	peerAddrsStr := make([]string, 0, len(peerAddrs))
-	for i, addr := range peerAddrs {
-		if addr == c.conn.RemoteAddr() { // Don't send the peer their own address
+	
+	for _, addr := range peerAddrs {
+		if addr == c.remoteListenAddr { // Don't send the peer their own address
 			continue
 		}
-		peerAddrsStr[i] = addr.String()
+		peerAddrsStr = append(peerAddrsStr, addr.String())
 	}
 
 	if len(peerAddrsStr) == 0 { // Don't send an empty list of peers
@@ -136,24 +144,26 @@ func (c *TCPConnection) SharePeers() {
 		log.Printf("Error marshalling peer addresses: %s", err.Error())
 		return
 	}
+	//log.Println("Sharing peers")
 	c.SendMsg(peerAddrsBytes)
 }
 
 // Takes a protobuf message and converts it into a uuid
 // This is used to convert the ID of a peer into a uuid
-func MessageToID(msg *Message) (uuid.UUID, error) {
+func MessageToID(msg *Message) (uuid.UUID, string, error) {
 	peerId, ok := msg.Message.(*Message_PeerID)
 	if !ok {
-		return uuid.Nil, errors.New("Message is not a PeerID")
+		return uuid.Nil, "", errors.New("Message is not a PeerID")
 	}
 	peerID := peerId.PeerID
 
 	peerIDBytes := peerID.Id
 	peerIDUUID, err := uuid.FromBytes(peerIDBytes)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, "", err
 	}
-	return peerIDUUID, nil
+	peerAddr := peerID.Addr
+	return peerIDUUID, peerAddr, nil
 }
 
 // Reads in a message from the connection

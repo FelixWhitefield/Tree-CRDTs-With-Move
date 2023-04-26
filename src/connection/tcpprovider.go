@@ -19,6 +19,7 @@ import (
 )
 
 type TCPProvider struct {
+	laddr 		   *net.TCPAddr	
 	port           int
 	id             uuid.UUID
 	numPeers       int
@@ -39,7 +40,15 @@ func NewTCPProvider(numPeers int, port int) *TCPProvider {
 
 // New TCPProvider with, the number of peers, the port and the ID for the peer
 func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
+	address := net.JoinHostPort("0.0.0.0", strconv.Itoa(port))
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		log.Fatalf("Error resolving address: %s", err.Error())
+		return nil
+	}
+
 	return &TCPProvider{
+		laddr: 			tcpAddr,
 		port:           port,
 		numPeers:       numPeers,
 		id:             id,
@@ -59,14 +68,9 @@ func (p *TCPProvider) CloseAll() {
 }
 
 // This should be called in a goroutine after appropriate setup - Setting up channels
+// This should be the first thing called after creating a new TCPProvider
 func (p *TCPProvider) Listen() {
-	address := net.JoinHostPort("::", strconv.Itoa(p.port))
-	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
-	if err != nil {
-		log.Fatalf("Error resolving address: %s", err.Error())
-	}
-
-	listener, err := net.ListenTCP("tcp", tcpAddr)
+	listener, err := net.Listen("tcp", "0.0.0.0:" + strconv.Itoa(p.port))
 	if err != nil {
 		log.Fatalf("Error listening: %s", err.Error())
 	}
@@ -75,7 +79,7 @@ func (p *TCPProvider) Listen() {
 	log.Println("Listening on:", listener.Addr().String())
 
 	for {
-		conn, err := listener.AcceptTCP()
+		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("Error accepting connection: ", err.Error())
 		}
@@ -192,6 +196,7 @@ func (p *TCPProvider) connectToPeer(tcpAddr *net.TCPAddr) {
 	if tcpAddr.IP.IsLoopback() && tcpAddr.Port == p.port {
 		return
 	}
+
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
 		log.Printf("Error connecting to peer: %s", err.Error())
@@ -220,12 +225,12 @@ func (p *TCPProvider) addPeer(tcpConn *TCPConnection) error {
 	defer p.peersMu.Unlock()
 
 	if val, ok := p.peers[tcpConn.peerId]; ok && val != nil { // Check if the peer already exists
-		return errors.New("peer already exists (not nil)")
+		return errors.New("already connected to peer")
 	} else if len(p.peers) == p.numPeers { // Check if the peer map is full
 		return errors.New("peer map is full")
 	}
 
-	p.peerAddrs[tcpConn.conn.RemoteAddr()] = true
+	p.peerAddrs[tcpConn.remoteListenAddr] = true
 	p.peers[tcpConn.peerId] = tcpConn
 	return nil
 }
@@ -235,7 +240,7 @@ func (p *TCPProvider) removePeer(tcpConn *TCPConnection) {
 	p.peersMu.Lock()
 	defer p.peersMu.Unlock()
 
-	delete(p.peerAddrs, tcpConn.conn.RemoteAddr())
+	delete(p.peerAddrs, tcpConn.remoteListenAddr)
 	p.peers[tcpConn.peerId] = nil
 }
 
