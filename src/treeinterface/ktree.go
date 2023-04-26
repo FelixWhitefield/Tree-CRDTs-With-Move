@@ -6,6 +6,7 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
+	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 	"github.com/shamaton/msgpack/v2" // msgpack is faster and smaller than JSON
 
@@ -163,7 +164,7 @@ func (kt *KTree[MD]) Root() uuid.UUID {
 	return kt.crdt.RootID() // RootID is a constant, so no lock
 }
 
-func (kt *KTree[MD]) Get(id uuid.UUID) (MD, error) {
+func (kt *KTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 	node := kt.crdt.GetNode(id)
@@ -172,4 +173,14 @@ func (kt *KTree[MD]) Get(id uuid.UUID) (MD, error) {
 		return metadata, errors.New("node does not exist")
 	}
 	return node.Metadata(), nil
+}
+
+func (kt *KTree[MD]) Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error) {
+	kt.crdtMu.RLock()
+	defer kt.crdtMu.RUnlock()
+	node := kt.crdt.GetNode(id)
+	if node == nil {
+		return nil, errors.New("node does not exist")
+	}
+	return node, nil
 }

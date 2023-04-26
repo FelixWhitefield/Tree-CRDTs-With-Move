@@ -12,6 +12,7 @@ package k
 import (
 	"container/list"
 	"log"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 type State[MD any, T opTimestamp[T]] struct {
@@ -22,8 +23,8 @@ type State[MD any, T opTimestamp[T]] struct {
 	extraConflict *TNConflict[MD]
 }
 
-func NewState[MD any, T opTimestamp[T]](conf *TNConflict[MD]) State[MD, T] {
-	return State[MD, T]{tree: *NewTree[MD](), log: list.New(), extraConflict: conf}
+func NewState[MD any, T opTimestamp[T]](conf *TNConflict[MD]) *State[MD, T] {
+	return &State[MD, T]{tree: *NewTree[MD](), log: list.New(), extraConflict: conf}
 }
 
 // 'do_op' from the paper
@@ -43,7 +44,7 @@ func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
 		conflict = (*s.extraConflict)(op.NewP, &s.tree)
 	}
 
-	if !isAnc && !newParentIsSelf && !conflict {
+	if !isAnc && !newParentIsSelf && !conflict && op.ChldID != s.tree.Root() {
 		// instead of removing and then re-adding the node, we just move it
 		// this ensures that the node will either be moved fully, or not at all
 		// removing then adding may cause the node to be removed, but not added
@@ -65,7 +66,7 @@ func (s *State[MD, T]) DoOp(op *OpMove[MD, T]) *LogOpMove[MD, T] {
 // if the old parent is nil, then the child is removed
 func (s *State[MD, T]) UndoOp(lop *LogOpMove[MD, T]) {
 	s.tree.Remove(lop.op.ChldID)
-	if !(lop.oldP == nil) {
+	if lop.oldP != nil {
 		s.tree.Add(lop.op.ChldID, lop.oldP)
 	}
 }
@@ -88,31 +89,31 @@ func (s *State[MD, T]) ApplyOp(op *OpMove[MD, T]) {
 	if s.log.Len() == 0 {
 		logop := s.DoOp(op)
 		s.log.PushBack(logop)
-	} else {
-		e := s.log.Back()
-		// This ignores the case where CompareOp returns 0, which is not defined in the paper
-		// This should not happen in normal operation, if it does then the state is in an undefined state
-		// loops while log op is greater than op
-		for ; e != nil && e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
-			s.UndoOp(e.Value.(*LogOpMove[MD, T]))
-		}
+		return
+	} 
+	e := s.log.Back()
+	// This ignores the case where CompareOp returns 0, which is not defined in the paper
+	// This should not happen in normal operation, if it does then the state is in an undefined state
+	// loops while log op is greater than op
+	for ; e != nil && e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 1; e = e.Prev() {
+		s.UndoOp(e.Value.(*LogOpMove[MD, T]))
+	}
 
-		// check if the op is already in the log (should not happen in normal operation)
-		// or if we have moved to the front of the list
-		if e == nil || !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
-			logop := s.DoOp(op)
-			if e == nil { // If we have moved to the front of the list
-				e = s.log.PushFront(logop)
-			} else {
-				e = s.log.InsertAfter(logop, e)
-			}
+	// check if the op is already in the log (should not happen in normal operation)
+	// or if we have moved to the front of the list
+	if e == nil || !(e.Value.(*LogOpMove[MD, T]).CompareOp(op) == 0) {
+		logop := s.DoOp(op)
+		if e == nil { // If we have moved to the front of the list
+			e = s.log.PushFront(logop)
+		} else {
+			e = s.log.InsertAfter(logop, e)
 		}
-		e = e.Next()
+	}
+	e = e.Next()
 
-		// redo ops until the end of the log
-		for ; e != nil; e = e.Next() {
-			s.RedoOp(e.Value.(*LogOpMove[MD, T]))
-		}
+	// redo ops until the end of the log
+	for ; e != nil; e = e.Next() {
+		s.RedoOp(e.Value.(*LogOpMove[MD, T]))
 	}
 }
 

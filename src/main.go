@@ -13,7 +13,9 @@ import (
 
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
+	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
 	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
 )
@@ -67,6 +69,56 @@ type LargePerson struct {
 }
 
 func main() {
+	mtree := ti.NewMTree[string](connection.NewTCPProvider(1, 1122))
+	m2tree := ti.NewMTree[string](connection.NewTCPProvider(1, 1123))
+
+	m2tree.ConnectionProvider().Connect("localhost:1122")
+
+	for i := 0; i < 10000; i++ {
+		mtree.Insert(mtree.Root(), "Felix")
+		m2tree.Insert(m2tree.Root(), "Felix")
+	}
+
+	mid, _ := mtree.Insert(mtree.Root(), "Felix")
+	mid2, _ := m2tree.Insert(m2tree.Root(), "Felix")
+
+	time.Sleep(1*time.Second)
+
+	for i := 0; i < 10000; i++ {
+		m2tree.Move(mid, mid2)
+
+		mtree.Move(mid2, mid)
+		mtree.Move(mid, mid2)
+	}
+
+	time.Sleep(1 * time.Second)
+
+
+	nodes22, _ := m2tree.GetChildren(m2tree.Root())
+	nodes11, _ := mtree.GetChildren(mtree.Root())
+
+	
+	fmt.Println(len(nodes22))
+	fmt.Println(len(nodes11))
+	fmt.Println(m2tree.Equals(mtree))
+
+	// start := time.Now()
+	// for i := 0; i < 10_000; i++ {
+	// 	mtree.Insert(mtree.Root(), "Felix")
+	// 	m2tree.Insert(m2tree.Root(), "Felix")
+	// }
+	// fmt.Println("Insert 1 Mil ops EACH:", time.Since(start))
+
+	// time.Sleep(1 * time.Second)
+
+	// nodes, _ := m2tree.GetChildren(m2tree.Root())
+	// fmt.Println("Nodes under root in Tree 2:", len(nodes))
+	// nodes1, _ := mtree.GetChildren(mtree.Root())
+	// fmt.Println("Nodes under root in Tree 1:", len(nodes1))
+
+
+
+	return 
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
@@ -181,11 +233,11 @@ func main() {
 	test(&i)
 	fmt.Println(i)
 
-	tree := k.NewTree[string]()
+	tree := treecrdt.NewTree[string]()
 	u1 := uuid.New()
-	tree.Add(u1, k.NewTreeNode(k.RootUUID, "hi"))
+	tree.Add(u1, treecrdt.NewTreeNode(treecrdt.RootUUID, "hi"))
 	u2 := uuid.New()
-	tree.Add(u2, k.NewTreeNode(u1, "hi2"))
+	tree.Add(u2, treecrdt.NewTreeNode(u1, "hi2"))
 
 	fmt.Println(tree)
 

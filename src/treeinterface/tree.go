@@ -2,6 +2,7 @@ package treeinterface
 
 import (
 	"github.com/google/uuid"
+	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 type Tree[MD any] interface {
@@ -12,5 +13,6 @@ type Tree[MD any] interface {
 	GetChildren(id uuid.UUID) ([]uuid.UUID, error)
 	GetParent(id uuid.UUID) (uuid.UUID, error)
 	Root() uuid.UUID
-	Get(id uuid.UUID) (MD, error)
+	GetMetadata(id uuid.UUID) (MD, error)
+	Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error)
 }

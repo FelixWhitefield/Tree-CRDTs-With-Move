@@ -1,4 +1,4 @@
-package k
+package treecrdt
 
 // Represents the errors which can occur when performing operations on the tree
 //
@@ -6,7 +6,6 @@ package k
 
 import (
 	"fmt"
-
 	"github.com/google/uuid"
 )
 

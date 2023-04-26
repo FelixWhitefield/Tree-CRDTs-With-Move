@@ -1,0 +1,77 @@
+package maram
+
+import (
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	"github.com/google/uuid"
+)
+
+type TreeReplica[MD any, T opTimestamp[T]] struct {
+	state State[MD, T]
+	clock c.Clock[T]
+	priotity c.Lamport
+}
+
+func NewTreeReplica[MD any](ids ...uuid.UUID) *TreeReplica[MD, *c.VectorTimestamp] {
+	var id uuid.UUID
+	if len(ids) > 0 {
+		id = ids[0]
+	} else {
+		id = uuid.New()
+	}
+	return &TreeReplica[MD, *c.VectorTimestamp]{state: *NewState[MD, *c.VectorTimestamp](), clock: c.NewVectorClock(id), priotity: *c.NewLamport(id)}
+}
+
+func (tr *TreeReplica[MD, T]) RootID() uuid.UUID {
+	return tr.state.tree.Root()
+}
+
+func (tr *TreeReplica[MD, T]) ActorID() uuid.UUID {
+	return tr.clock.ActorID()
+}
+
+func (tr *TreeReplica[MD, T]) CurrentTime() T {
+	return tr.clock.Timestamp()
+}
+
+func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
+	return tr.state.tree.GetChildren(u)
+}
+
+func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
+	return tr.state.tree.GetNode(u)
+}
+
+func (tr *TreeReplica[MD, T]) PrepareAdd(parentId uuid.UUID, metadata MD) *OpAdd[MD, T] {
+	id := uuid.New()
+	return &OpAdd[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: parentId, Meta: metadata}}
+}
+
+func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
+	return &OpRemove[T]{Timestmp: tr.clock.Tick(), ChldID: id}
+}
+
+func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
+	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
+}
+
+func (tr *TreeReplica[MD, T]) Effect(op Operation[T]) {
+	tr.clock.Merge(op.Timestamp())
+
+	switch op := op.(type) { // If op is of type OpAdd, update priority
+	case *OpMove[MD, T]:
+		tr.priotity.Merge(&op.Priotity)
+	}
+
+	tr.state.ApplyOp(op)
+}
+
+func (tr *TreeReplica[MD, T]) Effects(op []Operation[T]) {
+	for _, o := range op {
+		tr.Effect(o)
+	}
+}
+
+func (tr *TreeReplica[MD, T]) State() *State[MD, T] {
+	return &tr.state
+}

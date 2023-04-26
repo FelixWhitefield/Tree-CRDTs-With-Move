@@ -14,6 +14,8 @@
 \usepackage{listings}
 \usepackage{protobuf/lang}  % include language definition for protobuf
 \usepackage{protobuf/style} % include custom style for proto declarations. 
+\usepackage[hidelinks]{hyperref}
+
 \begin{document} 
 
 \pagenumbering{roman}
@@ -131,10 +133,10 @@ The remaining work includes creating a more refined design of the system and the
 \begin{center}
     \textsc{\LARGE Statement of Originality} \\ [1cm]
 \end{center}
-I have read and understood the ECS Academic Integrity\footnote{http://ecs.gg/ai} information and the University’s
-Academic Integrity Guidance for Students\footnote{https://www.southampton.ac.uk/quality/assessment/academic\_integrity.page}.
+I have read and understood the ECS Academic Integrity\footnote{\url{http://ecs.gg/ai}} information and the University’s
+Academic Integrity Guidance for Students\footnote{\url{https://www.southampton.ac.uk/quality/assessment/academic\_integrity.page}}.
 \\[0.3cm]
-I am aware that failure to act in accordance with the Regulations Governing Academic Integrity\footnote{http://www.calendar.soton.ac.uk/sectionIV/academic-integrity-regs.html}
+I am aware that failure to act in accordance with the Regulations Governing Academic Integrity\footnote{\url{http://www.calendar.soton.ac.uk/sectionIV/academic-integrity-regs.html}}
 may lead to the imposition of penalties which, for the most serious cases, may include
 termination of programme.
 \\[0.3cm]
@@ -193,16 +195,16 @@ The two main network architectures of file synchronisation systems are client-se
 % File synchronisation software usually comes in two variants; either a system with a central server that handles the file sharing, or a peer-to-peer system. Each system has its own benefits and drawbacks, as described below.
 
 \subsection{Client-server Systems}
-A vast majority of file synchronisation systems are integrated into file backup systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{https://www.google.co.uk/intl/en-GB/drive/}, OneDrive\footnote{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage} and Dropbox\footnote{https://www.dropbox.com/features/sync}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
+A vast majority of file synchronisation systems are integrated into file backup systems. These systems store the files in the cloud and all devices will be connected and synced with the cloud's version of the files. These services usually sell themselves as 'Cloud Storage', in that your files will be backed up on the cloud and be accessible from all your devices. A few of the popular services include Google Drive\footnote{\url{https://www.google.co.uk/intl/en-GB/drive/}}, OneDrive\footnote{\url{https://www.microsoft.com/en-us/microsoft-365/onedrive/online-cloud-storage}} and Dropbox\footnote{\url{https://www.dropbox.com/features/sync}}. On these services, the conflict resolution and merge of changes is all completed on a central server. This means that all updates to the file system have to go through a single server before being relayed to interested clients. \par
 
 This has the drawback of increased latency as all requests have to go through and be processed by the central server. If many people use the service, then the strain on the server from file transfers would be high and could increase the latency further. These systems also rely on the user trusting the provider to keep their files safe. \par
 
 As the web evolves there is more talk about Web3\cite{WhatIsWeb3}, which has foundations in decentralisation.
 \subsection{Peer-to-peer Systems}
-There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{https://www.resilio.com/}. This is an improvement on BitTorrent, however, it has some limitations and drawbacks, such as:
+There are many peer-to-peer (p2p) file-sharing programs, with many popular ones being built using the BitTorrent protocol. The most popular BitTorrent clients are uTorrent and BitTorrent\footnote{\url{https://torrentfreak.com/utorrent-is-the-most-used-bittorrent-client-by-far-200405/}}. While the BitTorrent protocol is widely used, one of its main drawbacks is that it does not accommodate editing the shared files. A modified version of the  BitTorrent protocol has been created to allow for the editing of files called Resilio\footnote{\url{https://www.resilio.com/}}. This is an improvement on BitTorrent, however, it has some limitations and drawbacks, such as:
 \begin{itemize}
-    \item Renaming a folder will not rename the folder on other devices \footnote{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}.
-    \item Renaming a file will cause other devices to believe it is deleted, and move the file into an archive folder. Then when the peer detects the renamed file, it will check the archive folder for a file with the same hash, and put it back with a new name\footnote{https://help.resilio.com/hc/en-us/articles/209606526-What-happens-when-file-is-renamed}.
+    \item Renaming a folder will not rename the folder on other devices \footnote{\url{https://help.resilio.com/hc/en-us/articles/205450655-Can-I-move-or-rename-a-syncing-folder-}}.
+    \item Renaming a file will cause other devices to believe it is deleted, and move the file into an archive folder. Then when the peer detects the renamed file, it will check the archive folder for a file with the same hash, and put it back with a new name\footnote{\url{https://help.resilio.com/hc/en-us/articles/209606526-What-happens-when-file-is-renamed}}.
           \begin{itemize}
               \item If the file is renamed and then changed, the hashes will not be the same and therefore will require the transmission of the whole file contents.
           \end{itemize}
@@ -232,7 +234,7 @@ Most distributed data stores today are either:
     \item \textbf{Strongly Consistent}: Any subsequent read after a write will return the most recent value.
     \item \textbf{Eventually Consistent}: The latest data will eventually become available, if no new updates are made.
 \end{itemize}
-Many databases are eventually consistent, such as Cassandra\footnote{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}. Even databases such as MongoDB\footnote{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels do not require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
+Many databases are eventually consistent, such as Cassandra\footnote{\url{https://cassandra.apache.org/doc/latest/cassandra/architecture/guarantees.html}}. Even databases such as MongoDB\footnote{\url{https://www.mongodb.com/docs/manual/core/read-isolation-consistency-recency/}} (which, by default, is strongly consistent) will become eventually consistent when reading from secondary members. Lower consistency levels do not require the coordiniation which comes with higher levels, and therefore can achieve higher performance because of this. As the need for low latency and higher throughput increases, eventual consistency becomes more desirable over strong consistency. \par
 
 \subsection{Strong Eventual Consistency}
 Strong Eventual Consistency (SEC) takes eventual consistency even further, by guaranteeing that two nodes which receive the same updates (regardless of order) will be in the same state. In eventually consistent systems, the nodes would have to communicate to resolve conflicts by consensus or roll-back. Whereas in strong eventually consistent systems the conflicts are resolved in a deterministic manner on each node (without the need for communication). \par
@@ -504,7 +506,7 @@ The CRDTs which will be implemented by this paper are particularly applicable to
 The source code for this project will be stored in a GitHub repository. This will allow for the code to be easily shared and modified by other developers. It will also allow for the code to be easily version controlled, and for the history of the project to be easily tracked. This report is also stored in the GitHub repository. \par
 
 \subsection{Diagrams}
-LucidChart\footnote{https://www.lucidchart.com/} is an online tool which can be used to create different types of diagrams. This paper will use LucidChart to create UML class diagrams, which will be used to visualise the different components of the system. Eraser\footnote{https://www.eraser.io} is another online tool which can be used to create diagrams from code. This paper will use Eraser to create sequence diagrams, which will be used to visualise the flow of the system. \par
+LucidChart\footnote{\url{https://www.lucidchart.com/}} is an online tool which can be used to create different types of diagrams. This paper will use LucidChart to create UML class diagrams, which will be used to visualise the different components of the system. Eraser\footnote{\url{https://www.eraser.io}} is another online tool which can be used to create diagrams from code. This paper will use Eraser to create sequence diagrams, which will be used to visualise the flow of the system. \par
 
 
 \section{Testing}
@@ -512,7 +514,7 @@ Go has a built-in testing framework, which will be used to test the code. Unit t
 
 
 \section{Code Structure}\label{sec:code_structure}
-The code will be written in accordance with the Go style guide\footnote{https://golang.org/doc/effective\_go}. This will ensure that the code is easy to read and understand. Go itself is opinionated about how code should be structured, and comes with a built-in tool to automatically format code. This makes code written in Go consistent and easy to read. \par
+The code will be written in accordance with the Go style guide\footnote{\url{https://golang.org/doc/effective\_go}}. This will ensure that the code is easy to read and understand. Go itself is opinionated about how code should be structured, and comes with a built-in tool to automatically format code. This makes code written in Go consistent and easy to read. \par
 
 The code will be split into different packages, with each package containing a single component of the system. The packages will be as follows:
 \begin{itemize}
@@ -570,7 +572,7 @@ The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be
 \end{figure}
 
 \subsection{Network}
-The network layer takes inspiration from Yjs\footnote{https://docs.yjs.dev/}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
+The network layer takes inspiration from Yjs\footnote{\url{https://docs.yjs.dev/}}, however the implementation is somewhat reversed. In Yjs, the network layer binds to the CRDT, in this paper the interface layer binds to the network layer. The main reason for this is that this paper is designing a static system, with a fixed number of nodes and therefore this design is more suitable. \par
 
 If the system was to be designed to be dynamic, then the CRDT layer would have more requirements. The CRDT would either need to store all local operations indefinitely or provide a means of transferring its state to new nodes, as they would require access to the current state of the CRDT.
 
@@ -654,30 +656,62 @@ The clocks package was the first to be implemented. Initially, it was a struggle
 \end{figure}
 
 
-\section{CRDTs}
+\section{Tree CRDTs}
 The CRDT algorithms were the largest part of the implementation as they contain the most parts, but were based off the algorithms from the papers. The CRDT implementations are not thread-safe.
+
+After implementing Kleppmann's algorithm, it was realised that the \texttt{Tree} and \texttt{TreeNode} structs are general classes and can be reused for both algorithms. Therefore, they were put into their own package, and the different algorithms were made into subpackages of the \texttt{treecrdt} package. This allows for the code to be reused, and for new algorithms to be easily added. The two structs do the following: 
+
+\begin{itemize}
+    \item \texttt{TreeNode}: This contains the node's parent id and metadata.
+    \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s, representing the triples. As well as a map of node ids to their children, for easy access to the children of a node.
+\end{itemize}
+
+The \texttt{Tree} struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is usually queried for a certain node when applying an operation. Which is O(1) for a set, compared to O(n) for a slice.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth{}]{images/treecrdt_impl.jpg} 
+    \caption{Class diagram for the \textit{treecrdt} package.}
+    \label{fig:treecrdt_impl} 
+\end{figure} 
 
 \subsection{Kleppmann's Algorithm}
 The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, that were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, which that contributes to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. Overall, the algorithm was relatively simple to implement and was composed of the following parts:
 \begin{itemize}
     \item \texttt{OpMove}: This contains a move operation, which is the child id, parent id, metadata and a timestamp.
     \item \texttt{LogOpMove}: This contains a move operation, and its previous parent id and metadata. This is used for the log.
-    \item \texttt{TreeNode}: This contains the node's parent id and metadata.
-    \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s, representing the triples. As well as a map of node ids to their children, for easy access to the children of a node.
     \item \texttt{State}: This contains the state of the CRDT. It contains a \texttt{Tree} and a log of operations. The state contains the main algorithm for applying operations.
     \item \texttt{TreeReplica}: This represents the state of the CRDT for a single replica. It contains a \texttt{State} and a \texttt{Clock}. This struct implements the \textit{prepare} and \textit{effect} functions from the literature on CmRDTs.
 \end{itemize}
 
-The log of operations being implemented as a linked list, as it is faster for altering the middle of the list and frequent appending. The tree struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is queried for a certain node when applying an operation. Which is O(1) for a set, compared to O(n) for a slice. \par
+The log of operations being implemented as a linked list. This was chosen over an array or slice as it is faster for altering the middle of the list and frequent appending. A normal slice would have to copy all the elements to a new array when it is full. \par
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=13cm]{images/kcrdt_impl.jpg} 
-    \caption{Class diagram for the Kleppmann CRDT.}
-    \label{fig:kcrdt} 
+    \includegraphics[width=1\textwidth]{images/kleppmann_impl2.jpg} 
+    \caption{Class diagram for the Kleppmann's algorithm.}
+    \label{fig:kleppmann_impl} 
 \end{figure} 
 
+\subsection{Maram}
 
+The Maram algorithm was more difficult to implement, and the final implementation slightly alters from the literature. The paper for the algorithm \cite{https://doi.org/10.48550/arxiv.2103.04828} was not as clear as the paper for Kleppmann's algorithm \cite{9563274}, and the algorithm was more complex. The paper defines how to resolve conflicts between two operations, but does not define how to resolve conflicts between multiple operations. Also, later concurrent move operations may affect the conflict resolution of earlier concurrent move operations. Therefore, the algorithm was implemented with the following change:
+
+\begin{itemize}
+    \item Concurrent move operations implement the algorithm from Kleppmann's algorithm. They have a total order, and are undone and re-applied in the that order. This ensures that concurrent move operations have a deterministic outcome.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/maram_impl.jpg} 
+    \caption{Class diagram for Maram.}
+    \label{fig:maram_impl} 
+\end{figure} 
+
+In comparison to Kleppmann's algorithm, Maram only logs move operations. This is because of the following reasons:
+\begin{itemize}
+    \item \textit{Add} operations are not logged as, they have a precondition that requires the parent node to be in the tree. The system also has a causal delivery layer, and therefore the addition of the parent node will be applied before adding the child. It also relies on nodes being added having unique ids, which is possible with UUIDs.
+\end{itemize}
 
 \section{Network}
 The network package was the most difficult to implement, as it is a peer-to-peer network with a reliable broadcast protocol. It has to deal with concurrency, and keep track of which nodes have received which operation. This requires that the nodes exchange their ids and share their peers. \par
@@ -696,9 +730,9 @@ As shown by Figure \ref{fig:networkimpl}, the network package only consists of t
     \end{itemize} 
     \item The \texttt{TCPProvider} also runs the \texttt{handleBroadcast()} function in a goroutine. This listens on the \texttt{opsToBroadcast} channel for operations to broadcast. When an operation is received, it is sent to all peers. 
 \end{itemize}
-Protocol Buffers\footnote{https://protobuf.dev/} are used to serialise the messages. They were chosen as they are smaller, faster and more efficient than other methods. Also, using their \texttt{oneof} feature, the message type can be easily determined. More information on the protocol buffers used can be found in Appendix \ref{app:protobuf}. \par
+Protocol Buffers\footnote{\url{https://protobuf.dev/}} are used to serialise the messages. They were chosen as they are smaller, faster and more efficient than other methods. Also, using their \texttt{oneof} feature, the message type can be easily determined. More information on the protocol buffers used can be found in Appendix \ref{app:protobuf}. \par
 
-\begin{figure}[H]
+\begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{images/network_impl.jpg}
     \caption{Class diagram for the connection package.}
@@ -708,15 +742,15 @@ Protocol Buffers\footnote{https://protobuf.dev/} are used to serialise the messa
 
 \section{Tree Interface}
 The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time. \par
-The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. 
-
-
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\textwidth]{images/ktree_impl.jpg}
+    \includegraphics[width=0.8\textwidth]{images/treeinterface_impl.jpg}
     \caption{Class diagram for the tree interface.}
     \label{fig:treeimpl}
 \end{figure}
+The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. 
+
+
 
 
 \chapter{Testing}

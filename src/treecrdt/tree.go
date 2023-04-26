@@ -1,4 +1,4 @@
-package k
+package treecrdt
 
 // `Tree` holds the current state of the tree.
 //
@@ -180,6 +180,31 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 func (t *Tree[MD]) Contains(id uuid.UUID) bool {
 	_, exists := t.nodes[id]
 	return exists
+}
+
+func (t *Tree[MD]) Equals(other *Tree[MD]) bool {
+	if len(t.nodes) != len(other.nodes) {
+		return false
+	}
+	for k, v := range t.nodes {
+		if !v.Equals(other.nodes[k]) {
+			return false
+		}
+	}
+	if len(t.children) != len(other.children) {
+		return false
+	}
+	for k, v := range t.children {
+		if len(v) != len(other.children[k]) {
+			return false
+		}
+		for k2 := range v {
+			if !other.children[k][k2] {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (t *Tree[MD]) String() string {

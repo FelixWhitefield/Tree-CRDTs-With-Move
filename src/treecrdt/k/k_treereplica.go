@@ -10,6 +10,7 @@ package k
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
 
@@ -36,7 +37,7 @@ func NewTreeReplica[MD any](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica
 	} else {
 		id = uuid.New()
 	}
-	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](conf), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
+	return &TreeReplica[MD, *c.Lamport]{state: *NewState[MD, *c.Lamport](conf), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
 }
 
 func (tr *TreeReplica[MD, T]) RootID() uuid.UUID {

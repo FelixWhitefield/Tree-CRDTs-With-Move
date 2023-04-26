@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 func TestNewAndCompareOp(t *testing.T) {

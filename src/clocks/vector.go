@@ -116,3 +116,42 @@ func (v *VectorClock) String() string {
 func (v *VectorTimestamp) String() string {
 	return fmt.Sprintf("%v", *v)
 }
+
+func (v *VectorTimestamp) CausallyReady(other *VectorTimestamp) bool {
+	oneLarger := false
+	for key, value := range *v {
+		if value <= (*other)[key] {
+			continue
+		} else {
+			if oneLarger {
+				return false
+			}
+			if value == (*other)[key]+1 {
+				oneLarger = true
+			} else {
+				return false
+			}
+		}
+	}
+	return oneLarger 
+}
+
+func (v *VectorTimestamp) Same(other *VectorTimestamp) bool {
+	for key, value := range *v {
+		otherValue, ok := (*other)[key]
+		if !ok || value != otherValue {
+			return false
+		}
+	}
+	return true
+}
+
+func (v *VectorTimestamp) Less(other *VectorTimestamp) bool {
+	for key, value := range *v {
+		otherValue := (*other)[key]
+		if value > otherValue {
+			return false
+		}
+	}
+	return true
+}

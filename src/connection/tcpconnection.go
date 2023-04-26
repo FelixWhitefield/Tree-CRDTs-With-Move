@@ -81,7 +81,6 @@ func (c *TCPConnection) handle() {
 			log.Printf("Malformed message: %s. Connection closed for %s", err.Error(), c.peerId.String())
 			return
 		}
-
 		// Handle the message
 		switch msg.Message.(type) {
 		case *Message_PeerAddresses:

@@ -5,6 +5,7 @@ import (
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 func TestNewAndAdd(t *testing.T) {
