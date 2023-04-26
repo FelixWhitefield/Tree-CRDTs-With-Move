@@ -1,7 +1,6 @@
-package treecrdt_test
+package treecrdt
 
 import (
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 	"testing"
 )

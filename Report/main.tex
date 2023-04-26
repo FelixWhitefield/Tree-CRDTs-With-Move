@@ -16,6 +16,7 @@
 \usepackage{protobuf/style} % include custom style for proto declarations. 
 \usepackage[hidelinks]{hyperref}
 \usepackage{dirtree}
+\usepackage{tabularx}
 
 \begin{document} 
 
@@ -115,6 +116,8 @@
 \begin{abstract}
 \addcontentsline{toc}{section}{Abstract}
 
+[Due to be rewritten]
+
 This report is an attempt to use new developments in tree CRDTs with highly available move operations to create a file synchronisation system that will resolve all directory conflicts without human interaction; and will not exhibit 'buggy' behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these systems in a real-world scenario. So far, this paper has reviewed the existing literature and has analysed the concurrency issues facing current systems. As well as detailing two algorithms which have been proposed that state to have solutions to the problem of creating a highly available move operation. \par
 The remaining work includes creating a more refined design of the system and then implementing the separate parts to create a cohesive application. Once implemented, the system will be tested for reliability and performance. This testing will inform the final evaluation of system, where it will be compared to existing solutions.
 
@@ -161,7 +164,23 @@ contains plagiarised material, and for quality assurance purposes.
 \addcontentsline{toc}{section}{Acknowledgements}
 
 I would like to express my sincere gratitude to the authors of the paper "A highly-available move operation for replicated
-trees"\cite{9563274} and "A coordination-free, convergent, and safe replicated tree"\cite{https://doi.org/10.48550/arxiv.2103.04828} for their work. The algorithms which they have proposed has been an essential part of this report, and I am truly grateful for their efforts.
+trees"\cite{9563274} and "A coordination-free, convergent, and safe replicated tree"\cite{https://doi.org/10.48550/arxiv.2103.04828} for their work. The algorithms which they have proposed has been an essential part of this report, and I am truly grateful for their efforts. This paper has attempted to implement their proposed algorithms in Go. \par 
+
+\hspace{2cm}
+
+The source code for this report also makes use of the following open source packages: 
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{\textwidth}{|l|X|}
+    \hline
+    \textbf{Name} & \textbf{URL} \\ \hline
+    uuid     &  \scriptsize{\url{https://pkg.go.dev/github.com/google/uuid@v1.3.0}}  \\ 
+    protobuf     &   \scriptsize{\url{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}}  \\
+    msgpack     &    \scriptsize{\url{https://pkg.go.dev/google.golang.org/protobuf@v1.30.0}} \\ \hline
+    \end{tabularx}
+\end{table}
+
+The protocol buffer compiler \href{https://github.com/protocolbuffers/protobuf#protocol-compiler-installation}{\textit{protoc}}, with plugin \href{https://github.com/protocolbuffers/protobuf-go}{\textit{protoc-gen-go}} was used to generate the Go code for the protobuf messages. The generated code is within \texttt{*.pb.go} files, and was not written by Felix Whitefield. \par
 
 
 
@@ -184,7 +203,7 @@ The goal of this project is to implement and test the viability of using new adv
 Tree structures are used in many scenarios, so the code for this project could be used where a tree structure with a highly available move operation is wanted.
 
 \section{Scope}
-The scope of this project will be limited to implementing CRDTs to resolve conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualize how the system would scale. The scope will be limited to implementing the CRDT algorithms and an accompanying, simple peer-to-peer network. Adding security or a more complex networking layer is out of the scope for this project. Also, more in-depth optimisation of the CRDTs is out of the scope of this project, however, the data structures used will attempt to be as efficient as possible. \par
+The scope of this project will be limited to implementing CRDTs to resolve conflicts and testing their performance and reliability. The system should be tested with a varying number of replicas and conflicts to attempt to visualise how the system would scale. The scope will be limited to implementing the CRDT algorithms and an accompanying, simple peer-to-peer network. Adding security or a more complex networking layer is out of the scope for this project. Also, more in-depth optimisation of the CRDTs is out of the scope of this project, however, the data structures used will attempt to be as efficient as possible. \par
 
 \newpage
 \chapter{Literature Review}
@@ -504,18 +523,18 @@ The CRDTs which will be implemented by this paper are particularly applicable to
 
 
 \subsection{GitHub}
-The source code for this project will be stored in a GitHub repository. This will allow for the code to be easily shared and modified by other developers. It will also allow for the code to be easily version controlled, and for the history of the project to be easily tracked. This report is also stored in the GitHub repository. \par
+The source code for this project is stored in a GitHub repository. This allows for the code to be easily shared and modified by other developers. It also allows for the code to be easily version controlled, and for the history of the project to be easily tracked. This report is also stored in the GitHub repository. \par
 
 \subsection{Diagrams}
-LucidChart\footnote{\url{https://www.lucidchart.com/}} is an online tool which can be used to create different types of diagrams. This paper will use LucidChart to create UML class diagrams, which will be used to visualise the different components of the system. Eraser\footnote{\url{https://www.eraser.io}} is another online tool which can be used to create diagrams from code. This paper will use Eraser to create sequence diagrams, which will be used to visualise the flow of the system. \par
+LucidChart\footnote{\url{https://www.lucidchart.com/}} is an online tool which can be used to create different types of diagrams. This paper uses LucidChart to create UML class diagrams, which are used to visualise the different components of the system. Eraser\footnote{\url{https://www.eraser.io}} is another online tool which can be used to create diagrams from code. This paper uses Eraser to create sequence diagrams, which will are used to visualise the flow of messages within the system. \par
 
 
 \section{Testing}
-Go has a built-in testing framework, which will be used to test the code. Unit tests can be used to simulate concurrent operations on the CRDTs, and therefore test the correctness of the CRDTs. Integration tests will be used to test the correctness of the system as a whole and ensure that the different layers work together correctly. \par
+Go has a built-in testing framework, which is used to write unit tests. Unit tests can be used to simulate concurrent operations on the CRDTs, and therefore test the correctness of the CRDTs. Integration tests will be used to test the correctness of the system as a whole and ensure that the different layers work together correctly. \par
 
 
 \section{Code Structure}\label{sec:code_structure}
-The code will be written in accordance with the Go style guide\footnote{\url{https://golang.org/doc/effective\_go}}. This will ensure that the code is easy to read and understand. Go itself is opinionated about how code should be structured, and comes with a built-in tool to automatically format code. This makes code written in Go consistent and easy to read. \par
+The code is written in accordance with the Go style guide\footnote{\url{https://golang.org/doc/effective\_go}}. This ensures that the code is easy to read and understand. Go itself is opinionated about how code should be structured, and comes with a built-in tool to automatically format code. This makes code written in Go consistent and easy to read. \par
 
 The code will be split into different packages, with each package containing a single component of the system. The packages will be as follows:
 \begin{itemize}
@@ -637,14 +656,14 @@ The system takes advantage of concurrency to allow for increased performance and
 
 
 \chapter{Implementation}\label{sec:implementation}
-This section will explain the difficulties in implementing the system, and how they were overcome. As well as the differences between the design and the implementation. \par
+This section will explain the difficulties in implementing the system, and how they were overcome. As well as the differences between the design and the implementation. The diagrams in this chapter were created using \href{https://github.com/jfeliu007/goplantuml}{\color{blue}\textit{goplantuml}}, and some manual editing.  \par
 The main struggle in the implementation was using Go to implement the system. Go does not have explicit implementations of interfaces, and uses composition instead of inheritance. There are also no classes in Go, instead there are types and structs which can have functions. This caused some initial difficulties in the implementation. \par
 
 The implementation uses the following open source packages:
 \begin{itemize}
     \item \textbf{\href{https://pkg.go.dev/github.com/google/uuid@v1.3.0}{uuid}} - Used to generate unique IDs for nodes, operations and peers.
-    \item \textbf{\href{https://pkg.go.dev/google.golang.org/protobuf}{protobuf}} - Used to encode and decode messages.
-    \item \textbf{\href{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}{msgpack}} - Used to encode and decode operations. \textit{protobuf} cannot be used as it requires the types to be defined in a \texttt{.proto} file. This is not possible for metadata field in the tree nodes as they can be \textit{any} type.
+    \item \textbf{\href{https://pkg.go.dev/google.golang.org/protobuf}{protobuf}} - Used to serialise messages between replicas.
+    \item \textbf{\href{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}{msgpack}} - Used to serialise operations. \textit{protobuf} cannot be used as it requires the types to be defined in a \texttt{.proto} file. This is not possible for metadata field in the tree nodes as they can be \textit{any} type.
 \end{itemize}
 
 \section{Clocks}
@@ -886,7 +905,7 @@ to existing solutions.
 
 \chapter{Implementation}
 
-This chapter details the interesting parts of the implementation. It contains some code snippets, however for a more detailed look at the code, the source code and associated comments should be consulted. The source code can be found at \url{github.com/FelixWhitefield/Tree-CRDTs-With-Move}
+This chapter details the interesting parts of the implementation. It contains some code snippets, however for a more detailed look at the code, the source code and associated comments should be consulted. The source code can be found at \url{github.com/FelixWhitefield/Tree-CRDTs-With-Move}. The repository will become public after the project has been marked.
 
 \newpage
 \section{Protocol Buffers}\label{app:protobuf}
@@ -937,6 +956,8 @@ The archive has the following contents and directory structure:
         .3 clocks.\DTcomment{Contains the clock package}.
         .4 test.\DTcomment{Contains the tests for the clock package}.
         .3 connection.\DTcomment{Contains the connection package}.
+        .4 message.pb.go.\DTcomment{Contains the generated protocol buffer file}.
+        .4 message.proto.\DTcomment{Contains the protocol buffer file}.
         .3 treecrdt\DTcomment{Contains the treecrdt package}.
         .4 kleppmann\DTcomment{Contains Kleppmann's algorithm}.
         .4 maram\DTcomment{Contains the Maram algorithm}.
@@ -944,6 +965,7 @@ The archive has the following contents and directory structure:
         .3 go.mod\DTcomment{Contains the go module file}.
         .3 go.sum\DTcomment{Contains the go module sum file}.
         .2 diagrams.\DTcomment{Contains the generated class diagrams}.
+        .3 images.\DTcomment{Contains the images used in the report}.
     }
     \caption{Directory structure of the archive}
 \end{figure}
