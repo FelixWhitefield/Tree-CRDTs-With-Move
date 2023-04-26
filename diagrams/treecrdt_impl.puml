@@ -1,0 +1,61 @@
+@startuml
+
+namespace treecrdt {
+    interface error {
+        + Error() string
+    }
+
+    class IDAlreadyExistsError << (S,Aquamarine) >> {
+        - id uuid.UUID
+    }
+    class InvalidNodeDeletionError << (S,Aquamarine) >> {
+        - id uuid.UUID
+    }
+    class MissingNodeIDError << (S,Aquamarine) >> {
+        - id uuid.UUID
+    }
+
+    class Tree <MD any> << (S,Aquamarine) >> {
+        - nodes <font color=blue>map</font>[uuid.UUID]*TreeNode[MD]
+        - children <font color=blue>map</font>[uuid.UUID]<font color=blue>map</font>[uuid.UUID]bool
+
+        + Root() uuid.UUID
+        + Tombstone() uuid.UUID
+        + GetNode(id uuid.UUID) *TreeNode
+        + GetChildren(id uuid.UUID) ([]uuid.UUID, bool)
+        + Add(id uuid.UUID, node *TreeNode) error
+        + Remove(id uuid.UUID) error
+        + Move(id uuid.UUID, node *TreeNode) error
+        + DeleteSubTree(id uuid.UUID) error
+        + IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error)
+        + Contains(id uuid.UUID) bool
+        + String() string
+
+    }
+
+        class TreeNode <MD any> << (S,Aquamarine) >> {
+        + PrntID uuid.UUID
+        + Meta MD
+
+        + ParentID() uuid.UUID
+        + Metadata() MD
+
+    }
+
+    class TNConflict <MD any> << (T, #FF7700) >> {
+        <font color=blue>func</font>(*TreeNode[MD], *Tree[MD]) bool
+    }
+
+
+
+
+    TreeNode "*" <-- "1" Tree
+
+    error <|.left. IDAlreadyExistsError
+    error <|.. InvalidNodeDeletionError
+    error <|.. MissingNodeIDError
+}
+
+
+
+@enduml

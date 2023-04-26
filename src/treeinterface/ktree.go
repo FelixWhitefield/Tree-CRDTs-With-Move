@@ -2,16 +2,12 @@ package treeinterface
 
 import (
 	"errors"
-
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	k "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
 	"github.com/google/uuid"
-	"github.com/shamaton/msgpack/v2" // msgpack is faster and smaller than JSON
-
-	//"google.golang.org/protobuf/proto"
-	// This certain encoder is one of the fastest msgpack encoders and decoders
+	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
 	"sync"
 )
 

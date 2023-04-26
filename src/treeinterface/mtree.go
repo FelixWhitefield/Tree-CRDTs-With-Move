@@ -1,22 +1,14 @@
 package treeinterface
 
 import (
+	"container/list"
 	"errors"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
 	"github.com/google/uuid"
-
-	//"github.com/shamaton/msgpack/v2" // msgpack is faster and smaller than JSON
-
-	"github.com/vmihailenco/msgpack"
-
-	//msgpack "encoding/json"
-
-	//"google.golang.org/protobuf/proto"
-	// This certain encoder is one of the fastest msgpack encoders and decoders
-	"container/list"
+	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
 	"sync"
 )
 
@@ -86,9 +78,9 @@ func (kt *MTree[MD]) applyOps(ops chan []byte) {
 
 		front := kt.opBuffer.Front()
 		kt.crdtMu.Lock()
-		for front != nil && (front.Value.(maram.Operation[ *clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) || 
+		for front != nil && (front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
 			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1) {
-			if front.Value.(maram.Operation[ *clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
+			if front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
 				opToApp := front.Value.(maram.Operation[*clocks.VectorTimestamp])
 				kt.crdt.Effect(opToApp)
 			}

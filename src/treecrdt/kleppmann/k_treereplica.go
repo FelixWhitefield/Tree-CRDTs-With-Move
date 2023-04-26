@@ -1,4 +1,4 @@
-package k
+package kleppmann
 
 // `TreeReplica` is a replica of the tree CRDT. It contains the state of the replica and the clock of the replica.
 //

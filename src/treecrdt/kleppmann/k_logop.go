@@ -1,4 +1,4 @@
-package k
+package kleppmann
 
 import (
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"

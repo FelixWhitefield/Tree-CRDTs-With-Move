@@ -1,4 +1,4 @@
-package k
+package kleppmann
 
 // Contains the CRDT state and implements the main algorithm
 //

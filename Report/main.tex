@@ -15,6 +15,7 @@
 \usepackage{protobuf/lang}  % include language definition for protobuf
 \usepackage{protobuf/style} % include custom style for proto declarations. 
 \usepackage[hidelinks]{hyperref}
+\usepackage{dirtree}
 
 \begin{document} 
 
@@ -639,6 +640,13 @@ The system takes advantage of concurrency to allow for increased performance and
 This section will explain the difficulties in implementing the system, and how they were overcome. As well as the differences between the design and the implementation. \par
 The main struggle in the implementation was using Go to implement the system. Go does not have explicit implementations of interfaces, and uses composition instead of inheritance. There are also no classes in Go, instead there are types and structs which can have functions. This caused some initial difficulties in the implementation. \par
 
+The implementation uses the following open source packages:
+\begin{itemize}
+    \item \textbf{\href{https://pkg.go.dev/github.com/google/uuid@v1.3.0}{uuid}} - Used to generate unique IDs for nodes, operations and peers.
+    \item \textbf{\href{https://pkg.go.dev/google.golang.org/protobuf}{protobuf}} - Used to encode and decode messages.
+    \item \textbf{\href{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}{msgpack}} - Used to encode and decode operations. \textit{protobuf} cannot be used as it requires the types to be defined in a \texttt{.proto} file. This is not possible for metadata field in the tree nodes as they can be \textit{any} type.
+\end{itemize}
+
 \section{Clocks}
 The clocks package was the first to be implemented. Initially, it was a struggle to understand how to use Go's generics and to understand Go's implicit interface implementation, however this was overcome. It is also idiomatic in Go for a function's return type to be simple and generic, with the documentation explaining the return value and how to use it. Therefore, the implementation contains comments explaining the return values of functions. As shown by Figure \ref{fig:clockimpl}, there are a few main differences between the design:
 
@@ -657,16 +665,16 @@ The clocks package was the first to be implemented. Initially, it was a struggle
 
 
 \section{Tree CRDTs}
-The CRDT algorithms were the largest part of the implementation as they contain the most parts, but were based off the algorithms from the papers. The CRDT implementations are not thread-safe.
+The CRDT algorithms were the largest part of the implementation as they contain the most parts. They were constructed by following the algorithms within the respective papers. The CRDT implementations are not thread-safe.
 
-After implementing Kleppmann's algorithm, it was realised that the \texttt{Tree} and \texttt{TreeNode} structs are general classes and can be reused for both algorithms. Therefore, they were put into their own package, and the different algorithms were made into subpackages of the \texttt{treecrdt} package. This allows for the code to be reused, and for new algorithms to be easily added. The two structs do the following: 
+The \texttt{Tree} and \texttt{TreeNode} structs are general structs and can be reused for both algorithms. They are in the \texttt{treecrdt} package, and the different algorithms are in subpackages of the \texttt{treecrdt} package. The two structs do the following: 
 
 \begin{itemize}
     \item \texttt{TreeNode}: This contains the node's parent id and metadata.
-    \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s, representing the triples. As well as a map of node ids to their children, for easy access to the children of a node.
+    \item \texttt{Tree}: This contains the representation of the tree. It has a map of node ids to \texttt{TreeNode}s. As well as a map of node ids to their children, for easy access to the children of a node.
 \end{itemize}
 
-The \texttt{Tree} struct uses maps for both the triples and the children, as this allows for fast retrievals and edits. The children for a node were originally stored in a slice, but this was changed to a set as it is usually queried for a certain node when applying an operation. Which is O(1) for a set, compared to O(n) for a slice.
+The \texttt{Tree} struct uses maps for nodes and children to enable fast retrieval and editing. The children were originally stored in a slice, but this was changed to a set to allow O(1) for querying and editing a particular child. 
 
 \begin{figure}[H]
     \centering
@@ -750,7 +758,7 @@ The tree interface provides a simple interface for the user to interact with the
     \caption{Class diagram for the tree interface.}
     \label{fig:treeimpl}
 \end{figure}
-The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. 
+The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. This Mutex is locked when applying operations and when querying the tree. \par
 
 
 
@@ -919,7 +927,26 @@ message Message {
 }
 \end{lstlisting}
 
+\chapter{Archive Contents}
 
+The archive has the following contents and directory structure:
+\begin{figure}[h]
+    \dirtree{%
+        .1 /.
+        .2 src.\DTcomment{Contains the source code}.
+        .3 clocks.\DTcomment{Contains the clock package}.
+        .4 test.\DTcomment{Contains the tests for the clock package}.
+        .3 connection.\DTcomment{Contains the connection package}.
+        .3 treecrdt\DTcomment{Contains the treecrdt package}.
+        .4 kleppmann\DTcomment{Contains Kleppmann's algorithm}.
+        .4 maram\DTcomment{Contains the Maram algorithm}.
+        .3 treeinterface\DTcomment{Contains the treeinterface package}.
+        .3 go.mod\DTcomment{Contains the go module file}.
+        .3 go.sum\DTcomment{Contains the go module sum file}.
+        .2 diagrams.\DTcomment{Contains the generated class diagrams}.
+    }
+    \caption{Directory structure of the archive}
+\end{figure}
 
 
 %TC:endignore
