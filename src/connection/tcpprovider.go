@@ -32,10 +32,12 @@ type TCPProvider struct {
 	opsToBroadcast chan []byte
 }
 
+// New TCPProvider with, the number of peers and the port
 func NewTCPProvider(numPeers int, port int) *TCPProvider {
 	return NewTCPProviderWID(numPeers, port, uuid.New())
 }
 
+// New TCPProvider with, the number of peers, the port and the ID for the peer
 func NewTCPProviderWID(numPeers int, port int, id uuid.UUID) *TCPProvider {
 	return &TCPProvider{
 		port:           port,

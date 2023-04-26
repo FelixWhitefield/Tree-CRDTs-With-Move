@@ -20,16 +20,8 @@ type TreeReplica[MD any, T opTimestamp[T]] struct {
 	latest_timestamp_by_actor map[uuid.UUID]T // contains the latest timestamp of each actor
 }
 
-// Returns a new TreeReplica with a random actorID, using the Lamport clock
-// func NewTreeReplica[MD Metadata]() *TreeReplica[MD, *c.Lamport] {
-// 	return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
-// }
-
-// Returns a new TreeReplica with the given actorID, using the Lamport clock
-//
-//	func NewTreeReplicaWithID[MD Metadata](id uuid.UUID) *TreeReplica[MD, *c.Lamport] {
-//		return &TreeReplica[MD, *c.Lamport]{state: NewState[MD, *c.Lamport](), clock: c.NewLamport(id), latest_timestamp_by_actor: make(map[uuid.UUID]*c.Lamport)}
-//	}
+// Creates a new replica with the given conflict and optional actorID
+// If no conflict is required, use `NewTreeReplica(nil, id)` or `NewTreeReplica(nil)`
 func NewTreeReplica[MD any](conf *TNConflict[MD], ids ...uuid.UUID) *TreeReplica[MD, *c.Lamport] {
 	var id uuid.UUID
 	if len(ids) > 0 {

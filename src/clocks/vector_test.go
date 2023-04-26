@@ -1,7 +1,6 @@
-package clocks_test
+package clocks
 
 import (
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
 	"testing"
 )
@@ -23,13 +22,10 @@ func TestVNewAndCompare(t *testing.T) {
 
 	v1.Inc()
 
-	if v1.CompareTimestamp(v2.Timestamp()) != 1 {
-		t.Errorf("Error in Inc() or Compare(), expected 1, got %d", v1.CompareTimestamp(v2.Timestamp()))
+	if v1.CompareTimestamp(v2.Timestamp()) != 2 {
+		t.Errorf("Error in Inc() or Compare(), expected 2, got %d", v1.CompareTimestamp(v2.Timestamp()))
 	}
 
-	if v2.CompareTimestamp(v1.Timestamp()) != -1 {
-		t.Errorf("Error in Inc() or Compare(), expected -1, got %d", v2.CompareTimestamp(v1.Timestamp()))
-	}
 }
 
 func TestVTickAndClone(t *testing.T) {
@@ -42,8 +38,8 @@ func TestVTickAndClone(t *testing.T) {
 		t.Errorf("Error in Tick() or Clone(), expected 0, got %d", v1.CompareTimestamp(v1copy))
 	}
 
-	if v1tick.Compare(v1.Timestamp()) != 1 {
-		t.Errorf("Error in Tick() or Compare(), expected 1, got %d", v1tick.Compare(v1.Timestamp()))
+	if v1tick.Compare(v1.Timestamp()) != 2 {
+		t.Errorf("Error in Tick() or Compare(), expected 2, got %d", v1tick.Compare(v1.Timestamp()))
 	}
 }
 

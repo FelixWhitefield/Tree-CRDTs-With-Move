@@ -1,14 +1,14 @@
-package treecrdt_test
+package kleppmann
 
 import (
+	"testing"
+
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
 	u "github.com/google/uuid"
-	"testing"
 )
 
-func TestNewAndAdd(t *testing.T) {
+func TestTreeReplicaPrepareAndEffect(t *testing.T) {
 	uuid1 := u.New()
 	tr := NewTreeReplica[string](nil, uuid1)
 
@@ -54,7 +54,7 @@ func contains(s []u.UUID, e u.UUID) bool {
 	return false
 }
 
-func TestTime(t *testing.T) {
+func TestTreeReplicaTime(t *testing.T) {
 	tr := NewTreeReplica[string](nil)
 
 	uuid1 := u.New()

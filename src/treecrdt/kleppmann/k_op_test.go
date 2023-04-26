@@ -1,16 +1,15 @@
-package treecrdt_test
+package kleppmann
 
 // This will test both ops and logops
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
 	"github.com/google/uuid"
 	"testing"
 )
 
-func TestNewAndCompareOp(t *testing.T) {
+func TestOpNewAndCompareOp(t *testing.T) {
 	u1 := uuid.New()
 	l := c.NewLamport()
 

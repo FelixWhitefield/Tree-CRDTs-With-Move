@@ -1,8 +1,7 @@
-package clocks_test
+package clocks
 
 import (
 	"bytes"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
 	"testing"
 )

@@ -178,6 +178,9 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 }
 
 func (t *Tree[MD]) Contains(id uuid.UUID) bool {
+	if id == RootUUID {
+		return true
+	}
 	exists, _ := t.IsAncestor(id, RootUUID)
 	return exists
 }

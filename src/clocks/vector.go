@@ -33,9 +33,17 @@ func NewVectorClock(ids ...uuid.UUID) *VectorClock {
 // will return 0 if a == b, -1 if a < b, 1 if a > b, 2 if a || b (concurrent)
 // This function makes use of go's default map behaviour (if a key doesn't exist, it returns 0)
 func (vt *VectorTimestamp) Compare(other *VectorTimestamp) int {
+	if vt == nil && other == nil {
+		return 0
+	} else if len(*vt) == 0 && len(*other) == 0 {
+		return 0
+	} else if vt == nil || len(*vt) == 0 || other == nil || len(*other) == 0 {
+		return 2
+	}
+	
+
 	isLess := false
 	isGreater := false
-
 	// loop through both maps and compare the values
 	for key := range *vt {
 		if (*vt)[key] < (*other)[key] {
