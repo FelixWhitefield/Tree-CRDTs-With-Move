@@ -58,7 +58,8 @@ func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
 }
 
 func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
-	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP) {
+	childIsAnc, _ := tr.state.tree.IsAncestor(newP, id)
+	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP)|| id != newP || id != tr.state.tree.Root() || !childIsAnc {
 		return nil
 	}
 	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
