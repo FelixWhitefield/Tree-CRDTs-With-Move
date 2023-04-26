@@ -57,7 +57,7 @@ func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 		s.UndoMoveOp(e.Value.(*LogOpMove[MD, T]))
 	}
 
-	if e == nil || e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 0 { // Got to the front of the list or Value already in tree
+	if e == nil || !(e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 0) { // Got to the front of the list and not in tree
 		logop := s.DoMoveOp(opMov)
 		if e == nil {
 			s.moveLog.PushFront(logop)
