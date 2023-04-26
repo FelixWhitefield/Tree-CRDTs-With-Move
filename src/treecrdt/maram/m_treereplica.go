@@ -43,15 +43,24 @@ func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
 }
 
 func (tr *TreeReplica[MD, T]) PrepareAdd(parentId uuid.UUID, metadata MD) *OpAdd[MD, T] {
+	if !tr.state.tree.Contains(parentId) {
+		return nil
+	}
 	id := uuid.New()
 	return &OpAdd[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: parentId, Meta: metadata}}
 }
 
 func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
+	if !tr.state.tree.Contains(id) {
+		return nil
+	}
 	return &OpRemove[T]{Timestmp: tr.clock.Tick(), ChldID: id}
 }
 
 func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
+	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP) {
+		return nil
+	}
 	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
 }
 
