@@ -86,9 +86,10 @@ func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	if opMov.NewP.ParentID() == s.tree.Root() {
 		parentInTree = true
 	}
-	childInTree, _ := s.tree.IsAncestor(opMov.ChldID, s.tree.Root())           // If child is in the tree
+	childInTree := s.tree.TotalContains(opMov.ChldID)         // If child is in the tree (may be child of tombstone)
+	childRemoved := s.tree.GetNode(opMov.ChldID).PrntID == s.tree.Tombstone()
 	childIsAnc, _ := s.tree.IsAncestor(opMov.NewP.ParentID(), opMov.ChldID)    // If parent is an ancestor of child
-	if !childIsAnc && parentInTree && childInTree && !childIsRoot {
+	if !childIsAnc && parentInTree && childInTree && !childIsRoot && !childRemoved {
 		s.tree.Move(opMov.ChldID, opMov.NewP)
 	}
 	return NewLogOpMove(opMov, oldP)

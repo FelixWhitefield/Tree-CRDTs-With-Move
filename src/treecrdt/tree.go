@@ -178,9 +178,15 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 }
 
 func (t *Tree[MD]) Contains(id uuid.UUID) bool {
+	exists, _ := t.IsAncestor(id, RootUUID)
+	return exists
+}
+
+func (t *Tree[MD]) TotalContains(id uuid.UUID) bool {
 	_, exists := t.nodes[id]
 	return exists
 }
+
 
 func (t *Tree[MD]) Equals(other *Tree[MD]) bool {
 	if len(t.nodes) != len(other.nodes) {
