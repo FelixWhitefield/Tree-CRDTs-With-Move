@@ -49,7 +49,7 @@ func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
 	if isAnc, _ := t.IsAncestor(id, TombstoneUUID); isAnc {
 		return nil
 	}
-	
+
 	node := t.nodes[id]
 	return node
 }
@@ -186,7 +186,6 @@ func (t *Tree[MD]) TotalContains(id uuid.UUID) bool {
 	_, exists := t.nodes[id]
 	return exists
 }
-
 
 func (t *Tree[MD]) Equals(other *Tree[MD]) bool {
 	if len(t.nodes) != len(other.nodes) {

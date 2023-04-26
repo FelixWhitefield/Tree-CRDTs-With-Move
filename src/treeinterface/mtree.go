@@ -49,6 +49,8 @@ func (kt *MTree[MD]) RegisterOpRemove() {
 	msgpack.RegisterExt(3, (*maram.OpRemove[*clocks.VectorTimestamp])(nil))
 }
 
+// Takes operations from the incoming channel and delivers
+// them in a causal order to the CRDT
 func (kt *MTree[MD]) applyOps(ops chan []byte) {
 	for {
 		opBytes := <-ops

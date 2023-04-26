@@ -1,9 +1,9 @@
 package clocks_test
 
 import (
-	"testing"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
+	"testing"
 )
 
 func TestVNewAndCompare(t *testing.T) {
@@ -13,7 +13,7 @@ func TestVNewAndCompare(t *testing.T) {
 
 	v1a := v1.ActorID()
 
-	if (v1a != u1) {
+	if v1a != u1 {
 		t.Errorf("NewVectorClock() returned wrong ID")
 	}
 
@@ -36,7 +36,7 @@ func TestVTickAndClone(t *testing.T) {
 	v1 := NewVectorClock()
 
 	v1copy := v1.Timestamp() // Get a copy of the timestamp
-	v1tick := v1.Tick() // Should have no effect
+	v1tick := v1.Tick()      // Should have no effect
 
 	if v1.CompareTimestamp(v1copy) != 0 {
 		t.Errorf("Error in Tick() or Clone(), expected 0, got %d", v1.CompareTimestamp(v1copy))

@@ -1,13 +1,13 @@
 package treecrdt_test
 
 import (
-	"testing"
-	"github.com/google/uuid"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/google/uuid"
+	"testing"
 )
 
 func TestTreeNode(t *testing.T) {
-	testData := struct{
+	testData := struct {
 		parentID uuid.UUID
 		metadata string
 	}{
@@ -38,7 +38,7 @@ func TestTreeNodeConflict(t *testing.T) {
 				return true
 			}
 		}
-		return false;
+		return false
 	})
 
 	tn1 := NewTreeNode(RootUUID, "test")

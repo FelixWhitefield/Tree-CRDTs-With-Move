@@ -82,7 +82,7 @@ func main() {
 	mid, _ := mtree.Insert(mtree.Root(), "Felix")
 	mid2, _ := m2tree.Insert(m2tree.Root(), "Felix")
 
-	time.Sleep(1*time.Second)
+	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 10000; i++ {
 		m2tree.Move(mid, mid2)
@@ -93,11 +93,9 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-
 	nodes22, _ := m2tree.GetChildren(m2tree.Root())
 	nodes11, _ := mtree.GetChildren(mtree.Root())
 
-	
 	fmt.Println(len(nodes22))
 	fmt.Println(len(nodes11))
 	fmt.Println(m2tree.Equals(mtree))
@@ -116,13 +114,10 @@ func main() {
 	// nodes1, _ := mtree.GetChildren(mtree.Root())
 	// fmt.Println("Nodes under root in Tree 1:", len(nodes1))
 
-
-
-	return 
+	return
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
-
 
 	var err error
 
@@ -136,8 +131,7 @@ func main() {
 
 	fmt.Println(k2tree.GetChildren(id))
 
-	return 
-
+	return
 
 	time.Sleep(1 * time.Second)
 

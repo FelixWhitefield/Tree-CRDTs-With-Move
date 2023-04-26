@@ -133,7 +133,7 @@ func (v *VectorTimestamp) CausallyReady(other *VectorTimestamp) bool {
 			}
 		}
 	}
-	return oneLarger 
+	return oneLarger
 }
 
 func (v *VectorTimestamp) Same(other *VectorTimestamp) bool {

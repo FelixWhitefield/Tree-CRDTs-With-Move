@@ -2,9 +2,9 @@ package clocks_test
 
 import (
 	"bytes"
-	"testing"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	u "github.com/google/uuid"
+	"testing"
 )
 
 func TestNewAndCompare(t *testing.T) {
@@ -15,7 +15,7 @@ func TestNewAndCompare(t *testing.T) {
 	l1a := l1.ActorID()
 	l2a := l2.ActorID()
 
-	if (l1a != u1) {
+	if l1a != u1 {
 		t.Errorf("NewLamport() returned wrong ID")
 	}
 
@@ -62,14 +62,14 @@ func TestMerge(t *testing.T) {
 	l2.Inc()
 
 	l1copy := l1.Clone() // make copy
-	l1.Merge(l2) // merge l2 into l1, should have no effect as both counters should be equal
+	l1.Merge(l2)         // merge l2 into l1, should have no effect as both counters should be equal
 
 	if l1.Compare(l1copy) != 0 {
 		t.Errorf("Error in Merge(), expected 0, got %d", l1.Compare(l2))
 	}
 
 	l2.Inc()
-	l1.Merge(l2) 
+	l1.Merge(l2)
 
 	if l1.Compare(l1copy) != 1 {
 		t.Errorf("Error in Merge(), expected 1, got %d", l1.Compare(l1copy))

@@ -11,8 +11,8 @@ package kleppmann
 
 import (
 	"container/list"
-	"log"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"log"
 )
 
 type State[MD any, T opTimestamp[T]] struct {
@@ -90,7 +90,7 @@ func (s *State[MD, T]) ApplyOp(op *OpMove[MD, T]) {
 		logop := s.DoOp(op)
 		s.log.PushBack(logop)
 		return
-	} 
+	}
 	e := s.log.Back()
 	// This ignores the case where CompareOp returns 0, which is not defined in the paper
 	// This should not happen in normal operation, if it does then the state is in an undefined state

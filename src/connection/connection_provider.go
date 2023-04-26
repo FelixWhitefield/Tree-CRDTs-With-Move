@@ -1,4 +1,4 @@
-package connection 
+package connection
 
 type ConnectionProvider interface {
 	BroadcastChannel() chan []byte

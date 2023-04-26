@@ -26,6 +26,8 @@ func NewKTree[MD any](connProv connection.ConnectionProvider) *KTree[MD] {
 	return kt
 }
 
+// Takes operations from the incoming channel and delivers
+// them to the CRDT instantly
 func (kt *KTree[MD]) applyOps(ops chan []byte) {
 	for {
 		opBytes := <-ops

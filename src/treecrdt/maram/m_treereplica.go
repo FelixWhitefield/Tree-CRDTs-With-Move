@@ -1,14 +1,14 @@
 package maram
 
 import (
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
 
 type TreeReplica[MD any, T opTimestamp[T]] struct {
-	state State[MD, T]
-	clock c.Clock[T]
+	state    State[MD, T]
+	clock    c.Clock[T]
 	priotity c.Lamport
 }
 
@@ -62,7 +62,7 @@ func (tr *TreeReplica[MD, T]) PrepareRemove(id uuid.UUID) *OpRemove[T] {
 // Prepares a move operation
 func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
 	childIsAnc, _ := tr.state.tree.IsAncestor(newP, id)
-	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP)|| id != newP || id != tr.state.tree.Root() || !childIsAnc {
+	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP) || id != newP || id != tr.state.tree.Root() || !childIsAnc {
 		return nil
 	}
 	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}

@@ -8,7 +8,7 @@ import (
 
 // Represents the state of the CRDT
 type State[MD any, T opTimestamp[T]] struct {
-	tree    Tree[MD]   
+	tree    Tree[MD]
 	moveLog *list.List // List of move operations
 }
 
@@ -27,7 +27,7 @@ func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 			parentInTree = true
 		}
 		childInTree, _ := s.tree.IsAncestor(op.ChldID, s.tree.Root()) // If child is in the tree
-		if !childInTree && parentInTree { // If child is not in the tree and parent is in the tree
+		if !childInTree && parentInTree {                             // If child is not in the tree and parent is in the tree
 			s.tree.Add(op.ChldID, op.NewP)
 		}
 	case *OpRemove[T]:
@@ -97,9 +97,9 @@ func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	if opMov.NewP.ParentID() == s.tree.Root() {
 		parentInTree = true
 	}
-	childInTree := s.tree.TotalContains(opMov.ChldID)         // If child is in the tree (may be child of tombstone)
+	childInTree := s.tree.TotalContains(opMov.ChldID) // If child is in the tree (may be child of tombstone)
 	childRemoved := s.tree.GetNode(opMov.ChldID).PrntID == s.tree.Tombstone()
-	childIsAnc, _ := s.tree.IsAncestor(opMov.NewP.ParentID(), opMov.ChldID)    // If parent is an ancestor of child
+	childIsAnc, _ := s.tree.IsAncestor(opMov.NewP.ParentID(), opMov.ChldID) // If parent is an ancestor of child
 	if !childIsAnc && parentInTree && childInTree && !childIsRoot && !childRemoved {
 		s.tree.Move(opMov.ChldID, opMov.NewP)
 	}
@@ -108,7 +108,7 @@ func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 
 // Checks if the state is equal to another state
 func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
-	treeEq := s.tree.Equals(&other.tree) 
+	treeEq := s.tree.Equals(&other.tree)
 	if !treeEq {
 		return false
 	}

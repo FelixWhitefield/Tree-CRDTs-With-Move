@@ -1,13 +1,13 @@
 package treecrdt_test
 
-// This will test both ops and logops 
+// This will test both ops and logops
 
-import ( 
-	"testing"
-	"github.com/google/uuid"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
+import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
+	"github.com/google/uuid"
+	"testing"
 )
 
 func TestNewAndCompareOp(t *testing.T) {
@@ -38,4 +38,3 @@ func TestNewAndCompareOp(t *testing.T) {
 		t.Errorf("Compare return %d, expected 1", lopop2.CompareOp(op3))
 	}
 }
-
