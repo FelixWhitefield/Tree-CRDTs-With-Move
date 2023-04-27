@@ -18,6 +18,7 @@ import (
 	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
 	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
+	"net"
 )
 
 // uuid.NewUUID() for version 1's
@@ -69,6 +70,37 @@ type LargePerson struct {
 }
 
 func main() {
+	var err error
+	li1, _ := net.Listen("tcp", "0.0.0.0:1122")
+	go func() {
+		for {
+			_, _ = li1.Accept()
+			log.Println("1122: Accepted")
+		}
+	}()
+	li2, _ := net.Listen("tcp", "0.0.0.0:1123")
+	go func() {
+		for {
+			_, _ = li2.Accept()
+			log.Println("1123: Accepted")
+		}
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	laddr := &net.TCPAddr{Port: 1122}
+	raddr := &net.TCPAddr{Port: 1123, IP: net.ParseIP("0.0.0.0")}
+
+	con, err := net.DialTCP("tcp", laddr, raddr)
+	if err != nil {
+		log.Println(err)
+	}
+	con.Write([]byte("Hello"))
+
+	time.Sleep(1 * time.Second)
+
+
+	return
 	mtree := ti.NewMTree[string](connection.NewTCPProvider(1, 1122))
 	m2tree := ti.NewMTree[string](connection.NewTCPProvider(1, 1123))
 
@@ -118,8 +150,6 @@ func main() {
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
-
-	var err error
 
 	var ttree ti.Tree[string]
 

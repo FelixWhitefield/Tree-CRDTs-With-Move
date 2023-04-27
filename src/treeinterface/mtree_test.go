@@ -52,7 +52,7 @@ func TestMTreeOperationTransmits(t *testing.T) {
 
 	tree3 := NewMTree[string](connection.NewTCPProvider(2, 2223))
 	tree3.ConnectionProvider().Connect("localhost:2221")
-
+	tree3.ConnectionProvider().Connect("localhost:2222")
 	time.Sleep(2 * time.Second) // Time for communication to occur
 
 	rootChildren3, err := tree3.GetChildren(tree3.Root())
