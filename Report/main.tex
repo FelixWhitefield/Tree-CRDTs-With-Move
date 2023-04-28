@@ -17,6 +17,14 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{dirtree}
 \usepackage{tabularx}
+\usepackage{bussproofs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{centernot}
+\newenvironment{bprooftree}
+  {\leavevmode\hbox\bgroup}
+  {\DisplayProof\egroup}
 
 \begin{document} 
 
@@ -722,9 +730,94 @@ The log of operations being implemented as a linked list. This was chosen over a
 
 \subsection{Maram}
 
-Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was discovered. The new algorithm was inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer from Maram, and the undoing, and redoing of operations from Kleppmann's algorithm. With a causal delivery layer, it allows the algorithm to relax which operations are logged, and need to be undone and redone. \par 
+Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was created. The new algorithm is inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer and the notion of OpSets, from Maram and Kleppmann's algorithm respectively. The causal delivery layer allows the algorithm to relax which operations are logged, and which need to be undone and redone. \par 
 
-A total order is given to move operations, which is used to resolve conflicts between concurrent move operations. This is similar to the priority given to move operations in Maram. Whereas Maram will only apply conflict resolution when there is a conflict, Lumina will always apply conflict resolution. This does not produce a large overhead, and may even be faster, as Maram still has to check all concurrent move operations to see if there is a conflict. Undo is a fast operation, and redo has similar overhead to determining if there is a conflict in Maram. \par
+\subsection{Lumina}
+In Lumina, a total order (priority in Maram) is given to move operations which is used to resolve conflicts between concurrent move operations. Whereas Maram will only apply conflict resolution when there is a conflict, Lumina will always apply conflict resolution for move operations. This does not produce a large overhead, and may even be faster, as Maram still has to check all concurrent move operations for conflicts. Undo is a fast operation, and redo has similar overhead to determining if there is a conflict in Maram. \par
+
+Compared to Kleppmann's algorithm, Lumina logs only the move operations. This is possible due to the guarantees provided by causal delivery, and using UUIDs as the ID for each node ensures each new node has a unique ID.
+\begin{itemize}
+    \item \textbf{Add Operations} are a monotonic increase to the \textit{Nodes} set.
+    \item \textbf{Remove Operations} are a monotonic increase to the \textit{TS} set.
+\end{itemize}
+As both add and remove operations are monotonic, they can be applied in any order and still produce the same result. If a node is in the \textit{Nodes} set and the \textit{TS} set, then it is considered to be deleted. The causal delivery layer ensures that the preconditions for add and remove operations are met when they are applied to remote replicas. \par
+
+
+\textit{Move} operations are not a monotonic increase, and they can break the tree invariant. Therefore, it is necessary to log them so that conflict resolution can happen. The conflict resolution is as follows: Concurrent move operations are applied in a total order on all replicas. Move operations which would break the tree invariant are not applied to the tree, but are still logged. This leads to earlier move operations taking precedence over later move operations. \par
+
+Lumina only needs to apply concurrent move operations in a total order as they may conflict. The causal delivery layer enforces that all move operations are applied in a way which preserves their causal dependencies.
+
+
+% \[ \small
+%     \begin{bprooftree}
+%         \AxiomC{$p \in Nodes \land n \notin Nodes $ \hskip 1cm $[\![ add(n,p) ]\!]$}
+%         \UnaryInfC{$n \in Nodes \land n \to p$}
+%     \end{bprooftree}
+%     \qquad
+%     \begin{bprooftree}
+%         \AxiomC{$n \neq root$ \hskip 1cm $[\![ remove(n) ]\!]$}
+%         \UnaryInfC{$n \in TS$}
+%     \end{bprooftree}
+% \]
+
+
+
+\begin{figure}[h]
+    \small
+    \centering
+    \begin{minipage}{1\textwidth}
+        \small
+        \begin{flushleft}
+            \footnotesize\textbf{State:} $Nodes \times TS \times LogMoveOps$ 
+            \\ \center $= \{n_{1}, n_{2}, \ldots, n_{m}\} \times \{m_{1}, m_{2}, \ldots, m_{k}\} \times [l_{1}, l_{2}, \ldots, l_{n}]$
+        \end{flushleft}
+        \centering
+        
+        %\captionof{figure}{Move Operation}
+        \label{fig:state}
+    \end{minipage}\\[.5cm]
+    \begin{minipage}{.55\textwidth}
+        \begin{flushleft}
+            \footnotesize\textbf{Add operation:}
+            \vspace{.2cm}
+        \end{flushleft}
+      \centering
+      \begin{bprooftree}
+        \AxiomC{$p \in Nodes \land n \notin Nodes $ \hskip .5cm $[\![ add(n,p) ]\!]$}
+        \UnaryInfC{$n \in Nodes \land n \to p$}
+    \end{bprooftree}
+      %\captionof{figure}{Add Operation}
+      \label{fig:addproof}
+    \end{minipage}%
+    \begin{minipage}{.45\textwidth}
+        \begin{flushleft}
+            \footnotesize\textbf{Remove operation:}
+            \vspace{.2cm}
+        \end{flushleft}
+        \centering
+      \begin{bprooftree}
+        \AxiomC{$n \neq root$ \hskip .5cm $[\![ remove(n) ]\!]$}
+        \UnaryInfC{$n \in TS$}
+    \end{bprooftree}
+      %\captionof{figure}{Remove Operation}
+      \label{fig:removeproof}
+    \end{minipage}\\[.5cm]
+    \begin{minipage}{1\textwidth}
+        \small
+        \begin{flushleft}
+            \footnotesize\textbf{Move operation:}
+            \vspace{.2cm}
+        \end{flushleft}
+        \centering
+        \begin{bprooftree}
+            \AxiomC{$n \in Nodes \land n \neq root \land p \in Nodes \land p \centernot\rightarrow\!^* \, n \land n \neq p$ \hskip .5cm $[\![ move(n,m,p) ]\!]$}
+            \UnaryInfC{$n \rightarrow p$}
+        \end{bprooftree}
+        %\captionof{figure}{Move Operation}
+        \label{fig:moveproof}
+    \end{minipage}
+    \caption{Pre and post conditions for each operation.}
+\end{figure}
 
 \begin{figure}[H]
     \centering
@@ -732,13 +825,6 @@ A total order is given to move operations, which is used to resolve conflicts be
     \caption{Class diagram for Lumina.}
     \label{fig:maram_impl} 
 \end{figure} 
-
-In comparison to Kleppmann's algorithm, Maram only logs move operations. This is because of the following reasons:
-\begin{itemize}
-    \item \textit{Add} operations are not logged as they have a precondition that requires the parent node to be in the tree. Together with the causal delivery layer, this implies that the parent node will be added first, followed by the addition of its child node. It also relies on nodes being added having unique ids, which is possible with UUIDs.
-    \item \textit{Remove} operations are also not logged as they have a precondition that the node being removed is in the tree. In the presence of the causal delivery layer, this indicates that the removal of a node will occur after its addition to the tree. This also relies on each node having a unique id. This has the implication that for concurrent remove and move operations on the same node, the rmeove will always win. However, the children of a removed node can still be concurrently moved back into the tree.
-\end{itemize}
-\textit{Move} operations will always need to be logged, as they can break the tree invariant. Therefore, it is necessary to log them so that concurrent move operations can be applied in a deterministic order and not break the tree invariant. \par
 
 \section{Network}
 The network package was the most difficult to implement, as it is a peer-to-peer network with a reliable broadcast protocol. It has to deal with concurrency, and keep track of which nodes have received which operation. This requires that the nodes exchange their ids and share their peers. \par
