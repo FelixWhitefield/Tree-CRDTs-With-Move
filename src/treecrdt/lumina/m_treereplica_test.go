@@ -1,4 +1,4 @@
-package maram
+package lumina
 
 import (
 	"testing"

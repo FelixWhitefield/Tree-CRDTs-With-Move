@@ -8,8 +8,8 @@ import (
 )
 
 func TestMTreeOperationTransmits(t *testing.T) {
-	tree1 := NewMTree[string](connection.NewTCPProvider(2, 2221))
-	tree2 := NewMTree[string](connection.NewTCPProvider(2, 2222))
+	tree1 := NewLTree[string](connection.NewTCPProvider(2, 2221))
+	tree2 := NewLTree[string](connection.NewTCPProvider(2, 2222))
 
 	tree1.ConnectionProvider().Connect("localhost:2222")
 
@@ -50,7 +50,7 @@ func TestMTreeOperationTransmits(t *testing.T) {
 		t.Errorf("Expected 4 children, got %d", len(rootChildren))
 	}
 
-	tree3 := NewMTree[string](connection.NewTCPProvider(2, 2223))
+	tree3 := NewLTree[string](connection.NewTCPProvider(2, 2223))
 	tree3.ConnectionProvider().Connect("localhost:2221")
 	tree3.ConnectionProvider().Connect("localhost:2222")
 	time.Sleep(2 * time.Second) // Time for communication to occur
@@ -67,8 +67,8 @@ func TestMTreeOperationTransmits(t *testing.T) {
 }
 
 func TestMTreeCycleMove(t *testing.T) {
-	tree1 := NewMTree[string](connection.NewTCPProvider(1, 3223))
-	tree2 := NewMTree[string](connection.NewTCPProvider(1, 3224))
+	tree1 := NewLTree[string](connection.NewTCPProvider(1, 3223))
+	tree2 := NewLTree[string](connection.NewTCPProvider(1, 3224))
 
 	tree1.ConnectionProvider().Connect("localhost:3224")
 

@@ -1,7 +1,8 @@
-package maram
+package lumina
 
 import (
 	"container/list"
+
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 

@@ -8,17 +8,20 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+
 	//"runtime"
 	"time"
 
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
+
 	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
+	"net"
+
 	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
-	"net"
 )
 
 // uuid.NewUUID() for version 1's
@@ -99,10 +102,9 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-
 	return
-	mtree := ti.NewMTree[string](connection.NewTCPProvider(1, 1122))
-	m2tree := ti.NewMTree[string](connection.NewTCPProvider(1, 1123))
+	mtree := ti.NewLTree[string](connection.NewTCPProvider(1, 1122))
+	m2tree := ti.NewLTree[string](connection.NewTCPProvider(1, 1123))
 
 	m2tree.ConnectionProvider().Connect("localhost:1122")
 

@@ -722,16 +722,14 @@ The log of operations being implemented as a linked list. This was chosen over a
 
 \subsection{Maram}
 
-The Maram algorithm was more difficult to implement, and the final implementation slightly alters from the literature. The paper for the algorithm \cite{https://doi.org/10.48550/arxiv.2103.04828} was not as clear as the paper for Kleppmann's algorithm \cite{9563274}, and the algorithm was more complex. The paper defines how to resolve conflicts between two operations, but does not define how to resolve conflicts between multiple operations. Also, later concurrent move operations may affect the conflict resolution of earlier concurrent move operations. Therefore, the algorithm was implemented with the following change:
+Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was discovered. The new algorithm was inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer from Maram, and the undoing, and redoing of operations from Kleppmann's algorithm. With a causal delivery layer, it allows the algorithm to relax which operations are logged, and need to be undone and redone. \par 
 
-\begin{itemize}
-    \item Concurrent move operations implement the algorithm from Kleppmann's algorithm. They have a total order, and are undone and re-applied in the that order. This ensures that concurrent move operations have a deterministic outcome.
-\end{itemize}
+A total order is given to move operations, which is used to resolve conflicts between concurrent move operations. This is similar to the priority given to move operations in Maram. Whereas Maram will only apply conflict resolution when there is a conflict, Lumina will always apply conflict resolution. This does not produce a large overhead, and may even be faster, as Maram still has to check all concurrent move operations to see if there is a conflict. Undo is a fast operation, and redo has similar overhead to determining if there is a conflict in Maram. \par
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{images/maram_impl.jpg} 
-    \caption{Class diagram for Maram.}
+    \caption{Class diagram for Lumina.}
     \label{fig:maram_impl} 
 \end{figure} 
 

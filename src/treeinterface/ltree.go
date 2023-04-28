@@ -8,20 +8,20 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
-	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/lumina"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
 )
 
 type MTree[MD any] struct {
-	crdt     *maram.TreeReplica[MD, *clocks.VectorTimestamp]
+	crdt     *lumina.TreeReplica[MD, *clocks.VectorTimestamp]
 	crdtMu   sync.RWMutex
 	connProv connection.ConnectionProvider
 	opBuffer *list.List
 }
 
-func NewMTree[MD any](connProv connection.ConnectionProvider) *MTree[MD] {
-	kt := &MTree[MD]{crdt: maram.NewTreeReplica[MD](), connProv: connProv, opBuffer: list.New()}
+func NewLTree[MD any](connProv connection.ConnectionProvider) *MTree[MD] {
+	kt := &MTree[MD]{crdt: lumina.NewTreeReplica[MD](), connProv: connProv, opBuffer: list.New()}
 
 	go connProv.HandleBroadcast()
 	go connProv.Listen()
@@ -37,17 +37,17 @@ func NewMTree[MD any](connProv connection.ConnectionProvider) *MTree[MD] {
 
 func (kt *MTree[MD]) RegisterOpMove() {
 	defer func() { recover() }()
-	msgpack.RegisterExt(1, (*maram.OpMove[MD, *clocks.VectorTimestamp])(nil))
+	msgpack.RegisterExt(1, (*lumina.OpMove[MD, *clocks.VectorTimestamp])(nil))
 }
 
 func (kt *MTree[MD]) RegisterOpAdd() {
 	defer func() { recover() }()
-	msgpack.RegisterExt(2, (*maram.OpAdd[MD, *clocks.VectorTimestamp])(nil))
+	msgpack.RegisterExt(2, (*lumina.OpAdd[MD, *clocks.VectorTimestamp])(nil))
 }
 
 func (kt *MTree[MD]) RegisterOpRemove() {
 	defer func() { recover() }()
-	msgpack.RegisterExt(3, (*maram.OpRemove[*clocks.VectorTimestamp])(nil))
+	msgpack.RegisterExt(3, (*lumina.OpRemove[*clocks.VectorTimestamp])(nil))
 }
 
 // Takes operations from the incoming channel and delivers
@@ -56,23 +56,23 @@ func (kt *MTree[MD]) applyOps(ops chan []byte) {
 	for {
 		opBytes := <-ops
 
-		var op maram.Operation[*clocks.VectorTimestamp]
+		var op lumina.Operation[*clocks.VectorTimestamp]
 		msgpack.Unmarshal(opBytes, &op)
 
 		if kt.opBuffer.Len() == 0 {
 			kt.opBuffer.PushFront(op)
 		} else {
 			pos := kt.opBuffer.Front()
-			for pos != nil && op.Timestamp().Compare(pos.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp()) == 1 {
+			for pos != nil && op.Timestamp().Compare(pos.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp()) == 1 {
 				pos = pos.Next()
 			}
 			if pos == nil {
-				if op.Timestamp().Same(kt.opBuffer.Back().Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp()) {
+				if op.Timestamp().Same(kt.opBuffer.Back().Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp()) {
 				} else {
 					kt.opBuffer.PushBack(op)
 				}
 			} else {
-				if op.Timestamp().Same(pos.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp()) {
+				if op.Timestamp().Same(pos.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp()) {
 				} else {
 					kt.opBuffer.InsertBefore(op, pos)
 				}
@@ -81,11 +81,11 @@ func (kt *MTree[MD]) applyOps(ops chan []byte) {
 
 		front := kt.opBuffer.Front()
 		kt.crdtMu.Lock()
-		for front != nil && (front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
-			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
-			front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == 0) {
-			if front.Value.(maram.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
-				opToApp := front.Value.(maram.Operation[*clocks.VectorTimestamp])
+		for front != nil && (front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
+			front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
+			front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == 0) {
+			if front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
+				opToApp := front.Value.(lumina.Operation[*clocks.VectorTimestamp])
 				kt.crdt.Effect(opToApp)
 			}
 			kt.opBuffer.Remove(front)

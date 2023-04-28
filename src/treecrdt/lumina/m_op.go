@@ -1,4 +1,4 @@
-package maram
+package lumina
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"

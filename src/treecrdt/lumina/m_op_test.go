@@ -1,10 +1,11 @@
-package maram
+package lumina
 
 import (
+	"testing"
+
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
-	"testing"
 )
 
 func TestMaramOpInherits(t *testing.T) {
