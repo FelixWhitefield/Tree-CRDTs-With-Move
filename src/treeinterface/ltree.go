@@ -9,19 +9,46 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/lumina"
+	rb "github.com/emirpasic/gods/trees/redblacktree"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
+	"container/heap"
 )
 
-type MTree[MD any] struct {
+type OperationQueue []lumina.Operation[*clocks.VectorTimestamp]
+
+func (pq OperationQueue) Len() int { return len(pq) }
+
+func (pq OperationQueue) Less(i, j int) bool {
+	// Compare the timestamps of the operations to determine priority
+	return pq[i].Timestamp().Compare(pq[j].Timestamp()) == -1
+}
+
+func (pq OperationQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+
+func (pq *OperationQueue) Push(x interface{}) {
+	*pq = append(*pq, x.(lumina.Operation[*clocks.VectorTimestamp]))
+}
+
+func (pq *OperationQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	*pq = old[0 : n-1]
+	return item
+}
+
+type LTree[MD any] struct {
 	crdt     *lumina.TreeReplica[MD, *clocks.VectorTimestamp]
 	crdtMu   sync.RWMutex
 	connProv connection.ConnectionProvider
 	opBuffer *list.List
 }
 
-func NewLTree[MD any](connProv connection.ConnectionProvider) *MTree[MD] {
-	kt := &MTree[MD]{crdt: lumina.NewTreeReplica[MD](), connProv: connProv, opBuffer: list.New()}
+func NewLTree[MD any](connProv connection.ConnectionProvider) *LTree[MD] {
+	kt := &LTree[MD]{crdt: lumina.NewTreeReplica[MD](), connProv: connProv, opBuffer: list.New()}
 
 	go connProv.HandleBroadcast()
 	go connProv.Listen()
@@ -35,24 +62,58 @@ func NewLTree[MD any](connProv connection.ConnectionProvider) *MTree[MD] {
 	return kt
 }
 
-func (kt *MTree[MD]) RegisterOpMove() {
+func (kt *LTree[MD]) GetBufLen() int {
+	return kt.opBuffer.Len()
+}
+
+func (kt *LTree[MD]) RegisterOpMove() {
 	defer func() { recover() }()
 	msgpack.RegisterExt(1, (*lumina.OpMove[MD, *clocks.VectorTimestamp])(nil))
 }
 
-func (kt *MTree[MD]) RegisterOpAdd() {
+func (kt *LTree[MD]) RegisterOpAdd() {
 	defer func() { recover() }()
 	msgpack.RegisterExt(2, (*lumina.OpAdd[MD, *clocks.VectorTimestamp])(nil))
 }
 
-func (kt *MTree[MD]) RegisterOpRemove() {
+func (kt *LTree[MD]) RegisterOpRemove() {
 	defer func() { recover() }()
 	msgpack.RegisterExt(3, (*lumina.OpRemove[*clocks.VectorTimestamp])(nil))
 }
 
+func (kt *LTree[MD]) applyOpsHeap(ops chan []byte) {
+	pq := &OperationQueue{}
+	heap.Init(pq)
+
+	for {
+		opBytes := <-ops
+
+		var op lumina.Operation[*clocks.VectorTimestamp]
+		msgpack.Unmarshal(opBytes, &op)
+
+		heap.Push(pq, op)
+
+		kt.crdtMu.Lock()
+		for pq.Len() > 0 {
+			causallyReady := (*pq)[0].Timestamp().CausallyReady(kt.crdt.CurrentTime())
+			compare := (*pq)[0].Timestamp().Compare(kt.crdt.CurrentTime())
+			if causallyReady {
+				opToApp := heap.Pop(pq).(lumina.Operation[*clocks.VectorTimestamp])
+				kt.crdt.Effect(opToApp)
+			} else if compare == -1 || compare == 0 {
+				heap.Pop(pq)
+			} else {
+				break
+			}
+		}
+		kt.crdtMu.Unlock()
+	}	
+}
+
+
 // Takes operations from the incoming channel and delivers
 // them in a causal order to the CRDT
-func (kt *MTree[MD]) applyOps(ops chan []byte) {
+func (kt *LTree[MD]) applyOps(ops chan []byte) {
 	for {
 		opBytes := <-ops
 
@@ -67,46 +128,61 @@ func (kt *MTree[MD]) applyOps(ops chan []byte) {
 				pos = pos.Next()
 			}
 			if pos == nil {
-				if op.Timestamp().Same(kt.opBuffer.Back().Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp()) {
-				} else {
-					kt.opBuffer.PushBack(op)
-				}
+				kt.opBuffer.PushBack(op)
 			} else {
-				if op.Timestamp().Same(pos.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp()) {
-				} else {
-					kt.opBuffer.InsertBefore(op, pos)
-				}
+				kt.opBuffer.InsertBefore(op, pos)
 			}
 		}
 
-		front := kt.opBuffer.Front()
+		item := kt.opBuffer.Front()
+
 		kt.crdtMu.Lock()
-		for front != nil && (front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
-			front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
-			front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == 0) {
-			if front.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
-				opToApp := front.Value.(lumina.Operation[*clocks.VectorTimestamp])
+		for item != nil {
+			op := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
+			causallyReady := op.Timestamp().CausallyReady(kt.crdt.CurrentTime())
+			compare := op.Timestamp().Compare(kt.crdt.CurrentTime())
+			if causallyReady {
+				opToApp := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
 				kt.crdt.Effect(opToApp)
+				kt.opBuffer.Remove(item)
+			} else if compare == -1 || compare == 0 {
+				kt.opBuffer.Remove(item)
+			} else {
+				break
 			}
-			kt.opBuffer.Remove(front)
-			front = kt.opBuffer.Front()
+			item = kt.opBuffer.Front()
 		}
 		kt.crdtMu.Unlock()
+		
+
+	
+
+		// for ; item != nil && (item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
+		// 	item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
+		// 	item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == 0); item = kt.opBuffer.Front() {
+		// 		if item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) {
+		// 			opToApp := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
+		// 			kt.crdt.Effect(opToApp)
+		// 		}
+		// 	kt.opBuffer.Remove(item)
+
+		// }
 	}
 }
 
-func (kt *MTree[MD]) ConnectionProvider() connection.ConnectionProvider {
+
+func (kt *LTree[MD]) ConnectionProvider() connection.ConnectionProvider {
 	return kt.connProv
 }
 
-func (kt *MTree[MD]) Equals(other *MTree[MD]) bool {
+func (kt *LTree[MD]) Equals(other *LTree[MD]) bool {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 
 	return kt.crdt.State().Equals(other.crdt.State())
 }
 
-func (kt *MTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) {
+func (kt *LTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
@@ -132,7 +208,7 @@ func (kt *MTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 	return id, nil
 }
 
-func (kt *MTree[MD]) Delete(id uuid.UUID) error {
+func (kt *LTree[MD]) Delete(id uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
@@ -158,7 +234,7 @@ func (kt *MTree[MD]) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (kt *MTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
+func (kt *LTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
@@ -186,7 +262,7 @@ func (kt *MTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	return nil
 }
 
-func (kt *MTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
+func (kt *LTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
@@ -211,7 +287,7 @@ func (kt *MTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	return nil
 }
 
-func (kt *MTree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, error) {
+func (kt *LTree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 	children, bool := kt.crdt.GetChildren(id)
@@ -221,7 +297,7 @@ func (kt *MTree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, error) {
 	return children, nil
 }
 
-func (kt *MTree[MD]) GetParent(id uuid.UUID) (uuid.UUID, error) {
+func (kt *LTree[MD]) GetParent(id uuid.UUID) (uuid.UUID, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 	node := kt.crdt.GetNode(id)
@@ -231,11 +307,11 @@ func (kt *MTree[MD]) GetParent(id uuid.UUID) (uuid.UUID, error) {
 	return node.ParentID(), nil
 }
 
-func (kt *MTree[MD]) Root() uuid.UUID {
+func (kt *LTree[MD]) Root() uuid.UUID {
 	return kt.crdt.RootID() // RootID is a constant, so no lock
 }
 
-func (kt *MTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
+func (kt *LTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 	node := kt.crdt.GetNode(id)
@@ -246,7 +322,7 @@ func (kt *MTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
 	return node.Metadata(), nil
 }
 
-func (kt *MTree[MD]) Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error) {
+func (kt *LTree[MD]) Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
 	node := kt.crdt.GetNode(id)

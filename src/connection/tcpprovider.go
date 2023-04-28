@@ -207,9 +207,6 @@ func (p *TCPProvider) connectToPeer(tcpAddr *net.TCPAddr) {
 }
 
 func (p *TCPProvider) GetPeerAddrs() []net.Addr {
-	p.peersMu.RLock()
-	defer p.peersMu.RUnlock()
-
 	peerAddrs := make([]net.Addr, 0, len(p.peers))
 	for addr := range p.peerAddrs {
 		peerAddrs = append(peerAddrs, addr)
@@ -232,6 +229,7 @@ func (p *TCPProvider) addPeer(tcpConn *TCPConnection) error {
 
 	p.peerAddrs[tcpConn.remoteListenAddr] = true
 	p.peers[tcpConn.peerId] = tcpConn
+	tcpConn.SharePeers()
 	return nil
 }
 

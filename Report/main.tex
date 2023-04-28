@@ -143,7 +143,7 @@ The remaining work includes creating a more refined design of the system and the
 
 \addcontentsline{toc}{section}{Statement of Originality}
 \begin{center}
-    \textsc{\LARGE Statement of Originality} \\ [1cm]
+    \textsc{\LARGE Statement of Originality} \\ [0.3cm]
 \end{center}
 I have read and understood the ECS Academic Integrity\footnote{\url{http://ecs.gg/ai}} information and the University’s
 Academic Integrity Guidance for Students\footnote{\url{https://www.southampton.ac.uk/quality/assessment/academic\_integrity.page}}.
@@ -155,15 +155,29 @@ termination of programme.
 I consent to the University copying and distributing any or all of my work in any form and
 using third parties (who may be based outside the EU/EEA) to verify whether my work
 contains plagiarised material, and for quality assurance purposes.
-\\[0.5cm]
+\\[-.5cm]
 
 \begin{itemize}
-    \item I have acknowledged all sources, and identified any content taken from elsewhere.
-    \item I have not used any resources produced by anyone else.
-    \item I did all the work myself, or with my allocated group, and have not helped anyone else.
-    \item The material in the report is genuine, and I have included all my data/code/designs.
-    \item I have not submitted any part of this work for another assessment.
-    \item My work did not involve human participants, their cells or data, or animals
+    \item \textbf{I have acknowledged all sources, and identified any content taken from elsewhere.}
+    \item \textbf{I have used the following open source libraries and tools:}\\[-0.8cm]
+    \begin{table}[h]
+        \centering
+        \begin{tabularx}{\textwidth}{|l|X|}
+        \hline
+        \textbf{Name} & \textbf{URL} \\ \hline
+        uuid     &  \scriptsize{\url{https://pkg.go.dev/github.com/google/uuid@v1.3.0}}  \\ 
+        protobuf     &   \scriptsize{\url{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}}  \\
+        msgpack     &    \scriptsize{\url{https://pkg.go.dev/google.golang.org/protobuf@v1.30.0}} \\ 
+        protoc    &    \scriptsize{\url{https://github.com/protocolbuffers/protobuf}} \\
+        protoc-gen-go   &    \scriptsize{\url{https://github.com/protocolbuffers/protobuf-go}} \\ 
+        \hline
+        \end{tabularx}
+    \end{table}
+    \\[-.4cm]All code with \texttt{*.pb.go} files is generated from the \texttt{*.proto} files using the \texttt{protoc} tool with the \texttt{protoc-gen-go} plugin.
+    \item \textbf{I did all the work myself, or with my allocated group, and have not helped anyone else.}
+    \item \textbf{The material in the report is genuine, and I have included all my data/code/designs.}
+    \item \textbf{I have not submitted any part of this work for another assessment.}
+    \item \textbf{My work did not involve human participants, their cells or data, or animals}
 \end{itemize}
 
 % STATEMENT OF ORIGINALITY ------------------------------------------------------------
@@ -172,24 +186,7 @@ contains plagiarised material, and for quality assurance purposes.
 \addcontentsline{toc}{section}{Acknowledgements}
 
 I would like to thank the authors of the papers "A highly-available move operation for replicated
-trees"\cite{9563274} and "A coordination-free, convergent, and safe replicated tree"\cite{https://doi.org/10.48550/arxiv.2103.04828} for their work. The algorithms which they have proposed has been an essential part of this report, and I am grateful for their efforts. This paper has attempted to implement their proposed algorithms in Go. \par 
-
-\hspace{2cm}
-
-The source code for this report also makes use of the following open source packages: 
-\begin{table}[h]
-    \centering
-    \begin{tabularx}{\textwidth}{|l|X|}
-    \hline
-    \textbf{Name} & \textbf{URL} \\ \hline
-    uuid     &  \scriptsize{\url{https://pkg.go.dev/github.com/google/uuid@v1.3.0}}  \\ 
-    protobuf     &   \scriptsize{\url{https://pkg.go.dev/github.com/vmihailenco/msgpack@v4.0.4+incompatible}}  \\
-    msgpack     &    \scriptsize{\url{https://pkg.go.dev/google.golang.org/protobuf@v1.30.0}} \\ \hline
-    \end{tabularx}
-\end{table}
-
-The protocol buffer compiler \href{https://github.com/protocolbuffers/protobuf#protocol-compiler-installation}{\textit{protoc}}, with plugin \href{https://github.com/protocolbuffers/protobuf-go}{\textit{protoc-gen-go}} was used to generate the Go code for the protobuf messages. The generated code is within \texttt{*.pb.go} files, and was not written by Felix Whitefield. \par
-
+trees"\cite{9563274} and "A coordination-free, convergent, and safe replicated tree"\cite{https://doi.org/10.48550/arxiv.2103.04828} for their work. The algorithms which they have proposed has been an essential part of this report, and I am grateful for their efforts. \par 
 
 
 \newpage
@@ -733,7 +730,7 @@ The log of operations being implemented as a linked list. This was chosen over a
 Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was created. The new algorithm is inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer and the notion of OpSets, from Maram and Kleppmann's algorithm respectively. The causal delivery layer allows the algorithm to relax which operations are logged, and which need to be undone and redone. \par 
 
 \subsection{Lumina}
-In Lumina, a total order (priority in Maram) is given to move operations which is used to resolve conflicts between concurrent move operations. Whereas Maram will only apply conflict resolution when there is a conflict, Lumina will always apply conflict resolution for move operations. This does not produce a large overhead, and may even be faster, as Maram still has to check all concurrent move operations for conflicts. Undo is a fast operation, and redo has similar overhead to determining if there is a conflict in Maram. \par
+In Lumina, a total order (priority in Maram) is given to move operations which is used to apply concurrent move operations in the same order on all replicas. This is an improvement on Kleppmann's algorithm, as it reduces the total amount of undo and redo operations. Maram is better, but still has to check all concurrent move operations for conflicts, and then apply the conflict resolution policy. Lumina, will undo and redo a subset of the concurrent move operations. Undoing, and redoing an operation takes approximately the same time as checking an operation for conflicts. Also, Lumina does not need to calculate and send additional metadata with each move operation. \par 
 
 Compared to Kleppmann's algorithm, Lumina logs only the move operations. This is possible due to the guarantees provided by causal delivery, and using UUIDs as the ID for each node ensures each new node has a unique ID.
 \begin{itemize}
@@ -867,6 +864,20 @@ The implementation of the interface was relatively simple, as it is a wrapper ar
 
 
 \chapter{Testing}
+
+\section{Unit Testing}
+The unit testing is completed using the standard Go testing package. The tests are run using the \texttt{gotestsum --format testname  ./...} command in the \texttt{src} directory. The tests are located next to the code they are testing, in files called \texttt{filename\_test.go}. The output of the unit tests is shown in Figure \ref{fig:testing}. \par
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{images/tests_out.jpg}
+    \caption{Output of unit tests.}
+    \label{fig:testing}
+\end{figure}
+
+\section{Performance Testing}
+
+
 
 \chapter{Evaluation}
 

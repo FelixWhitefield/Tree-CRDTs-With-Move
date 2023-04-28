@@ -30,5 +30,10 @@ func (tn TreeNode[MD]) Metadata() MD {
 type TNConflict[MD any] func(tn1 *TreeNode[MD], tn2 *Tree[MD]) bool
 
 func (tn *TreeNode[MD]) Equals(other *TreeNode[MD]) bool {
+	if tn == nil && other == nil {
+		return true
+	} else if tn == nil || other == nil {
+		return false
+	}
 	return tn.PrntID == other.PrntID
 }

@@ -79,7 +79,6 @@ func (c *TCPConnection) handle() {
 	log.Printf("Connected to: %v; at %v", c.peerId.String(), c.conn.RemoteAddr())
 	defer c.tcpProv.removePeer(c) // Remove the peer from the list of peers when the connection is closed
 
-	c.SharePeers()                     // Share the list of peers with the new peer
 	c.tcpProv.sendMissingOps(c.peerId) // Send any missing operations to the new peer
 	// Read messages from the connection
 	for {

@@ -18,7 +18,6 @@ import (
 	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/k"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/maram"
-	"net"
 
 	ti "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treeinterface"
 	"github.com/google/uuid"
@@ -74,64 +73,47 @@ type LargePerson struct {
 
 func main() {
 	var err error
-	li1, _ := net.Listen("tcp", "0.0.0.0:1122")
-	go func() {
-		for {
-			_, _ = li1.Accept()
-			log.Println("1122: Accepted")
-		}
-	}()
-	li2, _ := net.Listen("tcp", "0.0.0.0:1123")
-	go func() {
-		for {
-			_, _ = li2.Accept()
-			log.Println("1123: Accepted")
-		}
-	}()
 
-	time.Sleep(1 * time.Second)
-
-	laddr := &net.TCPAddr{Port: 1122}
-	raddr := &net.TCPAddr{Port: 1123, IP: net.ParseIP("0.0.0.0")}
-
-	con, err := net.DialTCP("tcp", laddr, raddr)
-	if err != nil {
-		log.Println(err)
-	}
-	con.Write([]byte("Hello"))
-
-	time.Sleep(1 * time.Second)
-
-	return
-	mtree := ti.NewLTree[string](connection.NewTCPProvider(1, 1122))
-	m2tree := ti.NewLTree[string](connection.NewTCPProvider(1, 1123))
+	mtree := ti.NewLTree[string](connection.NewTCPProvider(2, 1122))
+	m2tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1123))
+	m3tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1124))
 
 	m2tree.ConnectionProvider().Connect("localhost:1122")
+	m3tree.ConnectionProvider().Connect("localhost:1122")
+
+	
+	time.Sleep(1 * time.Second)
 
 	for i := 0; i < 10000; i++ {
 		mtree.Insert(mtree.Root(), "Felix")
+	}
+	for i := 0; i < 10000; i++ {
 		m2tree.Insert(m2tree.Root(), "Felix")
 	}
-
-	mid, _ := mtree.Insert(mtree.Root(), "Felix")
-	mid2, _ := m2tree.Insert(m2tree.Root(), "Felix")
-
-	time.Sleep(1 * time.Second)
-
 	for i := 0; i < 10000; i++ {
-		m2tree.Move(mid, mid2)
-
-		mtree.Move(mid2, mid)
-		mtree.Move(mid, mid2)
+		m3tree.Insert(m2tree.Root(), "Felix")
 	}
+	
+	// mid, _ := mtree.Insert(mtree.Root(), "Felix")
+	// mid2, _ := m2tree.Insert(m2tree.Root(), "Felix")
+
+	// time.Sleep(1 * time.Second)
+
+	// for i := 0; i < 10000; i++ {
+	// 	m2tree.Move(mid, mid2)
+	// 	mtree.Move(mid2, mid)
+	// 	mtree.Move(mid, mid2)
+	// }
 
 	time.Sleep(1 * time.Second)
 
-	nodes22, _ := m2tree.GetChildren(m2tree.Root())
 	nodes11, _ := mtree.GetChildren(mtree.Root())
+	nodes22, _ := m2tree.GetChildren(m2tree.Root())
+	nodes33, _ := m3tree.GetChildren(m3tree.Root())
 
-	fmt.Println(len(nodes22))
-	fmt.Println(len(nodes11))
+	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes11), mtree.GetBufLen())
+	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes22), m2tree.GetBufLen())
+	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes33), m3tree.GetBufLen())
 	fmt.Println(m2tree.Equals(mtree))
 
 	// start := time.Now()

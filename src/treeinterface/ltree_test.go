@@ -7,7 +7,7 @@ import (
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 )
 
-func TestMTreeOperationTransmits(t *testing.T) {
+func TestLTreeOperationTransmits(t *testing.T) {
 	tree1 := NewLTree[string](connection.NewTCPProvider(2, 2221))
 	tree2 := NewLTree[string](connection.NewTCPProvider(2, 2222))
 
@@ -66,7 +66,7 @@ func TestMTreeOperationTransmits(t *testing.T) {
 
 }
 
-func TestMTreeCycleMove(t *testing.T) {
+func TestLTreeCycleMove(t *testing.T) {
 	tree1 := NewLTree[string](connection.NewTCPProvider(1, 3223))
 	tree2 := NewLTree[string](connection.NewTCPProvider(1, 3224))
 
