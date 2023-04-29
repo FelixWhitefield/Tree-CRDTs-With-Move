@@ -4,41 +4,13 @@ import (
 	"container/list"
 	"errors"
 	"sync"
-
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/lumina"
-	rb "github.com/emirpasic/gods/trees/redblacktree"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
-	"container/heap"
 )
-
-type OperationQueue []lumina.Operation[*clocks.VectorTimestamp]
-
-func (pq OperationQueue) Len() int { return len(pq) }
-
-func (pq OperationQueue) Less(i, j int) bool {
-	// Compare the timestamps of the operations to determine priority
-	return pq[i].Timestamp().Compare(pq[j].Timestamp()) == -1
-}
-
-func (pq OperationQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-}
-
-func (pq *OperationQueue) Push(x interface{}) {
-	*pq = append(*pq, x.(lumina.Operation[*clocks.VectorTimestamp]))
-}
-
-func (pq *OperationQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	*pq = old[0 : n-1]
-	return item
-}
 
 type LTree[MD any] struct {
 	crdt     *lumina.TreeReplica[MD, *clocks.VectorTimestamp]
@@ -81,36 +53,6 @@ func (kt *LTree[MD]) RegisterOpRemove() {
 	msgpack.RegisterExt(3, (*lumina.OpRemove[*clocks.VectorTimestamp])(nil))
 }
 
-func (kt *LTree[MD]) applyOpsHeap(ops chan []byte) {
-	pq := &OperationQueue{}
-	heap.Init(pq)
-
-	for {
-		opBytes := <-ops
-
-		var op lumina.Operation[*clocks.VectorTimestamp]
-		msgpack.Unmarshal(opBytes, &op)
-
-		heap.Push(pq, op)
-
-		kt.crdtMu.Lock()
-		for pq.Len() > 0 {
-			causallyReady := (*pq)[0].Timestamp().CausallyReady(kt.crdt.CurrentTime())
-			compare := (*pq)[0].Timestamp().Compare(kt.crdt.CurrentTime())
-			if causallyReady {
-				opToApp := heap.Pop(pq).(lumina.Operation[*clocks.VectorTimestamp])
-				kt.crdt.Effect(opToApp)
-			} else if compare == -1 || compare == 0 {
-				heap.Pop(pq)
-			} else {
-				break
-			}
-		}
-		kt.crdtMu.Unlock()
-	}	
-}
-
-
 // Takes operations from the incoming channel and delivers
 // them in a causal order to the CRDT
 func (kt *LTree[MD]) applyOps(ops chan []byte) {
@@ -140,12 +82,11 @@ func (kt *LTree[MD]) applyOps(ops chan []byte) {
 		for item != nil {
 			op := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
 			causallyReady := op.Timestamp().CausallyReady(kt.crdt.CurrentTime())
-			compare := op.Timestamp().Compare(kt.crdt.CurrentTime())
 			if causallyReady {
 				opToApp := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
 				kt.crdt.Effect(opToApp)
 				kt.opBuffer.Remove(item)
-			} else if compare == -1 || compare == 0 {
+			} else if compare := op.Timestamp().Compare(kt.crdt.CurrentTime()); compare == -1 || compare == 0 {
 				kt.opBuffer.Remove(item)
 			} else {
 				break
@@ -153,9 +94,6 @@ func (kt *LTree[MD]) applyOps(ops chan []byte) {
 			item = kt.opBuffer.Front()
 		}
 		kt.crdtMu.Unlock()
-		
-
-	
 
 		// for ; item != nil && (item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().CausallyReady(kt.crdt.CurrentTime()) ||
 		// 	item.Value.(lumina.Operation[*clocks.VectorTimestamp]).Timestamp().Compare(kt.crdt.CurrentTime()) == -1 ||
@@ -169,7 +107,6 @@ func (kt *LTree[MD]) applyOps(ops chan []byte) {
 		// }
 	}
 }
-
 
 func (kt *LTree[MD]) ConnectionProvider() connection.ConnectionProvider {
 	return kt.connProv
