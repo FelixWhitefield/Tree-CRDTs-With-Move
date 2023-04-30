@@ -1,8 +1,9 @@
 package clocks
 
 import (
-	u "github.com/google/uuid"
 	"testing"
+
+	u "github.com/google/uuid"
 )
 
 func TestVNewAndCompare(t *testing.T) {
@@ -21,6 +22,8 @@ func TestVNewAndCompare(t *testing.T) {
 	}
 
 	v1.Inc()
+	v2.Inc()
+	v2.Inc()
 
 	if v1.CompareTimestamp(v2.Timestamp()) != 2 {
 		t.Errorf("Error in Inc() or Compare(), expected 2, got %d", v1.CompareTimestamp(v2.Timestamp()))

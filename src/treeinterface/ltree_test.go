@@ -8,8 +8,8 @@ import (
 )
 
 func TestLTreeOperationTransmits(t *testing.T) {
-	tree1 := NewLTree[string](connection.NewTCPProvider(2, 2221))
-	tree2 := NewLTree[string](connection.NewTCPProvider(2, 2222))
+	tree1 := NewLTree[string](connection.NewTCPProvider(2, 2221), false)
+	tree2 := NewLTree[string](connection.NewTCPProvider(2, 2222), false)
 
 	tree1.ConnectionProvider().Connect("localhost:2222")
 
@@ -50,7 +50,7 @@ func TestLTreeOperationTransmits(t *testing.T) {
 		t.Errorf("Expected 4 children, got %d", len(rootChildren))
 	}
 
-	tree3 := NewLTree[string](connection.NewTCPProvider(2, 2223))
+	tree3 := NewLTree[string](connection.NewTCPProvider(2, 2223), false)
 	tree3.ConnectionProvider().Connect("localhost:2221")
 	tree3.ConnectionProvider().Connect("localhost:2222")
 	time.Sleep(2 * time.Second) // Time for communication to occur
@@ -67,8 +67,8 @@ func TestLTreeOperationTransmits(t *testing.T) {
 }
 
 func TestLTreeCycleMove(t *testing.T) {
-	tree1 := NewLTree[string](connection.NewTCPProvider(1, 3223))
-	tree2 := NewLTree[string](connection.NewTCPProvider(1, 3224))
+	tree1 := NewLTree[string](connection.NewTCPProvider(1, 3223), false)
+	tree2 := NewLTree[string](connection.NewTCPProvider(1, 3224), false)
 
 	tree1.ConnectionProvider().Connect("localhost:3224")
 
@@ -118,7 +118,7 @@ func TestLTreeCycleMove(t *testing.T) {
 	time.Sleep(1 * time.Second) // Time for communication to occur
 
 	// Check that states are the same after move
-	if !tree1.crdt.Equals(tree2.crdt) {
+	if !tree1.Crdt.Equals(tree2.Crdt) {
 		t.Errorf("States are not the same after move")
 	}
 	children, _ := tree1.GetChildren(tree1.Root())

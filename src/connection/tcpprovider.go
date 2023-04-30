@@ -8,6 +8,7 @@ package connection
 // This will share peers with other peers. Whenever a new connection is made, peer addresses are shared with the new peer.
 
 import (
+	"encoding/binary"
 	"errors"
 	"log"
 	"net"
@@ -103,21 +104,27 @@ func (p *TCPProvider) HandleBroadcast() {
 			continue
 		}
 
-		p.addOperation(opToSend, newOpId)
+		encodedOp := make([]byte, 4+len(opData)) // 4 bytes for length (up to 4GB, max length for protobuf)
+		binary.BigEndian.PutUint32(encodedOp, uint32(len(opData)))
+
+		//Write the length and then the data, using a single write call (to ensure they are sent together)
+		copy(encodedOp[4:], opData)
+
+		p.addOperation(encodedOp, newOpId)
 		//log.Println("Broadcasting operation:", newOpId.String())
 
-		p.broadcastOp(opData)
+		p.broadcastOp(encodedOp)
 	}
 }
 
-func (p *TCPProvider) broadcastOp(opData []byte) {
+func (p *TCPProvider) broadcastOp(encodedOp []byte) {
 	p.peersMu.RLock()
 	for _, conn := range p.peers {
 		if conn == nil {
 			log.Println("Attempted to broadcast to a nil peer")
 			continue
 		}
-		conn.SendMsg(opData)
+		conn.SendOperation(encodedOp)
 	}
 	p.peersMu.RUnlock()
 }
@@ -139,14 +146,7 @@ func (p *TCPProvider) sendMissingOps(peerId uuid.UUID) {
 	for opId := range p.delivered {
 		if !p.delivered[opId][peerId] {
 			// Send the operation to the peer
-			opMsg := Message{Message: &Message_Operation{Operation: &OperationMsg{Id: opId[:], Op: p.operations[opId]}}}
-			opData, err := proto.Marshal(&opMsg)
-			if err != nil {
-				log.Println("Error marshalling operation: ", err.Error())
-				continue
-			}
-
-			peerConn.SendMsg(opData)
+			peerConn.SendOperation(p.operations[opId])
 		}
 	}
 }
@@ -166,9 +166,11 @@ func (p *TCPProvider) Connect(addr string) {
 		log.Printf("Error resolving address: %s", err.Error())
 	}
 	// If we already have this peer, don't connect again
+	p.peersMu.RLock()
 	if p.peerAddrs[tcpAddr] {
 		return
 	}
+	p.peersMu.RUnlock() 
 
 	p.connectToPeer(tcpAddr)
 }
@@ -247,20 +249,21 @@ func (p *TCPProvider) addOperation(op []byte, opId uuid.UUID) {
 	defer p.deliveredMu.Unlock()
 
 	p.operations[opId] = op
-	p.delivered[opId] = make(map[uuid.UUID]bool, p.numPeers)
+	p.delivered[opId] = make(map[uuid.UUID]bool)
 }
 
 func (p *TCPProvider) addDelivered(opId uuid.UUID, peerId uuid.UUID) {
 	p.deliveredMu.Lock()
 	defer p.deliveredMu.Unlock()
 
-	// This would be the last peer to receive the operation (No need to add it to the delivered map)
-	// If final peer and not in delivered map, delete entries
-	if _, exists := p.delivered[opId][peerId]; len(p.delivered[opId]) == p.numPeers-1 && !exists {
+	if _, exists := p.delivered[opId]; !exists {
+		return
+	}
+
+	p.delivered[opId][peerId] = true
+	if len(p.delivered[opId]) == p.numPeers {
 		delete(p.operations, opId)
 		delete(p.delivered, opId)
-	} else {
-		p.delivered[opId][peerId] = true
 	}
 }
 

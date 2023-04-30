@@ -133,7 +133,7 @@ func (v *VectorTimestamp) CausallyReady(other *VectorTimestamp) bool {
 			if oneLarger {
 				return false
 			}
-			if value == (*other)[key]+1 {
+			if value-1 == (*other)[key] {
 				oneLarger = true
 			} else {
 				return false

@@ -220,3 +220,14 @@ func (c *TCPConnection) SendMsg(data []byte) {
 		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.peerId)
 	}
 }
+
+func (c *TCPConnection) SendOperation(encodedOp []byte) {
+	if c == nil {
+		return
+	}
+	_, err := c.conn.Write(encodedOp)
+	if err != nil {
+		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.peerId)
+	}
+}
+

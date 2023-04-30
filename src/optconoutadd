@@ -1,0 +1,26 @@
+goos: windows
+goarch: amd64
+pkg: github.com/FelixWhitefield/Tree-CRDTs-With-Move
+cpu: AMD Ryzen 7 5800X 8-Core Processor             
+BenchmarkKleppmannConcurrent_10-8      	      20	  15409870 ns/op
+BenchmarkKleppmannConcurrent_100-8     	      20	  20726570 ns/op
+BenchmarkKleppmannConcurrent_1000-8    	      20	  45765805 ns/op
+BenchmarkKleppmannConcurrent_3000-8    	      20	 101797840 ns/op
+BenchmarkKleppmannConcurrent_5000-8    	      20	 157813305 ns/op
+BenchmarkKleppmannConcurrent_7500-8    	      20	 225794350 ns/op
+BenchmarkKleppmannConcurrent_10000-8   	      20	 299165640 ns/op
+BenchmarkKleppmannConcurrent_15000-8   	      20	 436776070 ns/op
+BenchmarkKleppmannConcurrent_20000-8   	      20	 596603500 ns/op
+BenchmarkKleppmannConcurrent_30000-8   	      20	1005383915 ns/op
+BenchmarkLuminaConcurrent_10-8         	      20	  17802725 ns/op
+BenchmarkLuminaConcurrent_100-8        	      20	  16806985 ns/op
+BenchmarkLuminaConcurrent_1000-8       	      20	  46438085 ns/op
+BenchmarkLuminaConcurrent_3000-8       	      20	  99620200 ns/op
+BenchmarkLuminaConcurrent_5000-8       	      20	 161346790 ns/op
+BenchmarkLuminaConcurrent_7500-8       	      20	 247267410 ns/op
+BenchmarkLuminaConcurrent_10000-8      	      20	 329130515 ns/op
+BenchmarkLuminaConcurrent_15000-8      	      20	 469690625 ns/op
+BenchmarkLuminaConcurrent_20000-8      	      20	 674349630 ns/op
+BenchmarkLuminaConcurrent_30000-8      	      20	1124793135 ns/op
+PASS
+ok  	github.com/FelixWhitefield/Tree-CRDTs-With-Move	208.381s

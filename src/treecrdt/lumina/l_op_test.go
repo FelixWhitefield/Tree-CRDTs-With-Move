@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func TestMaramOpInherits(t *testing.T) {
+func TestLuminaOpInherits(t *testing.T) {
 	var op Operation[*c.VectorTimestamp]
 	var timestamp *c.VectorTimestamp
 
@@ -33,7 +33,7 @@ func TestMaramOpInherits(t *testing.T) {
 	}
 }
 
-func TestMaramMoveOps(t *testing.T) {
+func TestLuminaMoveOps(t *testing.T) {
 	opMov := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: NewTreeNode(uuid.New(), "meta"), Priotity: *c.NewLamport()}
 	opMov.Timestamp().Inc(uuid.New())
 

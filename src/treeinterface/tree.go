@@ -15,4 +15,5 @@ type Tree[MD any] interface {
 	Root() uuid.UUID                                           // Get the root of the tree
 	GetMetadata(id uuid.UUID) (MD, error)                      // Get the metadata of a node
 	Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error)             // Get the node with the given ID
+	GetTotalApplied() uint64 								   // Get the total number of operations applied to the tree
 }

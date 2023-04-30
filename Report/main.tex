@@ -22,6 +22,9 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{centernot}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{verbatim}
 \newenvironment{bprooftree}
   {\leavevmode\hbox\bgroup}
   {\DisplayProof\egroup}
@@ -866,16 +869,217 @@ The implementation of the interface was relatively simple, as it is a wrapper ar
 \chapter{Testing}
 
 \section{Unit Testing}
-The unit testing is completed using the standard Go testing package. The tests are run using the \texttt{gotestsum --format testname  ./...} command in the \texttt{src} directory. The tests are located next to the code they are testing, in files called \texttt{filename\_test.go}. The output of the unit tests is shown in Figure \ref{fig:testing}. \par
+The unit testing was completed using the standard Go testing package. The tests are located next to the code they are testing, in files called \texttt{filename\_test.go}. The main components of the system were tested. The parts which were not directly tested are tested indirectly by other unit tests. The output of the unit tests is shown in Figure \ref{fig:testing}. \par
 
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{images/tests_out.jpg}
-    \caption{Output of unit tests.}
+    \includegraphics[width=0.9\textwidth]{images/tests_vs.jpg} 
+    \caption{Output of unit tests (VSCode test runner).}
     \label{fig:testing}
 \end{figure}
 
 \section{Performance Testing}
+Rudimentary performance testing was carried out to determine the differences in throughput between the two CRDT implementations. Latency was not tested as it is not a concern for CRDTs, as operations are immediately applied locally. Therefore, the only performance metric which may differ greatly between the two implementations is throughput. Other papers have already shown that CRDT latency is much lower than traditional systems \cite{crdtlatency}. \par
+
+\subsection{Concurrent}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        xlabel=Total Operations,
+        ylabel=Time (ns),
+        ymin=0, ymax=7500000000,
+        xmin=0, xmax=30000,
+        width=1\textwidth, height=7cm,
+        legend style={at={(0,1)},anchor=north west, font=\small},
+        title=Time to Apply All Concurrent Operations
+    ]
+
+    \addplot[smooth, mark=*, blue] plot coordinates {
+        (10,  15409870)
+        (100,  20726570)
+        (1000,  45765805)
+        (3000,  101797840)
+        (5000,  157813305)
+        (7500,  225794350)
+        (10000,  299165640)
+        (15000,  436776070)
+        (20000,  596603500)
+        (30000, 1005383915)
+    };
+    \addlegendentry{Kleppmann (Add)}
+
+    \addplot[smooth, mark=*, red] plot coordinates {
+        (10,  17802725)
+        (100,  16806985)
+        (1000,  46438085)
+        (3000,  99620200)
+        (5000,  161346790)
+        (7500,  247267410)
+        (10000,  329130515)
+        (15000,  469690625)
+        (20000,  674349630)
+        (30000,  1124793135)
+    };
+    \addlegendentry{Lumina (Add)}
+    \addplot[smooth, mark=x, blue] plot coordinates {
+        (10,  15113640)
+        (100,  18981080)
+        (1000,  47203270)
+        (3000,  182713890)
+        (5000,  396213770)
+        (7500,  783896170)
+        (10000,  1312333150)
+        (15000,  2752529730)
+        (20000,  4624398590)
+        (25000,  7430071940)
+    };
+    \addlegendentry{Klepp (Rand)}
+    \addplot[smooth, mark=x, red] plot coordinates {
+        (10,  15928130)
+        (100,  15883980)
+        (1000,  48713570)
+        (3000,  160903300)
+        (5000,  370459390)
+        (7500,  694302850)
+        (10000,  1171288340)
+        (15000,  2339546700)
+        (20000,  4074630250)
+        (25000,  6052257030)
+    };
+    \addlegendentry{Lumina (Rand)}
+    \end{axis}
+\end{tikzpicture}
+
+
+\subsection{Sequential}
+
+
+\begin{tikzpicture}
+    \begin{axis}[
+        xlabel=Total Operations,
+        ylabel=Time (ns),
+        ymin=0, ymax=7500000000,
+        xmin=0, xmax=30000,
+        width=1\textwidth, height=7cm,
+        legend style={at={(0,1)},anchor=north west, font=\small},
+        title=Time to Apply All Sequential Operations
+    ]
+
+    \addplot[smooth, mark=*, blue] plot coordinates {
+        (10,  14988900)
+        (100,  15862110)
+        (1000,  65269460)
+        (3000,  171947870)
+        (5000,  287224060)
+        (7500,  374872200)
+        (10000,  497396880)
+        (15000,  669384030)
+        (20000,  890876260)
+        (30000, 1340203480)
+    };
+    \addlegendentry{Kleppmann (Add)}
+
+    \addplot[smooth, mark=*, red] plot coordinates {
+        (10,  15746340)
+        (100,  15619000)
+        (1000,  62575680)
+        (3000,  141441220)
+        (5000,  233789860)
+        (7500,  337757450)
+        (10000,  461017030)
+        (15000,  676597900)
+        (20000,  884806370)
+        (30000,  1358266570)
+    };
+    \addlegendentry{Lumina (Add)}
+    \addplot[smooth, mark=x, blue] plot coordinates {
+        (10,  10531760)
+        (100,  14630970)
+        (1000,  52876940)
+        (3000,  246032110)
+        (5000,  355997310)
+        (7500,  709697100)
+        (10000,  1150844530)
+        (15000,  2498838490)
+        (20000,  4248878010)
+        (25000,  6832985480)
+    };
+    \addlegendentry{Klepp (Rand)}
+    \addplot[smooth, mark=x, red] plot coordinates {
+        (10,  15690050)
+        (100,  15765610)
+        (1000,  62335790)
+        (3000,  151480580)
+        (5000,  300758050)
+        (7500,  599709860)
+        (10000,  998342570)
+        (15000,  2045923810)
+        (20000,  3498627800)
+        (25000,  5260888970)
+    };
+    \addlegendentry{Lumina (Rand)}
+    \end{axis}
+\end{tikzpicture}
+
+
+\subsection{After}
+
+
+\begin{tikzpicture}
+    \begin{axis}[
+        xlabel=Total Operations,
+        ylabel=Time (ns),
+        ymin=0, ymax=8800000000,
+        xmin=0, xmax=3000,
+        width=1\textwidth, height=7cm,
+        legend style={at={(0,1)},anchor=north west, font=\small},
+        title=Time to Apply All Operations (Connecting Afterwards),
+        scaled x ticks=base 10:-3
+    ]
+
+    \addplot[smooth, mark=*, blue] plot coordinates {
+        (10,  13752620)
+        (100,  15582760)
+        (500,  179296100)
+        (1000,  697264970)
+        (1500,  1606878680)
+        (2000,  2896042280)
+        (3000,  6667710080)
+    };
+    \addlegendentry{Kleppmann (Add)}
+
+    \addplot[smooth, mark=*, red] plot coordinates {
+        (10,  11479210)
+        (100,  12526040)
+        (500,  152991810)
+        (1000,  457235080)
+        (1500,  1109320120)
+        (2000,  1970951780)
+        (3000,  5016166680)
+    };
+    \addlegendentry{Lumina (Add)}
+    \addplot[smooth, mark=x, blue] plot coordinates {
+        (10,  13674660)
+        (100,  29031990)
+        (500,  239381990)
+        (1000,  897819060)
+        (1500,  2152389620)
+        (2000,  3861588460)
+        (3000,  8724443150)
+    };
+    \addlegendentry{Klepp (Rand)}
+    \addplot[smooth, mark=x, red] plot coordinates {
+        (10,  14300350)
+        (100,  14688800)
+        (500,  180049100)
+        (1000,  593186790)
+        (1500,  1337185580)
+        (2000,  2561055350)
+        (3000,  6093228210)
+    };
+    \addlegendentry{Lumina (Rand)}
+    \end{axis}
+\end{tikzpicture}
 
 
 

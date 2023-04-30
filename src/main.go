@@ -74,47 +74,48 @@ type LargePerson struct {
 func main() {
 	var err error
 
-	mtree := ti.NewLTree[string](connection.NewTCPProvider(2, 1122))
-	m2tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1123))
-	m3tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1124))
-
-	m2tree.ConnectionProvider().Connect("localhost:1122")
-	m3tree.ConnectionProvider().Connect("localhost:1122")
-
+	mtree := ti.NewLTree[string](connection.NewTCPProvider(2, 1122), true)
+	m2tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1123), true)
+	m3tree := ti.NewLTree[string](connection.NewTCPProvider(2, 1124), true)
 	
-	time.Sleep(1 * time.Second)
-
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 3000; i++ {
 		mtree.Insert(mtree.Root(), "Felix")
 	}
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 3000; i++ {
 		m2tree.Insert(m2tree.Root(), "Felix")
 	}
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 3000; i++ {
 		m3tree.Insert(m2tree.Root(), "Felix")
 	}
 	
-	// mid, _ := mtree.Insert(mtree.Root(), "Felix")
-	// mid2, _ := m2tree.Insert(m2tree.Root(), "Felix")
+	m2tree.ConnectionProvider().Connect("localhost:1122")
+	m3tree.ConnectionProvider().Connect("localhost:1122")
 
-	// time.Sleep(1 * time.Second)
-
-	// for i := 0; i < 10000; i++ {
-	// 	m2tree.Move(mid, mid2)
-	// 	mtree.Move(mid2, mid)
-	// 	mtree.Move(mid, mid2)
-	// }
-
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	nodes11, _ := mtree.GetChildren(mtree.Root())
 	nodes22, _ := m2tree.GetChildren(m2tree.Root())
 	nodes33, _ := m3tree.GetChildren(m3tree.Root())
 
-	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes11), mtree.GetBufLen())
-	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes22), m2tree.GetBufLen())
-	fmt.Printf("Nodes: %v and Buf: %v \n", len(nodes33), m3tree.GetBufLen())
+	fmt.Printf("Nodes: %v  \n", len(nodes11))
+	fmt.Printf("Nodes: %v  \n", len(nodes22))
+	fmt.Printf("Nodes: %v  \n", len(nodes33))
 	fmt.Println(m2tree.Equals(mtree))
+
+	
+
+	fmt.Println(mtree.Crdt.CurrentTime())
+
+	return
+	time.Sleep(5 * time.Second)
+
+	nodes11, _ = mtree.GetChildren(mtree.Root())
+	nodes22, _ = m2tree.GetChildren(m2tree.Root())
+	nodes33, _ = m3tree.GetChildren(m3tree.Root())
+
+	fmt.Printf("Nodes: %v \n", len(nodes11))
+	fmt.Printf("Nodes: %v \n", len(nodes22))
+	fmt.Printf("Nodes: %v  \n", len(nodes33))
 
 	// start := time.Now()
 	// for i := 0; i < 10_000; i++ {

@@ -32,6 +32,7 @@ func (op *OpMove[MD, T]) CompareOp(other *OpMove[MD, T]) int {
 	return op.Timestmp.Compare(other.Timestmp)
 }
 
+
 // Represents an add operation
 type OpAdd[MD any, T opTimestamp[T]] struct {
 	Timestmp T
@@ -42,6 +43,7 @@ type OpAdd[MD any, T opTimestamp[T]] struct {
 func (op *OpAdd[MD, T]) Timestamp() T {
 	return op.Timestmp.Clone()
 }
+
 
 // Represents a remove operation
 type OpRemove[T opTimestamp[T]] struct {

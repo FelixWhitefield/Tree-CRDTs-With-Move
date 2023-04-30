@@ -8,7 +8,7 @@ import (
 	u "github.com/google/uuid"
 )
 
-func TestMaramTreeReplicaPrepareAndEffect(t *testing.T) {
+func TestLuminaTreeReplicaPrepareAndEffect(t *testing.T) {
 	uuid1 := u.New()
 	tr := NewTreeReplica[string](uuid1)
 
@@ -54,7 +54,7 @@ func contains(s []u.UUID, e u.UUID) bool {
 	return false
 }
 
-func TestMaramTreeReplicaTime(t *testing.T) {
+func TestLuminaTreeReplicaTime(t *testing.T) {
 	tr := NewTreeReplica[string]()
 
 	uuid1 := u.New()

@@ -2,19 +2,26 @@ package treeinterface
 
 import (
 	"errors"
+	"sync"
+	"sync/atomic"
+
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	k "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt/kleppmann"
 	"github.com/google/uuid"
 	"github.com/vmihailenco/msgpack" // msgpack is faster and smaller than JSON
-	"sync"
 )
 
 type KTree[MD any] struct {
 	crdt     *k.TreeReplica[MD, *clocks.Lamport]
 	crdtMu   sync.RWMutex
 	connProv connection.ConnectionProvider
+	totalApplied uint64
+}
+
+func (kt *KTree[MD]) GetTotalApplied() uint64 {
+	return atomic.LoadUint64(&kt.totalApplied)
 }
 
 func NewKTree[MD any](connProv connection.ConnectionProvider) *KTree[MD] {
@@ -34,9 +41,10 @@ func (kt *KTree[MD]) applyOps(ops chan []byte) {
 
 		var op k.OpMove[MD, *clocks.Lamport]
 		msgpack.Unmarshal(opBytes, &op)
-
+		
 		kt.crdtMu.Lock()
 		kt.crdt.Effect(&op)
+		atomic.AddUint64(&kt.totalApplied, 1)
 		kt.crdtMu.Unlock()
 	}
 }
@@ -65,6 +73,7 @@ func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 	}
 
 	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
@@ -74,23 +83,24 @@ func (kt *KTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 func (kt *KTree[MD]) Delete(id uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
-
+	
 	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return errors.New("node does not exist")
 	}
-
+	
 	op := kt.crdt.Prepare(id, kt.crdt.TombstoneID(), kt.crdt.GetNode(id).Metadata())
 	if op == nil {
 		return errors.New("could not prepare operation")
 	}
-
+	
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return err
 	}
-
+	
 	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
@@ -100,7 +110,7 @@ func (kt *KTree[MD]) Delete(id uuid.UUID) error {
 func (kt *KTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
-
+	
 	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return errors.New("node does not exist")
@@ -108,18 +118,20 @@ func (kt *KTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	if kt.crdt.GetNode(newParentID) == nil {
 		return errors.New("new parent node does not exist")
 	}
-
+	
 	op := kt.crdt.Prepare(id, newParentID, kt.crdt.GetNode(id).Metadata())
 	if op == nil {
 		return errors.New("could not prepare operation")
 	}
-
+	
 	opBytes, err := msgpack.Marshal(op)
 	if err != nil {
 		return err
 	}
-
+	
 	kt.crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
+	atomic.AddUint64(&kt.totalApplied, 1)
+
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil
@@ -145,6 +157,8 @@ func (kt *KTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	}
 
 	kt.crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
+	atomic.AddUint64(&kt.totalApplied, 1)
+
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil
