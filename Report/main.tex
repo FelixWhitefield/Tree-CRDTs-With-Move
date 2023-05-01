@@ -843,7 +843,7 @@ As shown by Figure \ref{fig:networkimpl}, the network package only consists of t
     \end{itemize} 
     \item The \texttt{TCPProvider} also runs the \texttt{handleBroadcast()} function in a goroutine. This listens on the \texttt{opsToBroadcast} channel for operations to broadcast. When an operation is received, it is sent to all peers. 
 \end{itemize}
-Protocol Buffers\footnote{\url{https://protobuf.dev/}} are used to serialise the messages. They were chosen as they are smaller, faster and more efficient than other methods. Also, using their \texttt{oneof} feature, the message type can be easily determined. More information on the protocol buffers used can be found in Appendix \ref{app:protobuf}. \par
+Protocol Buffers\footnote{\url{https://protobuf.dev/}} are used to serialise the messages. They were chosen as they are smaller, faster and more efficient than other serialisation methods. Also, using their \texttt{oneof} feature, the message type can be easily determined. The proto code used in this project can be found in Appendix \ref{app:protobuf}. \par
 
 \begin{figure}[H] 
     \centering
@@ -854,17 +854,15 @@ Protocol Buffers\footnote{\url{https://protobuf.dev/}} are used to serialise the
 
 
 \section{Tree Interface}
-The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time. \par
+The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time by using a read-write mutex. \par
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{images/treeinterface_impl.jpg}
+    \includegraphics[width=0.75\textwidth]{images/treeinterface_impl.jpg}
     \caption{Class diagram for the tree interface.}
     \label{fig:treeimpl}
 \end{figure}
-The implementation of the interface was relatively simple, as it is a wrapper around the CRDT. As shown by Figure \ref{fig:treeimpl}, a RWMutex is used to ensure that only one operation is applied to the CRDT at a time. This Mutex is locked when applying operations and when querying the tree. \par
 
-
-
+The causal delivery layer for Lumina was implemented on the receiving end. This means that all peers will attempt to send their operations to all other peers immediately and the peer receiving the messages will buffer them until they are causally ready to be applied. This is implemented using a priority queue, with a skip list for insertions as an optimisation.
 
 \chapter{Testing}
 
@@ -879,19 +877,22 @@ The unit testing was completed using the standard Go testing package. The tests 
 \end{figure}
 
 \section{Performance Testing}
-Rudimentary performance testing was carried out to determine the differences in throughput between the two CRDT implementations. Latency was not tested as it is not a concern for CRDTs, as operations are immediately applied locally. Therefore, the only performance metric which may differ greatly between the two implementations is throughput. Other papers have already shown that CRDT latency is much lower than traditional systems \cite{crdtlatency}. \par
+Rudimentary performance testing was carried out to determine the differences in throughput between the two CRDT implementations. Latency was not tested as it is not a concern for CRDTs, as operations are immediately applied locally. Therefore, the only performance metric which may differ greatly between the two implementations is throughput. Other papers have already shown that CRDT latency is much lower than traditional systems \cite{crdtlatency}. The CRDTs may also differ in their conflict resolution policies, however testing is not required for this as the policies are well-defined. \par
+
+All the performance tests were carried out with both: all operations being inserts, and with random operations (60\% inserts, 12\% remove and 28\% move). \textit{(Add)} and \textit{(Rand)} in the graphs respectively. All tests were performed on the same computer and were run using the command \texttt{go test -bench <test\_name> -benchtime=10x -cpu=8 > <output\_file>}. This means the tests are run 10 times, on only 8 (of 16) threads and the average time is output to a file. The tests are the time to apply all operations on all peers. 
 
 \subsection{Concurrent}
+This test was performed by having three peers connect to each other, and then doing $n$ operations concurrently. As shown by Figure \ref{fig:concurrent_test}, the performance of the two CRDTs is very similar. The performance of add operations seems linear, however the performance of random operations seems to be quadratic.
 
+\begin{figure}[h]
 \begin{tikzpicture}
     \begin{axis}[
         xlabel=Total Operations,
         ylabel=Time (ns),
         ymin=0, ymax=7500000000,
         xmin=0, xmax=30000,
-        width=1\textwidth, height=7cm,
-        legend style={at={(0,1)},anchor=north west, font=\small},
-        title=Time to Apply All Concurrent Operations
+        width=1\textwidth, height=6cm,
+        legend style={at={(0,1)},anchor=north west, font=\small}
     ]
 
     \addplot[smooth, mark=*, blue] plot coordinates {
@@ -949,20 +950,22 @@ Rudimentary performance testing was carried out to determine the differences in 
     \addlegendentry{Lumina (Rand)}
     \end{axis}
 \end{tikzpicture}
-
+\caption{Time to apply all concurrent operations.}
+\label{fig:concurrent_test}
+\end{figure}
 
 \subsection{Sequential}
+The sequential test was performed by having three peers connect to each other, and then doing $n$ operations sequentially (peer one does $n$ operations, then peer two, then peer three). The results are very similar to the concurrent test, as shown by Figure \ref{fig:sequential_test}. 
 
-
+\begin{figure}[h]
 \begin{tikzpicture}
     \begin{axis}[
         xlabel=Total Operations,
         ylabel=Time (ns),
         ymin=0, ymax=7500000000,
         xmin=0, xmax=30000,
-        width=1\textwidth, height=7cm,
-        legend style={at={(0,1)},anchor=north west, font=\small},
-        title=Time to Apply All Sequential Operations
+        width=1\textwidth, height=6cm,
+        legend style={at={(0,1)},anchor=north west, font=\small}
     ]
 
     \addplot[smooth, mark=*, blue] plot coordinates {
@@ -1020,20 +1023,23 @@ Rudimentary performance testing was carried out to determine the differences in 
     \addlegendentry{Lumina (Rand)}
     \end{axis}
 \end{tikzpicture}
-
+\caption{Time to apply all sequential operations.}
+\label{fig:sequential_test}
+\end{figure}
 
 \subsection{After}
+The after tests are similar to the concurrent tests, except that the peers connect to each other after all the operations have been applied. The results are shown in Figure \ref{fig:after_test}. The x-axis on this graph is $10^3$ instead of $10^4$ because the after tests took much longer than the concurrent and sequential tests. This gives insight into the overhead of concurrent operations, which appears to be quite significant.
 
 
+\begin{figure}[H]
 \begin{tikzpicture}
     \begin{axis}[
         xlabel=Total Operations,
         ylabel=Time (ns),
         ymin=0, ymax=8800000000,
         xmin=0, xmax=3000,
-        width=1\textwidth, height=7cm,
+        width=1\textwidth, height=6cm,
         legend style={at={(0,1)},anchor=north west, font=\small},
-        title=Time to Apply All Operations (Connecting Afterwards),
         scaled x ticks=base 10:-3
     ]
 
@@ -1080,10 +1086,24 @@ Rudimentary performance testing was carried out to determine the differences in 
     \addlegendentry{Lumina (Rand)}
     \end{axis}
 \end{tikzpicture}
+\caption{Time to apply all operations (Connecting Afterwards).}
+\label{fig:after_test}
+\end{figure}
 
-
+The difference in performance between the two algorithms is much greater in the after tests than in the other tests. Lumina is clearly faster in this test. This is because Lumina's causal delivery layer has been optimised using a skip list, which allows for faster insertion of incoming operations into the priority queue. In comparison to Kleppmann's algorithm, which does not have a causal delivery layer but does have to undo and redo operations and can not have the same optimisations.
 
 \chapter{Evaluation}
+The initial intention of this project was to create a File Synchronization System using CRDTs. However, the project scope was changed to focus more on the CRDTs and on providing useful implementations of tree CRDTs with move operations. Two algorithms from the literature were chosen to be implemented (\cite{9563274} and \cite{https://doi.org/10.48550/arxiv.2103.04828}), but only one was successfully implemented (Kleppmann's algorithm). However, this project has created a new algorithm which uses lessons from both algorithms to create a new algorithm which is potentially more efficient than either of the original algorithms. The new algorithm was giving the name \textit{Lumina}. Lumina was implemented and compared against Kleppmann's algorithm. \par 
+
+The performance testing shows that Lumina has a slightly higher throughput than Kleppmann's algorithm. The performance of Lumina may be improved further by using a more efficient casual delivery mechanism, or by relaxing the causal delivery for certain types of operations. This would require tight integration with the network layer. Kleppmann's algorithm is slowed by the amount of undo and redo operations that are required to be performed. Therefore, it could be improved by employing a slightly smarter algorithm which reduces the need to log add (and potentially remove) operations. However, this could remove Kleppmann's main advantage of being able to easily extend the algorithm to support more conflicts. \par
+
+\section{Future Work}
+The implementations do work, however there are some optimisations which could be made to improve them. For Kleppmann's algorithm, the log of operations can be truncated so operations that are no longer needed are removed. This would reduce the memory overhead of the algorithm. For Lumina, the causal delivery layer could be improved by using a more efficient data structure. The current implementation uses a skip list, but a more efficient data structure could be used. \par
+
+More research into the correctness of Lumina also needs to be completed, as it is a new algorithm and has not been proven to be correct. The algorithm has been tested and appears to be correct, but more rigorous testing and formal proofs need to be completed. \par
+
+
+\chapter{Project Management}
 
 %TC:ignore
 \addcontentsline{toc}{chapter}{References}
@@ -1209,7 +1229,7 @@ This chapter details the interesting parts of the implementation. It contains so
 \newpage
 \section{Protocol Buffers}\label{app:protobuf}
 
-The 'message.proto' file is shown below. The message \texttt{Message} is the only message which is sent between peers. The \texttt{oneof} is used to allow for different types of messages to be sent. The \textit{repeated} keyword in the \texttt{PeerAddresses} message is used to define a list of strings. The messages are relatively simple, and using protocol buffers the messages can be understood by any language which has protocol buffer support 
+The 'message.proto' file is shown below. The message \texttt{Message} is the only message which is sent between peers. The \texttt{oneof} feature is used to allow for different types of messages to be sent. The \textit{repeated} keyword in the \texttt{PeerAddresses} message is used to define a list of strings. The messages are relatively simple, and using protocol buffers the messages can be understood by any language which has protocol buffer support 
 
 \begin{lstlisting}[language=protobuf3, style=protobuf]{message.proto}
 syntax = "proto3";
@@ -1254,16 +1274,16 @@ The archive has the following contents and directory structure:
         .1 /.
         .2 src.\DTcomment{Contains the source code}.
         .3 clocks.\DTcomment{Contains the clock package}.
-        .4 test.\DTcomment{Contains the tests for the clock package}.
         .3 connection.\DTcomment{Contains the connection package}.
-        .4 message.pb.go.\DTcomment{Contains the generated protocol buffer file}.
-        .4 message.proto.\DTcomment{Contains the protocol buffer file}.
+        .4 message.pb.go.\DTcomment{The generated protocol buffer file}.
+        .4 message.proto.\DTcomment{The protocol buffer file}.
+        .3 performance\_tests.\DTcomment{Contains the output of performance tests}.
         .3 treecrdt\DTcomment{Contains the treecrdt package}.
         .4 kleppmann\DTcomment{Contains Kleppmann's algorithm}.
-        .4 maram\DTcomment{Contains the Maram algorithm}.
+        .4 lumina\DTcomment{Contains the Lumina algorithm}.
         .3 treeinterface\DTcomment{Contains the treeinterface package}.
-        .3 go.mod\DTcomment{Contains the go module file}.
-        .3 go.sum\DTcomment{Contains the go module sum file}.
+        .3 go.mod\DTcomment{The go module file}.
+        .3 go.sum\DTcomment{The go module sum file}.
         .2 diagrams.\DTcomment{Contains the generated class diagrams}.
         .3 images.\DTcomment{Contains the images used in the report}.
     }
