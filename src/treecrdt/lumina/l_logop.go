@@ -1,16 +1,16 @@
 package lumina
 
 import (
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 )
 
 // Represents a log of the move `op`, and the old parent `oldP`
 type LogOpMove[MD any, T opTimestamp[T]] struct {
 	op   *OpMove[MD, T]
-	oldP *TreeNode[MD]
+	oldP *treecrdt.TreeNode[MD]
 }
 
-func NewLogOpMove[MD any, T opTimestamp[T]](op *OpMove[MD, T], oldP *TreeNode[MD]) *LogOpMove[MD, T] {
+func NewLogOpMove[MD any, T opTimestamp[T]](op *OpMove[MD, T], oldP *treecrdt.TreeNode[MD]) *LogOpMove[MD, T] {
 	return &LogOpMove[MD, T]{op: op, oldP: oldP}
 }
 

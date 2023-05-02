@@ -24,7 +24,7 @@ func DoRandomOperation(tree ti.Tree[string]) {
 		// Insert
 		tree.Insert(tree.Root(), "Add Node")
 		return
-	} 
+	}
 	rootChildren, _ := tree.GetChildren(tree.Root())
 	if randOp < 72 {
 		// Remove
@@ -145,7 +145,7 @@ func LuminaConcurrent(ops int, b *testing.B) {
 			time.Sleep(10 * time.Millisecond) // wait before calling GetChildren() again
 		}
 		if time.Since(startTime) >= 12*time.Second {
-			b.Fatalf("Timeout reached, %v", Lumina3.GetTotalApplied())
+			b.Fatalf("Timeout reached")
 		}
 	}
 }
@@ -199,7 +199,6 @@ func BenchmarkLuminaSequential_25000(b *testing.B) {
 	log.SetOutput(io.Discard)
 	LuminaSequential(25000, b)
 }
-
 
 func LuminaSequential(ops int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
@@ -293,7 +292,6 @@ func BenchmarkLuminaAfter_3000(b *testing.B) {
 	log.SetOutput(io.Discard)
 	LuminaAfter(3000, b)
 }
-
 
 func LuminaAfter(ops int, b *testing.B) {
 	for i := 0; i < b.N; i++ {

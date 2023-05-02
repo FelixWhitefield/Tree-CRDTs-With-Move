@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
 
@@ -34,14 +34,14 @@ func TestLuminaOpInherits(t *testing.T) {
 }
 
 func TestLuminaMoveOps(t *testing.T) {
-	opMov := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: NewTreeNode(uuid.New(), "meta"), Priotity: *c.NewLamport()}
+	opMov := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: treecrdt.NewTreeNode(uuid.New(), "meta"), Priotity: *c.NewLamport()}
 	opMov.Timestamp().Inc(uuid.New())
 
 	if opMov.NewP.Meta != "meta" {
 		t.Errorf("Wrong meta")
 	}
 
-	opMov2 := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: NewTreeNode(uuid.New(), "meta2"), Priotity: *c.NewLamport()}
+	opMov2 := &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New(), NewP: treecrdt.NewTreeNode(uuid.New(), "meta2"), Priotity: *c.NewLamport()}
 	opMov2.Timestmp.Inc(uuid.New())
 	opMov2.Priotity.Inc()
 

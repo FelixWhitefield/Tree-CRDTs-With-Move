@@ -230,4 +230,3 @@ func (c *TCPConnection) SendOperation(encodedOp []byte) {
 		log.Printf("Error: %s; sending message to client: %v", err.Error(), c.peerId)
 	}
 }
-

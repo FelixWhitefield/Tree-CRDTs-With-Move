@@ -54,6 +54,13 @@ func (t *Tree[MD]) GetNode(id uuid.UUID) *TreeNode[MD] {
 	return node
 }
 
+func (t *Tree[MD]) Get(id uuid.UUID) *TreeNode[MD] {
+	if t.IsDeleted(id) {
+		return nil
+	}
+	return t.nodes[id]
+}
+
 // Returns the children of the node with the given id. Returns false if the node does not exist.
 func (t *Tree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, bool) {
 	// If Tombstone node is an ancestor of the node, return nil, and false
@@ -177,6 +184,21 @@ func (t *Tree[MD]) IsAncestor(childID uuid.UUID, ancID uuid.UUID) (bool, error) 
 	return false, nil
 }
 
+func (t *Tree[MD]) IsDeleted(id uuid.UUID) bool {
+	if id == TombstoneUUID {
+		return true
+	}
+	// If parent id is tombstone, then node is deleted
+	node, exists := t.nodes[id]
+	if !exists {
+		return true
+	}
+	if node.PrntID == TombstoneUUID {
+		return true
+	}
+	return false
+}
+
 func (t *Tree[MD]) Contains(id uuid.UUID) bool {
 	if id == RootUUID {
 		return true
@@ -186,6 +208,14 @@ func (t *Tree[MD]) Contains(id uuid.UUID) bool {
 }
 
 func (t *Tree[MD]) TotalContains(id uuid.UUID) bool {
+	node, exists := t.nodes[id]
+	if node != nil && node.PrntID == TombstoneUUID {
+		return false
+	}
+	return exists
+}
+
+func (t *Tree[MD]) Anywhere(id uuid.UUID) bool {
 	_, exists := t.nodes[id]
 	return exists
 }
@@ -194,6 +224,7 @@ func (t *Tree[MD]) Equals(other *Tree[MD]) bool {
 	if len(t.nodes) != len(other.nodes) {
 		return false
 	}
+
 	for k, v := range t.nodes {
 		if !v.Equals(other.nodes[k]) {
 			return false

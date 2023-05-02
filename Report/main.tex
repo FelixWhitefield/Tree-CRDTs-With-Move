@@ -65,7 +65,7 @@
 
     \HRule\\[0.4cm]
 
-    {\huge\bfseries A Study of Highly Available Move Operations in Tree CRDTs}\\[0.4cm] % Title of your document
+    {\huge\bfseries An Implementation of Tree CRDTs With Highly Available Move Operations}\\[0.4cm] % Title of your document
 
     \HRule\\[1cm]
 
@@ -127,12 +127,10 @@
 \begin{abstract}
 \addcontentsline{toc}{section}{Abstract}
 
-[Due to be rewritten]
+Conflict-Free Data Types (CRDTs) are a class of data structures which allow for concurrent updates without the need for synchronisation. This allows for highly available systems to be created, which are able to operate in the presence of network partitions. Creating a tree CRDT which supports highly available move operations is difficult, as trees have a strict invariant which has to be kept. A move operation can move a node under itself or a descendant of itself, which would create a cycle in the tree and therefore an incorrect state.
 
-This report is an attempt to use new developments in tree CRDTs with highly available move operations to create a file synchronisation system that will resolve all directory conflicts without human interaction; and will not exhibit 'buggy' behaviour such as duplicating files which some current systems exhibit. This report should provide research into the viability of these systems in a real-world scenario. So far, this paper has reviewed the existing literature and has analysed the concurrency issues facing current systems. As well as detailing two algorithms which have been proposed that state to have solutions to the problem of creating a highly available move operation. \par
-The remaining work includes creating a more refined design of the system and then implementing the separate parts to create a cohesive application. Once implemented, the system will be tested for reliability and performance. This testing will inform the final evaluation of system, where it will be compared to existing solutions.
+This report implements two tree CRDT algorithms which have move operations, one of which was created during this project. This report evaluates their performance and correctness. The implementations are provided for other developers to use in their own applications or to provide a basis for further research. The performance testing results show that the algorithms exhibit a high efficiency in managing a substantial number of concurrent operations. They deliver an impressive throughput of approximately 10,000 operations per second.
 
-( rewrite this whole abstract once report is finished )
 \end{abstract}
 
 %TC:endignore
@@ -176,7 +174,7 @@ contains plagiarised material, and for quality assurance purposes.
         \hline
         \end{tabularx}
     \end{table}
-    \\[-.4cm]All code with \texttt{*.pb.go} files is generated from the \texttt{*.proto} files using the \texttt{protoc} tool with the \texttt{protoc-gen-go} plugin.
+    \\[-.4cm]All code within \texttt{*.pb.go} files is generated from the \texttt{*.proto} files using the \texttt{protoc} tool with the \texttt{protoc-gen-go} plugin.
     \item \textbf{I did all the work myself, or with my allocated group, and have not helped anyone else.}
     \item \textbf{The material in the report is genuine, and I have included all my data/code/designs.}
     \item \textbf{I have not submitted any part of this work for another assessment.}
@@ -480,7 +478,7 @@ This paper will use both of the algorithms stated above, Kleppmann's \cite{95632
 \chapter{Planning}
 The original aim of this paper was to create a file synchronisation system using conflict-free replicated data types (CRDTs). However, due to the complexity and challenges of implementing such a system, this paper has narrowed its focus to explore the implementation and evaluation of the CRDTs. By narrowing down the scope of this research, this paper aims to provide a more in-depth analysis of the advantages and limitations of the CRDTs. This will allow for a more thorough evaluation of the CRDTs, and will allow for a more detailed comparison between the different CRDTs.
 
-\section{Requirements}
+\section{Requirements}\label{sec:requirements}
 The main focus of this paper is to implement the two CRDT algorithms, Maram\cite{9563274} and Kleppmann's algorithm\cite{https://doi.org/10.48550/arxiv.2103.04828}, and to test them individually as well as to compare them. While the evaluation of these algorithms will be the main focus, this paper will also attempt to create implementations that can be used by other developers. As such, the requirements will be as follows:
 \begin{itemize}
     \item The system shall be comprised of multiple layers that can be modified independently.
@@ -525,13 +523,13 @@ Certain CRDTs require different consistency models, therefore the interface laye
 
 \section{Language and Tools}
 \subsection{Go}
-Go is a language created by Google, and is designed to be used in distributed systems with the help of its built-in, lightweight concurrency features. As this paper aims to create a distributed system, then Go is a good choice to help with this. \par
+Go is a language created at Google, and is designed to be used in distributed systems with the help of its built-in, lightweight concurrency features. As this paper aims to create a distributed system, then Go is a good choice to help with this. \par
 
-The CRDTs which will be implemented by this paper are particularly applicable to distributed file systems. Recent distributed file systems have been written using Go, such as JuiceFS or Kertish-DFS. Therefore, by using Go this paper aims to create useful implementations for these systems, or to provide a base implementation which can then be improved upon. \par
+The CRDTs which will be implemented by this paper are particularly applicable to distributed file systems. Recent distributed file systems have been written using Go, such as JuiceFS or Kertish-DFS. Therefore, by using Go this paper aims to create useful implementations for these systems, or to provide base implementations which can then be improved upon. \par
 
 
 \subsection{GitHub}
-The source code for this project is stored in a GitHub repository. This allows for the code to be easily shared and modified by other developers. It also allows for the code to be easily version controlled, and for the history of the project to be easily tracked. This report is also stored in the GitHub repository. \par
+The source code for this project is stored in a GitHub repository. This allows for the code to be easily shared and modified by other developers. It also allows for the code to be version controlled, and for the history of the project to be tracked. This report is also stored in the GitHub repository. \par
 
 \subsection{Diagrams}
 LucidChart\footnote{\url{https://www.lucidchart.com/}} is an online tool which can be used to create different types of diagrams. This paper uses LucidChart to create UML class diagrams, which are used to visualise the different components of the system. Eraser\footnote{\url{https://www.eraser.io}} is another online tool which can be used to create diagrams from code. This paper uses Eraser to create sequence diagrams, which will are used to visualise the flow of messages within the system. \par
@@ -565,12 +563,12 @@ The system will be split into different packages as described in Section \ref{se
     \label{fig:packages}
 \end{figure}
 
-The packages will be developed in a way which implements the main focus of this paper first, the CRDTs. Therefore, they will be developed in the following order: \texttt{Clocks}, \texttt{TreeCRDT}, \texttt{Connection} and finally \texttt{TreeInterface}. This will allow for the main focus of this paper to be implemented first, and then the rest of the system can be built around it. \par
+The packages will be developed in a way which implements the main focus of this paper first, the CRDTs. Therefore, they will be developed in the following order: \texttt{Clocks}, \texttt{TreeCRDT}, \texttt{Connection} and finally \texttt{TreeInterface}. This will allow for the CRDTs to be implemented first, and then the rest of the packages can be built around it to create a fully functioning system. \par
 
 \section{System Structure}
 
 \subsection{Clocks}
-The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor, and \textit{timestamps} will refer to a timestamp for a specific event.  
+The system has two interfaces for tracking the order of events, clocks and timestamps. Moving forward, \textit{clocks} will refer to a timestamp for a specific actor that can be updated, and \textit{timestamps} will refer to a timestamp for a specific event.  
 As shown in Figure \ref{fig:ordered}, the system will have two implementations of clocks, Lamport and Vector clocks. These will be used within their respective CRDTs, as described in Section \ref{sssec:algorithms}. \par
 
 \begin{figure}[h]
@@ -585,12 +583,12 @@ The two interfaces, \texttt{Clock} and \texttt{Timestamp}, are shown in Figure \
 The \texttt{Lamport} and \texttt{VectorTimestamp} classes implement \texttt{TotalOrder} and \texttt{PartialOrder} respectively. They denote the differences in the gurantees that the two types of clocks provide. The \texttt{Lamport} class implements \texttt{TotalOrder} as it provides an arbitrary, but deterministic total order of events. The \texttt{VectorTimestamp} class implements \texttt{PartialOrder} as it provides a partial order of events. \par
 
 \subsection{CRDT and Interface}
-Since the CRDT layer is the primary focus of this paper, it will comprise multiple components, making it the largest layer. The components will be specific to each CRDT, and will be implemented using the algorithms described in Section \ref{sssec:algorithms}. The exact implementation is not known at this point, and will be discussed in Section \ref{sec:implementation}. \par
+Since CRDTs are complex, each algorithm will be comprised of multiple components that together form the CRDTs. The components will be specific to each CRDT, and will be implemented using the algorithms described in Section \ref{sssec:algorithms}. The exact implementations are not known at this point, and will be discussed in Section \ref{sec:implementation}. \par
 
 
 The exact \texttt{Components} of each CRDT will be known once the algorithms have been implemented. It may also be possible to provide a \texttt{CmRDT} interface for the CRDTs, with \textit{prepare} and \textit{effect} methods. However, this will not be explored in this paper. \par
 
-The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will also be responsible for sending operations to the network layer to be broadcast to other peers. As well as receiving operations from the network layer, and either applying them to the local CRDT or buffering them, depending on the consistency model. They will also be responsible for providing a generic interface for application code to interact with the CRDT, and translating the application code into operations for the specific CRDT. \par
+The classes that implement \texttt{Tree} from Figure \ref{fig:crdt} will be responsible for sending operations to the network layer to be broadcast to other peers. As well as receiving operations from the network layer, and either applying them to the local CRDT or buffering them, depending on the consistency model needed for the CRDT. They will also be responsible for providing a generic interface for application code to interact with the different CRDTs. \par
 
 \begin{figure}[H]
     \centering
@@ -604,7 +602,7 @@ The network layer takes inspiration from Yjs\footnote{\url{https://docs.yjs.dev/
 
 If the system was to be designed to be dynamic, then the CRDT layer would have more requirements. The CRDT would either need to store all local operations indefinitely or provide a means of transferring its state to new nodes, as they would require access to the current state of the CRDT.
 
-The network layer assumes that each node will be started with the same number of peers, and the total set of peers will not change. This is a reasonable assumption for a static system, however it is not suitable for a dynamic system. \par
+The network layer assumes that each node will be started with the same number of peers, and the total set of peers will not change. This is a reasonable assumption for a static system, which is what this paper is designing. \par
 
 \begin{figure}[h]
     \centering
@@ -616,10 +614,10 @@ The network layer assumes that each node will be started with the same number of
 The interface \texttt{ConnectionProvider} is shown in Figure \ref{fig:connection}. It describes what the network layer is required to do, broadcast messages and receive them. This interface is implemented by the class \texttt{TCPProvider}. The \texttt{TCPProvider} class is responsible for providing the reliable broadcast functionality, as well as listening for incoming connections. \par
 
 
-The \texttt{TCPConnection} class is responsible for maintaining a connection with a single node, and receiving messages from that node. When a node joins after being offline, \texttt{TCPProvider} is responsible for sending them all the messages which they missed. The \texttt{TCPConnection} will not apply incoming operations, instead they will be passed to the TreeInterface for processing. This is useful as it reduces the need for locks, which would be required if the \texttt{TCPConnection} was responsible for applying operations. \par 
+The \texttt{TCPConnection} class is responsible for maintaining a connection with a single node, and receiving messages from that node. When a node joins after being offline, \texttt{TCPProvider} is responsible for sending them all the messages which they missed. The \texttt{TCPConnection} will not apply incoming operations, instead they will be passed to the \texttt{TreeInterface} for processing. This is useful as it reduces the need for locks, which would be required if the \texttt{TCPConnection} was responsible for applying operations. \par 
 
 \section{Communication Sequences}
-The CRDT layer and Clocks in the application should not be affected by concurrency because they are designed to be used in a single thread. Therefore, it is the responsibility of the developer to ensure that both are used exclusively within a single thread. The Interface and Network layer however will run in multiple threads, and therefore concurrency and message passing must be considered. \par
+The CRDT layer and Clocks in the application should not be affected by concurrency because they are designed to be used in a single thread. Therefore, if a developer uses those packages directly, instead of the provided interface package, it is their responsibility to ensure that they are used exclusively within a single thread. The Interface and Network layer will run in multiple threads, and therefore concurrency and message passing must be considered. \par
 
 \subsection{Network Layer}
 
@@ -637,17 +635,16 @@ The CRDT layer and Clocks in the application should not be affected by concurren
     \label{fig:networksend}
 \end{figure} 
 
-The network layer will comprise multiple concurrent processes. One process will be responsible for listening for incoming connections, and creating a new \texttt{TCPConnection} for each connection. The \texttt{TCPConnection} will only be responsible for receiving messages from the peer but not sending them. If the message is an operation, it is sent to the TreeInterface buffer to be applied to the Tree. Otherwise, if it is an acknowledgement, it is sent to \texttt{TCPProvider handleAcks()} for processing. As shown by Figure \ref{fig:networkjoin} and \ref{fig:networksend}. \par
+The network layer will use multiple concurrent processes. One process will be responsible for listening for incoming connections, and creating a new \texttt{TCPConnection} for each connection. The \texttt{TCPConnection} will be run in a new thread, and will only be responsible for receiving messages from the peer, not sending them. If the message is an operation, it is sent to the \texttt{TreeInterface} to be applied to the Tree. Otherwise, if it is an acknowledgement, it is sent to \texttt{TCPProvider handleAcks()} thread for processing. As shown by Figure \ref{fig:networkjoin} and \ref{fig:networksend}. \par
 
 The \texttt{TCPProvider handleBroadcast()} will be responsible for sending messages to other peers, which will happen in a separate process as shown by Figure \ref{fig:networksend}. The process will receive operations to send from the Interface layer. Whenever an operation is broadcasted, it is added to a map that associates the operation's ID with a list of node IDs. When a node sends an acknowledgement for an operation, that node ID is added to the list of node IDs for that operation. When the list of node IDs is the same size as the number of nodes, the operation is removed from the map. This is how the system ensures each node receives each operation. \par
 
 
-
 \subsection{Interface Layer}
 
-As shown by Figure \ref{fig:interfaceseq}, the interface layer will buffer operations from the network layer, and only apply them when they are ready. This is important for the causal consistency model, as it ensures that operations are applied in the correct order. For local operations, they are translated into operations for the specific CRDT, and then applied to the CRDT. It is likely that the CRDT will be protected by a lock, as it is not thread safe. \par
+As shown by Figure \ref{fig:interfaceseq}, the interface layer will buffer operations from the network layer, and only apply them when they are ready. This is important for the causal consistency model, as it ensures that operations are applied in the correct order. For local operations, they are translated into operations for the specific CRDT, applied to the CRDT and then sent for broadcasting. It is likely that the CRDT will be protected by a lock, as it is not thread safe. \par
 
-Broadcasting operations is not shown in Figure \ref{fig:interfaceseq}, but it would happen after the operation is applied to the CRDT. A message would be sent to the network layer, which would then broadcast the operation to all other nodes. \par
+Broadcasting operations is not shown in Figure \ref{fig:interfaceseq}, as it is handled by the network layer. \par
 
 \begin{figure}[h]
     \centering
@@ -711,7 +708,7 @@ The \texttt{Tree} struct uses maps for nodes and children to enable fast retriev
 \end{figure} 
 
 \subsection{Kleppmann's Algorithm}
-The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, that were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, which that contributes to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. Overall, the algorithm was relatively simple to implement and was composed of the following parts:
+The first algorithm implemented was Kleppmann's algorithm, primarily due to its simplicity and ease of implementation. It is based on OpSets, that were introduced in 2018\cite{https://doi.org/10.48550/arxiv.1805.04263}, which contribute to its simplicity. More information on Kleppmann's algorithm can be found in Section \ref{sssec:algorithms}. Overall, the algorithm was relatively simple to implement and was composed of the following parts:
 \begin{itemize}
     \item \texttt{OpMove}: This contains a move operation, which is the child id, parent id, metadata and a timestamp.
     \item \texttt{LogOpMove}: This contains a move operation, and its previous parent id and metadata. This is used for the log.
@@ -730,10 +727,10 @@ The log of operations being implemented as a linked list. This was chosen over a
 
 \subsection{Maram}
 
-Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was created. The new algorithm is inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer and the notion of OpSets, from Maram and Kleppmann's algorithm respectively. The causal delivery layer allows the algorithm to relax which operations are logged, and which need to be undone and redone. \par 
+Maram \cite{https://doi.org/10.48550/arxiv.2103.04828} was deemed too complex to implement, but during the process of attempting implementation, a potentially superior algorithm was created. The new algorithm is inspired by Maram and Kleppmann's algorithm, and will be referred to as \textit{Lumina}. Lumina uses the guarantees provided by a causal delivery layer and the notion of OpSets, from Maram and Kleppmann's algorithm respectively. One thing to note is Maram uses tentative move operations, meaning that a move operation is in a transient state until it is confirmed by other replicas. 
 
 \subsection{Lumina}
-In Lumina, a total order (priority in Maram) is given to move operations which is used to apply concurrent move operations in the same order on all replicas. This is an improvement on Kleppmann's algorithm, as it reduces the total amount of undo and redo operations. Maram is better, but still has to check all concurrent move operations for conflicts, and then apply the conflict resolution policy. Lumina, will undo and redo a subset of the concurrent move operations. Undoing, and redoing an operation takes approximately the same time as checking an operation for conflicts. Also, Lumina does not need to calculate and send additional metadata with each move operation. \par 
+In Lumina, a total order is given to move operations. This is a similar concept to Maram's priority for move operations. Add and remove operations are applied immediately without the need for logging, thanks to the causal delivery layer. Move operations need to check the local replica for concurrent move operations, and if there are any, they need to be applied in a total order. Therefore, move operations are logged and undone and redone to allow for concurrent move operations to be applied in a total order. \par
 
 Compared to Kleppmann's algorithm, Lumina logs only the move operations. This is possible due to the guarantees provided by causal delivery, and using UUIDs as the ID for each node ensures each new node has a unique ID.
 \begin{itemize}
@@ -816,7 +813,7 @@ Lumina only needs to apply concurrent move operations in a total order as they m
         %\captionof{figure}{Move Operation}
         \label{fig:moveproof}
     \end{minipage}
-    \caption{Pre and post conditions for each operation.}
+    \caption{Pre and post conditions for each operation in Lumina.}
 \end{figure}
 
 \begin{figure}[H]
@@ -854,7 +851,7 @@ Protocol Buffers\footnote{\url{https://protobuf.dev/}} are used to serialise the
 
 
 \section{Tree Interface}
-The tree interface provides a simple interface for the user to interact with the tree with. It is a wrapper around the CRDT, and translates generic tree operations into CRDT specific operations. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time by using a read-write mutex. \par
+The tree interface provides a simple interface for developers to interact with the tree. It is a wrapper around the CRDT, and translates generic tree operations into operations specific for the CRDT. It also provides functions to query the tree. The interface also applies operations from the network to the CRDT. Because the CRDT is not thread-safe, the interface ensures that only one operation is applied at a time by using a read-write mutex. \par
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{images/treeinterface_impl.jpg}
@@ -867,7 +864,7 @@ The causal delivery layer for Lumina was implemented on the receiving end. This 
 \chapter{Testing}
 
 \section{Unit Testing}
-The unit testing was completed using the standard Go testing package. The tests are located next to the code they are testing, in files called \texttt{filename\_test.go}. The main components of the system were tested. The parts which were not directly tested are tested indirectly by other unit tests. The output of the unit tests is shown in Figure \ref{fig:testing}. \par
+The unit testing was completed using the standard Go testing package. The tests are located next to the code they are testing, in files called \texttt{<filename>\_test.go}. The main components of the system were tested. The parts which were not directly tested are tested indirectly by other unit tests. The output of the unit tests is shown in Figure \ref{fig:testing}. The unit tests were useful as they caught many bugs, and helped ensure that the code is working as expected. \par
 
 \begin{figure}[H]
     \centering
@@ -877,9 +874,9 @@ The unit testing was completed using the standard Go testing package. The tests 
 \end{figure}
 
 \section{Performance Testing}
-Rudimentary performance testing was carried out to determine the differences in throughput between the two CRDT implementations. Latency was not tested as it is not a concern for CRDTs, as operations are immediately applied locally. Therefore, the only performance metric which may differ greatly between the two implementations is throughput. Other papers have already shown that CRDT latency is much lower than traditional systems \cite{crdtlatency}. The CRDTs may also differ in their conflict resolution policies, however testing is not required for this as the policies are well-defined. \par
+Basic performance testing was carried out to determine the differences in throughput between the two CRDT implementations. Latency was not tested as it is not a concern for CRDTs, as operations are immediately applied locally. Therefore, the only performance metric which may differ greatly between the two implementations is throughput. Other papers have already shown that CRDT latency is much lower than traditional systems \cite{https://doi.org/10.48550/arxiv.2103.04828}. The CRDTs may also differ in their conflict resolution policies. \par
 
-All the performance tests were carried out with both: all operations being inserts, and with random operations (60\% inserts, 12\% remove and 28\% move). \textit{(Add)} and \textit{(Rand)} in the graphs respectively. All tests were performed on the same computer and were run using the command \texttt{go test -bench <test\_name> -benchtime=10x -cpu=8 > <output\_file>}. This means the tests are run 10 times, on only 8 (of 16) threads and the average time is output to a file. The tests are the time to apply all operations on all peers. 
+All the performance tests were carried out with both: all operations being inserts, and with random operations (60\% inserts, 12\% remove and 28\% move). \textit{(Add)} and \textit{(Rand)} in the graphs respectively. All tests were performed on the same computer and were run using the command \texttt{go test -bench <test\_name> -benchtime=10x -cpu=8 > <output\_file>}. This means the tests are run 10 times, on only 8 (of 16) threads and the average time is output to a file. The tests are the time taken to apply all operations on all peers, the lower the time the better.
 
 \subsection{Concurrent}
 This test was performed by having three peers connect to each other, and then doing $n$ operations concurrently. As shown by Figure \ref{fig:concurrent_test}, the performance of the two CRDTs is very similar. The performance of add operations seems linear, however the performance of random operations seems to be quadratic.
@@ -1028,7 +1025,7 @@ The sequential test was performed by having three peers connect to each other, a
 \end{figure}
 
 \subsection{After}
-The after tests are similar to the concurrent tests, except that the peers connect to each other after all the operations have been applied. The results are shown in Figure \ref{fig:after_test}. The x-axis on this graph is $10^3$ instead of $10^4$ because the after tests took much longer than the concurrent and sequential tests. This gives insight into the overhead of concurrent operations, which appears to be quite significant.
+The after tests are similar to the concurrent tests, except that the peers connect to each other and share operations after each peer has applied $n$ operations locally. The results are shown in Figure \ref{fig:after_test}. The x-axis on this graph is $10^3$ instead of $10^4$ because the after tests took much longer than the concurrent and sequential tests. This gives insight into the overhead that can occur when local replicas make progress locally without communicating with other peers.
 
 
 \begin{figure}[H]
@@ -1090,20 +1087,82 @@ The after tests are similar to the concurrent tests, except that the peers conne
 \label{fig:after_test}
 \end{figure}
 
-The difference in performance between the two algorithms is much greater in the after tests than in the other tests. Lumina is clearly faster in this test. This is because Lumina's causal delivery layer has been optimised using a skip list, which allows for faster insertion of incoming operations into the priority queue. In comparison to Kleppmann's algorithm, which does not have a causal delivery layer but does have to undo and redo operations and can not have the same optimisations.
+The difference in performance between the two algorithms is much greater in the after tests than in the other tests. Lumina is clearly faster in this test. This is because Lumina's causal delivery layer has been optimised using a skip list, which allows for faster insertion of incoming operations into the priority queue. In comparison to Kleppmann's algorithm, which does not have a causal delivery layer but instead has to undo and redo operations and can not have the same optimisations.
+
+\section{Test Analysis}
+The performance testing shows that Lumina has a slightly higher throughput than Kleppmann's algorithm. This could be attributed to the fact that Lumina has to undo and redo fewer operations. Overall, the difference in performance is not large and Kleppmann's algorithm may be preferred for its simplicity and ease of extension. This is demonstrated in the code as it was simple to add an extra user-defined conflict to Kleppmann's algorithm, but the same was not true for Lumina. \par
+
+Both algorithms have potential optimisations that could be made, and these are talked about in Section \ref{sec:future_work}
 
 \chapter{Evaluation}
-The initial intention of this project was to create a File Synchronization System using CRDTs. However, the project scope was changed to focus more on the CRDTs and on providing useful implementations of tree CRDTs with move operations. Two algorithms from the literature were chosen to be implemented (\cite{9563274} and \cite{https://doi.org/10.48550/arxiv.2103.04828}), but only one was successfully implemented (Kleppmann's algorithm). However, this project has created a new algorithm which uses lessons from both algorithms to create a new algorithm which is potentially more efficient than either of the original algorithms. The new algorithm was giving the name \textit{Lumina}. Lumina was implemented and compared against Kleppmann's algorithm. \par 
+The initial intention of this project was to create a File Synchronization System using CRDTs. However, the project scope was changed to focus more on the CRDTs and on providing useful implementations of tree CRDTs with move operations. Two algorithms from the literature were chosen to be implemented, Kleppmann's algorithm\cite{9563274} and Maram\cite{https://doi.org/10.48550/arxiv.2103.04828} but only the former was successfully implemented. However, through this project, a new algorithm called \textit{Lumina} was developed which was informed by the learnings from both of the original algorithms. Lumina was implemented and compared against Kleppmann's algorithm. \par 
 
-The performance testing shows that Lumina has a slightly higher throughput than Kleppmann's algorithm. The performance of Lumina may be improved further by using a more efficient casual delivery mechanism, or by relaxing the causal delivery for certain types of operations. This would require tight integration with the network layer. Kleppmann's algorithm is slowed by the amount of undo and redo operations that are required to be performed. Therefore, it could be improved by employing a slightly smarter algorithm which reduces the need to log add (and potentially remove) operations. However, this could remove Kleppmann's main advantage of being able to easily extend the algorithm to support more conflicts. \par
+Overall, the implementations fulfill the requirements set out in Section \ref{sec:requirements}. Therefore, this project has been successful and is a useful study into tree CRDTs with move operations. The implementations produced by this project can be used to create applications, or as base implementations which can be improved upon. \par
 
-\section{Future Work}
-The implementations do work, however there are some optimisations which could be made to improve them. For Kleppmann's algorithm, the log of operations can be truncated so operations that are no longer needed are removed. This would reduce the memory overhead of the algorithm. For Lumina, the causal delivery layer could be improved by using a more efficient data structure. The current implementation uses a skip list, but a more efficient data structure could be used. \par
+\section{CRDT Implementations}
+The implementation for Kleppmann's algorithm was successful and provides a robust implementation of the algorithm. The implementation for Lumina was also successful, however, it has not been proven to be correct. For the testing which was performed, the Lumina implementation appears to be correct. However, it is possible that there are some edge cases which have not been tested and would cause the algorithm to exhibit incorrect behaviour. Therefore, the Lumina implementation should be used with caution. \par
+
+Overall, the algorithm implementations correctly handle concurrent conflicting move operations which is the main requirement of the project. The implementations are not perfect, but they are a good starting point for future work.
+
+\section{Peer-to-Peer Network}
+The peer-to-peer network provides a good implementation for testing. It is able to handle peers joining the network late, and has a simple reliable broadcast algorithm which ensures that all peers receive all operations. Each peer will share its peers with other peers, and will connect to peers that are shared with it. This allows for a fully connected network to be created. One limitation of the network layer is that it does not implement the ability to leave the network, and does not handle being disconnected from the network. \par
+
+These limitations are not a problem for the current implementation, as the network layer has all the requirements needed for testing the CRDT implementations.
+
+
+\section{Future Work}\label{sec:future_work}
+The implementations do work, however there are some optimisations which could be made to improve them. For Kleppmann's algorithm, the log of operations can be truncated so operations that are no longer needed are removed. This would reduce the memory footprint of the algorithm. The number of undo and redo operations can be reduced by implementing the optimisations laid out in \cite{9563274}, Section 3.6. For Lumina, the causal delivery layer could be improved by using a more efficient data structure. The current implementation uses a skip list, but a more efficient data structure could be used. It may also be possible to relax the causal delivery for certain types of operations. This would require the causal delivery layer to have knowledge of the types of operations, which it currently does not. \par
 
 More research into the correctness of Lumina also needs to be completed, as it is a new algorithm and has not been proven to be correct. The algorithm has been tested and appears to be correct, but more rigorous testing and formal proofs need to be completed. \par
 
+The code should also be refactored to improve the readability and maintainability of the code. This would make it easier for other people to use the code. \par
+
+\section{Reflection}
+The main challenge of this project was the design of the system, primarily the peer-to-peer networking layer with reliable broadcast, as well as using a new programming language. If it was to be done again, more focus would be put into the CRDTs and a networking layer would not be implemented, or an existing networking layer would be used. This would allow for a more refined implementation of the CRDTs, which are the main focus of the project. More time would be spent on the testing of the CRDTs, as this was not completed to the extent that was originally planned. Therefore, the CRDTs are not as robust as they could be. \par
+
 
 \chapter{Project Management}
+The project was split into 3 main phases: research, design and implementation. The research phase was completed first, and informed the design phase. The design phase created an in-depth design of the system. During this it was realised that the central aspect of the project would not receive enough attention, and so the scope was changed to focus more on the CRDTs. Because of this, more research was completed into CRDTs and the design was updated. The implementation phase was then started, as described in Chapter \ref{sec:implementation}. Testing was completed throughout the implementation phase, and the results were used to inform the implementation details. \par
+
+The design phase took longer than expected as the UML class and sequence diagrams were very detailed, and a lot of thought was put into the overall system architecture to ensure it is robust as well as extensible. It is worth noting that prior to the design presented in this paper, several iterations of the design were made. This was largely due to the inherent complexity of the CRDTs and networking layer, which required careful consideration and multiple revisions to land on a final design. However, as the design was very in-depth and detailed, the implementation phase was completed quickly. \par
+
+%Time taken for implementation vs expected
+\section{Implementation Time}
+The implementation phase took around 4 weeks to complete, which was less than expected. This is because the design section was very detailed, which helped the implementation be completed fast. Table \ref{tab:implementation_table} shows the expected time for each task, and the actual time taken. \par
+
+
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{1\textwidth}{|p{2.2cm}|l|l|X|}
+        \hline
+        \textbf{Task} & \textbf{Expected} & \textbf{Actual} & \textbf{Reason} \\ \hline
+        Clocks & Small &  Medium  & Learning go's composition, and comparing vector timestamps took longer than expected \\ \hline
+        Kleppamnn & Large &  Medium & The algorithm is simple so the implementation was too \\ \hline
+        Lumina & Large &  Large  &  N/A \\ \hline
+        Networking & Large &  XLarge &  Passing complex messages and reliable broadcast was larger than expected \\ \hline
+        Interface & Small &  Medium  & The causal delivery part took longer than expected \\ \hline
+        Unit Testing & Medium &  Medium  & N/A \\ \hline
+        Performance Testing & Medium &  Large  & There was some issues in determining when a test was finished \\ \hline
+    \end{tabularx}
+    \caption{Comparison of expected and actual time taken for implementation (in t-shirt sizes)}
+\label{tab:implementation_table}
+\end{table}
+
+\section{Final Gantt Chart}
+The final Gantt chart is shown in Figure \ref{fig:gantt_final}, and varies greatly from the predicated Gantt chart as show in Appendix \ref{sec:remaining}. As is shown in the Gantt chart, the implementation phase was completed much quicker than anticipated and the design stage took longer. This was due to the large amounts of detail in the design, which therefore facilitated a quick implementation. Also, by investing significant time and effort into the design phase, the risk of encountering major changes during implementation that would require significant refactoring of the code was minimized. \par
+
+The final Gantt chart does not contain any file system layer implementation. This is because the scope of the project was changed to focus more on the CRDTs, and so the file system layer was not implemented. \par
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{images/final_gantt.jpg}
+    \caption{Final Gantt Chart}
+    \label{fig:gantt_final}
+\end{figure}
+
+
+
+
 
 %TC:ignore
 \addcontentsline{toc}{chapter}{References}
@@ -1129,7 +1188,7 @@ The performance testing may require the use of rented servers, to test latency.
 \includegraphics[width=16cm]{images/completed.jpg}
 
 
-\subsection{Remaining Work}
+\subsection{Remaining Work}\label{sec:remaining}
 \begin{center}
     \includegraphics[width=16cm]{images/remaining.jpg}
 \end{center} 

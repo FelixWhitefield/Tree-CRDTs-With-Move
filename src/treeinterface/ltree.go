@@ -255,7 +255,7 @@ func (kt *LTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 		return err
 	}
 
-	kt.Crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
+	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
@@ -282,9 +282,9 @@ func (kt *LTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 		return err
 	}
 
-	kt.Crdt.Effect(op)                        // Apply the operation to the state (After it is successfully encoded)
+	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
-	
+
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
 
 	return nil

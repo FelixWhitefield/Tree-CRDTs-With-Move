@@ -253,7 +253,6 @@ func BenchmarkKleppmannAfter_3000(b *testing.B) {
 	KleppmannAfter(3000, b)
 }
 
-
 func KleppmannAfter(ops int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()

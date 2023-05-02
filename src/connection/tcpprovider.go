@@ -170,7 +170,7 @@ func (p *TCPProvider) Connect(addr string) {
 	if p.peerAddrs[tcpAddr] {
 		return
 	}
-	p.peersMu.RUnlock() 
+	p.peersMu.RUnlock()
 
 	p.connectToPeer(tcpAddr)
 }

@@ -2,7 +2,7 @@ package lumina
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
 
@@ -20,7 +20,7 @@ type Operation[T opTimestamp[T]] interface {
 type OpMove[MD any, T opTimestamp[T]] struct {
 	Timestmp T
 	ChldID   uuid.UUID
-	NewP     *TreeNode[MD]
+	NewP     *treecrdt.TreeNode[MD]
 	Priotity c.Lamport
 }
 
@@ -32,18 +32,16 @@ func (op *OpMove[MD, T]) CompareOp(other *OpMove[MD, T]) int {
 	return op.Timestmp.Compare(other.Timestmp)
 }
 
-
 // Represents an add operation
 type OpAdd[MD any, T opTimestamp[T]] struct {
 	Timestmp T
 	ChldID   uuid.UUID
-	NewP     *TreeNode[MD]
+	NewP     *treecrdt.TreeNode[MD]
 }
 
 func (op *OpAdd[MD, T]) Timestamp() T {
 	return op.Timestmp.Clone()
 }
-
 
 // Represents a remove operation
 type OpRemove[T opTimestamp[T]] struct {
