@@ -118,7 +118,7 @@ func TestLTreeCycleMove(t *testing.T) {
 	time.Sleep(1 * time.Second) // Time for communication to occur
 
 	// Check that states are the same after move
-	if !tree1.Crdt.Equals(tree2.Crdt) {
+	if !tree1.crdt.Equals(tree2.crdt) {
 		t.Errorf("States are not the same after move")
 	}
 	children, _ := tree1.GetChildren(tree1.Root())

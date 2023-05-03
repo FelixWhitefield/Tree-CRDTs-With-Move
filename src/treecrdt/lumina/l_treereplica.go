@@ -2,14 +2,14 @@ package lumina
 
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
 
 type TreeReplica[MD any, T opTimestamp[T]] struct {
-	state    State[MD, T]
+	state    LState[MD, T]
 	clock    c.Clock[T]
-	priotity c.Lamport
+	priotity *c.Lamport
 }
 
 func NewTreeReplica[MD any](ids ...uuid.UUID) *TreeReplica[MD, *c.VectorTimestamp] {
@@ -19,7 +19,7 @@ func NewTreeReplica[MD any](ids ...uuid.UUID) *TreeReplica[MD, *c.VectorTimestam
 	} else {
 		id = uuid.New()
 	}
-	return &TreeReplica[MD, *c.VectorTimestamp]{state: *NewState[MD, *c.VectorTimestamp](), clock: c.NewVectorClock(id), priotity: *c.NewLamport(id)}
+	return &TreeReplica[MD, *c.VectorTimestamp]{state: *NewLState[MD, *c.VectorTimestamp](), clock: c.NewVectorClock(id), priotity: c.NewLamport(id)}
 }
 
 func (tr *TreeReplica[MD, T]) RootID() uuid.UUID {
@@ -38,7 +38,7 @@ func (tr *TreeReplica[MD, T]) GetChildren(u uuid.UUID) ([]uuid.UUID, bool) {
 	return tr.state.tree.GetChildren(u)
 }
 
-func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
+func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *treecrdt.TreeNode[MD] {
 	return tr.state.tree.GetNode(u)
 }
 
@@ -47,7 +47,7 @@ func (tr *TreeReplica[MD, T]) PrepareAdd(childId uuid.UUID, parentId uuid.UUID, 
 	if !tr.state.tree.Contains(parentId) {
 		return nil
 	}
-	return &OpAdd[MD, T]{Timestmp: tr.clock.Tick(), ChldID: childId, NewP: &TreeNode[MD]{PrntID: parentId, Meta: metadata}}
+	return &OpAdd[MD, T]{Timestmp: tr.clock.Tick(), ChldID: childId, NewP: &treecrdt.TreeNode[MD]{PrntID: parentId, Meta: metadata}}
 }
 
 // Prepares a remove operation
@@ -64,7 +64,7 @@ func (tr *TreeReplica[MD, T]) PrepareMove(id uuid.UUID, newP uuid.UUID, metadata
 	if !tr.state.tree.Contains(id) || !tr.state.tree.Contains(newP) || id == newP || id == tr.state.tree.Root() || childIsAnc {
 		return nil
 	}
-	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
+	return &OpMove[MD, T]{Timestmp: tr.clock.Tick(), ChldID: id, NewP: &treecrdt.TreeNode[MD]{PrntID: newP, Meta: metadata}, Priotity: *tr.priotity.Tick()}
 }
 
 // Applies an operation to the tree, and updates the clock
@@ -86,7 +86,7 @@ func (tr *TreeReplica[MD, T]) Effects(op []Operation[T]) {
 	}
 }
 
-func (tr *TreeReplica[MD, T]) State() *State[MD, T] {
+func (tr *TreeReplica[MD, T]) State() *LState[MD, T] {
 	return &tr.state
 }
 

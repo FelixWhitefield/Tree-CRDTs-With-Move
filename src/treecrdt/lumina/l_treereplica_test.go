@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
-	. "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
+	//"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	u "github.com/google/uuid"
 )
 

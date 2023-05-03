@@ -138,7 +138,7 @@ func LuminaConcurrent(ops int, b *testing.B) {
 			opsAp1 := Lumina1.GetTotalApplied()
 			opsAp2 := Lumina2.GetTotalApplied()
 			opsAp3 := Lumina3.GetTotalApplied()
-			if opsAp1 == expectedApplied && opsAp2 == expectedApplied && opsAp3 == expectedApplied {
+			if opsAp1 == expectedApplied && opsAp2 == expectedApplied && opsAp3 == expectedApplied && Lumina1.Equals(Lumina2) && Lumina2.Equals(Lumina3) {
 				// Expected result found, exit the loop
 				break
 			}

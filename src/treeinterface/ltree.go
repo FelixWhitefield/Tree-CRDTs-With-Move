@@ -17,14 +17,14 @@ import (
 )
 
 type LTree[MD any] struct {
-	Crdt         *lumina.TreeReplica[MD, *clocks.VectorTimestamp]
+	crdt         *lumina.TreeReplica[MD, *clocks.VectorTimestamp]
 	crdtMu       sync.RWMutex
 	connProv     connection.ConnectionProvider
 	totalApplied uint64
 }
 
 func NewLTree[MD any](connProv connection.ConnectionProvider, optimisedBuffer bool) *LTree[MD] {
-	kt := &LTree[MD]{Crdt: lumina.NewTreeReplica[MD](), connProv: connProv}
+	kt := &LTree[MD]{crdt: lumina.NewTreeReplica[MD](), connProv: connProv}
 
 	go connProv.HandleBroadcast()
 	go connProv.Listen()
@@ -96,10 +96,10 @@ func (kt *LTree[MD]) applyOpsSkip(ops chan []byte) {
 		min := opBuffer[0]
 		kt.crdtMu.Lock()
 		for min != nil {
-			causallyReady := min.Timestamp().CausallyReady(kt.Crdt.CurrentTime())
-			compare := min.Timestamp().Compare(kt.Crdt.CurrentTime())
+			causallyReady := min.Timestamp().CausallyReady(kt.crdt.CurrentTime())
+			compare := min.Timestamp().Compare(kt.crdt.CurrentTime())
 			if causallyReady {
-				kt.Crdt.Effect(min)
+				kt.crdt.Effect(min)
 				atomic.AddUint64(&kt.totalApplied, 1)
 				opBuffer = opBuffer[1:]
 			} else if compare == -1 || compare == 0 {
@@ -151,13 +151,13 @@ func (kt *LTree[MD]) applyOps(ops chan []byte) {
 		kt.crdtMu.Lock()
 		for item != nil {
 			op := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
-			causallyReady := op.Timestamp().CausallyReady(kt.Crdt.CurrentTime())
+			causallyReady := op.Timestamp().CausallyReady(kt.crdt.CurrentTime())
 			if causallyReady {
 				opToApp := item.Value.(lumina.Operation[*clocks.VectorTimestamp])
-				kt.Crdt.Effect(opToApp)
+				kt.crdt.Effect(opToApp)
 				atomic.AddUint64(&kt.totalApplied, 1)
 				opBuffer.Remove(item)
-			} else if compare := op.Timestamp().Compare(kt.Crdt.CurrentTime()); compare == -1 || compare == 0 {
+			} else if compare := op.Timestamp().Compare(kt.crdt.CurrentTime()); compare == -1 || compare == 0 {
 				opBuffer.Remove(item)
 			} else {
 				break
@@ -172,23 +172,16 @@ func (kt *LTree[MD]) ConnectionProvider() connection.ConnectionProvider {
 	return kt.connProv
 }
 
-func (kt *LTree[MD]) Equals(other *LTree[MD]) bool {
-	kt.crdtMu.RLock()
-	defer kt.crdtMu.RUnlock()
-
-	return kt.Crdt.State().Equals(other.Crdt.State())
-}
-
 func (kt *LTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
-	if kt.Crdt.GetNode(parentID) == nil {
+	if kt.crdt.GetNode(parentID) == nil {
 		return uuid.Nil, errors.New("parent node does not exist")
 	}
 
 	id := uuid.New()
-	op := kt.Crdt.PrepareAdd(id, parentID, metadata)
+	op := kt.crdt.PrepareAdd(id, parentID, metadata)
 	if op == nil {
 		return uuid.Nil, errors.New("error preparing add")
 	}
@@ -198,7 +191,7 @@ func (kt *LTree[MD]) Insert(parentID uuid.UUID, metadata MD) (uuid.UUID, error) 
 		return uuid.Nil, err
 	}
 
-	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
@@ -210,12 +203,12 @@ func (kt *LTree[MD]) Delete(id uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return errors.New("node does not exist")
 	}
 
-	op := kt.Crdt.PrepareRemove(id)
+	op := kt.crdt.PrepareRemove(id)
 	if op == nil {
 		return errors.New("error preparing remove")
 	}
@@ -225,7 +218,7 @@ func (kt *LTree[MD]) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
@@ -237,15 +230,15 @@ func (kt *LTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return errors.New("node does not exist")
 	}
-	if kt.Crdt.GetNode(newParentID) == nil {
+	if kt.crdt.GetNode(newParentID) == nil {
 		return errors.New("new parent node does not exist")
 	}
 
-	op := kt.Crdt.PrepareMove(id, newParentID, node.Metadata())
+	op := kt.crdt.PrepareMove(id, newParentID, node.Metadata())
 	if op == nil {
 		return errors.New("error preparing move")
 	}
@@ -255,7 +248,7 @@ func (kt *LTree[MD]) Move(id uuid.UUID, newParentID uuid.UUID) error {
 		return err
 	}
 
-	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
@@ -267,12 +260,12 @@ func (kt *LTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 	kt.crdtMu.Lock()
 	defer kt.crdtMu.Unlock()
 
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return errors.New("node does not exist")
 	}
 
-	op := kt.Crdt.PrepareMove(id, kt.Crdt.GetNode(id).ParentID(), newMetadata)
+	op := kt.crdt.PrepareMove(id, kt.crdt.GetNode(id).ParentID(), newMetadata)
 	if op == nil {
 		return errors.New("error preparing edit")
 	}
@@ -282,7 +275,7 @@ func (kt *LTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 		return err
 	}
 
-	kt.Crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
+	kt.crdt.Effect(op) // Apply the operation to the state (After it is successfully encoded)
 	atomic.AddUint64(&kt.totalApplied, 1)
 
 	kt.connProv.BroadcastChannel() <- opBytes // Broadcast Op
@@ -293,7 +286,7 @@ func (kt *LTree[MD]) Edit(id uuid.UUID, newMetadata MD) error {
 func (kt *LTree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
-	children, bool := kt.Crdt.GetChildren(id)
+	children, bool := kt.crdt.GetChildren(id)
 	if !bool {
 		return nil, errors.New("node does not exist")
 	}
@@ -303,7 +296,7 @@ func (kt *LTree[MD]) GetChildren(id uuid.UUID) ([]uuid.UUID, error) {
 func (kt *LTree[MD]) GetParent(id uuid.UUID) (uuid.UUID, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return uuid.Nil, errors.New("node does not exist")
 	}
@@ -311,13 +304,13 @@ func (kt *LTree[MD]) GetParent(id uuid.UUID) (uuid.UUID, error) {
 }
 
 func (kt *LTree[MD]) Root() uuid.UUID {
-	return kt.Crdt.RootID() // RootID is a constant, so no lock
+	return kt.crdt.RootID() // RootID is a constant, so no lock
 }
 
 func (kt *LTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	var metadata MD
 	if node == nil {
 		return metadata, errors.New("node does not exist")
@@ -328,9 +321,16 @@ func (kt *LTree[MD]) GetMetadata(id uuid.UUID) (MD, error) {
 func (kt *LTree[MD]) Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error) {
 	kt.crdtMu.RLock()
 	defer kt.crdtMu.RUnlock()
-	node := kt.Crdt.GetNode(id)
+	node := kt.crdt.GetNode(id)
 	if node == nil {
 		return nil, errors.New("node does not exist")
 	}
 	return node, nil
+}
+
+func (kt *LTree[MD]) Equals(other *LTree[MD]) bool {
+	kt.crdtMu.RLock()
+	defer kt.crdtMu.RUnlock()
+
+	return kt.crdt.State().Equals(other.crdt.State())
 }

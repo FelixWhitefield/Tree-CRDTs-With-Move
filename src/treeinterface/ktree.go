@@ -208,3 +208,10 @@ func (kt *KTree[MD]) Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error) {
 	}
 	return node, nil
 }
+
+func (kt *KTree[MD]) Equals(other *KTree[MD]) bool {
+	kt.crdtMu.RLock()
+	defer kt.crdtMu.RUnlock()
+
+	return kt.crdt.Equals(other.crdt)
+}
