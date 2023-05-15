@@ -13,11 +13,11 @@ func TestLuminaOpInherits(t *testing.T) {
 	var timestamp *c.VectorTimestamp
 
 	op = &OpRemove[*c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New()}
-	timestamp = op.Timestamp()
+	//timestamp = op.Timestamp()
 	timestampRem := op.Timestamp()
 
 	op = &OpAdd[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New()}
-	timestamp = op.Timestamp()
+	//timestamp = op.Timestamp()
 	timestampAdd := op.Timestamp()
 
 	op = &OpMove[string, *c.VectorTimestamp]{Timestmp: c.NewVectorTimestamp(), ChldID: uuid.New()}

@@ -1,5 +1,14 @@
 package lumina
 
+// This tree implementation was created to allow Lumina to correctly function
+//
+// The generic tree implementation does not work for Lumina, due to Lumina
+// not logging all operations. Therefore, delete operations can cause issues
+// 
+// This tree implementation is based on the generic tree implementation, but
+// instead of a tombstone node, this tree implementation uses a tombstone flag
+// on the node itself. This allows the tree to correctly function with Lumina
+
 import (
 	"bytes"
 	"errors"

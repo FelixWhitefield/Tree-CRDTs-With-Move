@@ -14,17 +14,17 @@ import (
 )
 
 // Represents the state of the CRDT
-type State[MD any, T opTimestamp[T]] struct {
+type OldState[MD any, T opTimestamp[T]] struct {
 	tree    treecrdt.Tree[MD]
 	moveLog *list.List // List of move operations
 }
 
-func NewState[MD any, T opTimestamp[T]]() *State[MD, T] {
-	return &State[MD, T]{tree: *treecrdt.NewTree[MD](), moveLog: list.New()}
+func NewState[MD any, T opTimestamp[T]]() *OldState[MD, T] {
+	return &OldState[MD, T]{tree: *treecrdt.NewTree[MD](), moveLog: list.New()}
 }
 
 // Applies an operation to the state
-func (s *State[MD, T]) ApplyOp(op Operation[T]) {
+func (s *OldState[MD, T]) ApplyOp(op Operation[T]) {
 	switch op := op.(type) {
 	case *OpMove[MD, T]:
 		s.ApplyMoveOp(op)
@@ -50,7 +50,7 @@ func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 // resolution policy the same way.
 // This instead uses the priority to determine a total order of concurrent operations
 // and undo's and redo's operations accordingly (Similar to Kleppmann's algorithm)
-func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
+func (s *OldState[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	if s.moveLog.Len() == 0 {
 		logop := s.DoMoveOp(opMov)
 		if logop != nil {
@@ -96,7 +96,7 @@ func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 }
 
 // Undo's the log operation
-func (s *State[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) bool {
+func (s *OldState[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) bool {
 	if s.tree.IsDeleted(lop.op.ChldID) {
 		return false
 	}
@@ -106,7 +106,7 @@ func (s *State[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) bool {
 }
 
 // Redo's the log operation
-func (s *State[MD, T]) RedoMoveOp(lop *LogOpMove[MD, T]) *LogOpMove[MD, T] {
+func (s *OldState[MD, T]) RedoMoveOp(lop *LogOpMove[MD, T]) *LogOpMove[MD, T] {
 	if s.tree.IsDeleted(lop.op.ChldID) {
 		return nil
 	}
@@ -116,7 +116,7 @@ func (s *State[MD, T]) RedoMoveOp(lop *LogOpMove[MD, T]) *LogOpMove[MD, T] {
 
 // Does the move operation
 // This checks if the move operation is valid and then executes it
-func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
+func (s *OldState[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP := s.tree.GetNode(opMov.ChldID)
 	if oldP == nil {
 		return nil
@@ -136,7 +136,7 @@ func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 }
 
 // Checks if the state is equal to another state
-func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
+func (s *OldState[MD, T]) Equals(other *OldState[MD, T]) bool {
 	treeEq := s.tree.Equals(&other.tree)
 	return treeEq
 }

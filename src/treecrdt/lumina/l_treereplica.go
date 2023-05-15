@@ -1,5 +1,7 @@
 package lumina
 
+// Represents the state of the CRDT for a single replica
+
 import (
 	c "github.com/FelixWhitefield/Tree-CRDTs-With-Move/clocks"
 	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
@@ -7,7 +9,7 @@ import (
 )
 
 type TreeReplica[MD any, T opTimestamp[T]] struct {
-	state    LState[MD, T]
+	state    State[MD, T]
 	clock    c.Clock[T]
 	priotity *c.Lamport
 }
@@ -86,7 +88,7 @@ func (tr *TreeReplica[MD, T]) Effects(op []Operation[T]) {
 	}
 }
 
-func (tr *TreeReplica[MD, T]) State() *LState[MD, T] {
+func (tr *TreeReplica[MD, T]) State() *State[MD, T] {
 	return &tr.state
 }
 

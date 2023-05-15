@@ -1,5 +1,7 @@
 package lumina
 
+// Represents the state of the CRDT
+
 import (
 	"container/list"
 	//"fmt"
@@ -7,25 +9,25 @@ import (
 )
 
 // Represents the state of the CRDT
-type LState[MD any, T opTimestamp[T]] struct {
+type State[MD any, T opTimestamp[T]] struct {
 	tree    Tree[MD]
 	moveLog *list.List // List of move operations
 }
 
-func NewLState[MD any, T opTimestamp[T]]() *LState[MD, T] {
-	return &LState[MD, T]{tree: *NewTree[MD](), moveLog: list.New()}
+func NewLState[MD any, T opTimestamp[T]]() *State[MD, T] {
+	return &State[MD, T]{tree: *NewTree[MD](), moveLog: list.New()}
 }
 
 // Applies an operation to the state
-func (s *LState[MD, T]) ApplyOp(op Operation[T]) {
+func (s *State[MD, T]) ApplyOp(op Operation[T]) {
 	switch op := op.(type) {
 	case *OpMove[MD, T]:
 		s.ApplyMoveOp(op)
 	case *OpAdd[MD, T]:
 		parentInTree := s.tree.WithinTree(op.NewP.ParentID()) != nil
 		childInTree := s.tree.WithinTree(op.ChldID) != nil // If child is in the tree
-		
-		if !childInTree && parentInTree {                             // If child is not in the tree and parent is in the tree
+
+		if !childInTree && parentInTree { // If child is not in the tree and parent is in the tree
 			s.tree.Add(op.ChldID, op.NewP)
 		}
 	case *OpRemove[T]:
@@ -44,7 +46,7 @@ func (s *LState[MD, T]) ApplyOp(op Operation[T]) {
 // resolution policy the same way.
 // This instead uses the priority to determine a total order of concurrent operations
 // and undo's and redo's operations accordingly (Similar to Kleppmann's algorithm)
-func (s *LState[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
+func (s *State[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 	if s.moveLog.Len() == 0 {
 		logop := s.DoMoveOp(opMov)
 		s.moveLog.PushBack(logop)
@@ -53,8 +55,8 @@ func (s *LState[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 
 	e := s.moveLog.Back()
 
-	for ; e != nil && e.Value.(*LogOpMove[MD,T]).CompareOp(opMov) == 2 && e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 1; e = e.Prev() {
-		s.UndoMoveOp(e.Value.(*LogOpMove[MD, T])) 
+	for ; e != nil && e.Value.(*LogOpMove[MD, T]).CompareOp(opMov) == 2 && e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 1; e = e.Prev() {
+		s.UndoMoveOp(e.Value.(*LogOpMove[MD, T]))
 	}
 
 	if e == nil || !(e.Value.(*LogOpMove[MD, T]).ComparePriority(opMov) == 0) { // Got to the front of the list and not in tree
@@ -75,19 +77,19 @@ func (s *LState[MD, T]) ApplyMoveOp(opMov *OpMove[MD, T]) {
 }
 
 // Undo's the log operation
-func (s *LState[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) {
+func (s *State[MD, T]) UndoMoveOp(lop *LogOpMove[MD, T]) {
 	s.tree.Move(lop.op.ChldID, lop.oldP)
 }
 
 // Redo's the log operation
-func (s *LState[MD, T]) RedoMoveOp(lop *LogOpMove[MD, T]) {
+func (s *State[MD, T]) RedoMoveOp(lop *LogOpMove[MD, T]) {
 	logop := s.DoMoveOp(lop.op)
 	*lop = *logop
 }
 
 // Does the move operation
 // This checks if the move operation is valid and then executes it
-func (s *LState[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
+func (s *State[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 	oldP := s.tree.WithinTree(opMov.ChldID).Node
 	childIsRoot := opMov.ChldID == s.tree.Root()
 	//parentInTree := s.tree.WithinTree(opMov.NewP.PrntID) != nil // If parent is in the tree
@@ -101,7 +103,7 @@ func (s *LState[MD, T]) DoMoveOp(opMov *OpMove[MD, T]) *LogOpMove[MD, T] {
 }
 
 // Checks if the state is equal to another state
-func (s *LState[MD, T]) Equals(other *LState[MD, T]) bool {
+func (s *State[MD, T]) Equals(other *State[MD, T]) bool {
 	treeEq := s.tree.Equals(&other.tree)
 	return treeEq
 }
