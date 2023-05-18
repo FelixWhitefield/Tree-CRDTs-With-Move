@@ -1,6 +1,7 @@
 package treeinterface
 
 import (
+	"github.com/FelixWhitefield/Tree-CRDTs-With-Move/connection"
 	tcrdt "github.com/FelixWhitefield/Tree-CRDTs-With-Move/treecrdt"
 	"github.com/google/uuid"
 )
@@ -16,4 +17,5 @@ type Tree[MD any] interface {
 	GetMetadata(id uuid.UUID) (MD, error)                      // Get the metadata of a node
 	Get(id uuid.UUID) (*tcrdt.TreeNode[MD], error)             // Get the node with the given ID
 	GetTotalApplied() uint64                                   // Get the total number of operations applied to the tree
+	ConnectionProvider() connection.ConnectionProvider         // Get the connection provider
 }

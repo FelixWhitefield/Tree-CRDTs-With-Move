@@ -1,5 +1,7 @@
 package connection
 
+import "net"
+
 type ConnectionProvider interface {
 	BroadcastChannel() chan []byte
 	IncomingOpsChannel() chan []byte
@@ -7,4 +9,6 @@ type ConnectionProvider interface {
 	HandleBroadcast()
 	Listen()
 	NumPeers() int
+	CloseAll()
+	GetPeerAddrs() []net.Addr
 }

@@ -225,7 +225,7 @@ func (p *TCPProvider) addPeer(tcpConn *TCPConnection) error {
 
 	if val, ok := p.peers[tcpConn.peerId]; ok && val != nil { // Check if the peer already exists
 		return errors.New("already connected to peer")
-	} else if len(p.peers) == p.numPeers { // Check if the peer map is full
+	} else if _, ok := p.peers[tcpConn.peerId]; len(p.peers) == p.numPeers && !ok { // Check if the peer map is full
 		return errors.New("peer map is full")
 	}
 

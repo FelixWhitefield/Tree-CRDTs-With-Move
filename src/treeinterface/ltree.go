@@ -69,7 +69,6 @@ func (kt *LTree[MD]) applyOpsSkip(ops chan []byte) {
 
 		var op lumina.Operation[*clocks.VectorTimestamp]
 		msgpack.Unmarshal(opBytes, &op)
-
 		i := 0
 		if len(opBuffer) > skip {
 			for i < len(opBuffer) {

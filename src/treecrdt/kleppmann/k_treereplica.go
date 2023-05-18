@@ -59,7 +59,7 @@ func (tr *TreeReplica[MD, T]) GetNode(u uuid.UUID) *TreeNode[MD] {
 // The `prepare` method for the op-based CRDTs, prepares an operation for the replica.
 func (tr *TreeReplica[MD, T]) Prepare(id uuid.UUID, newP uuid.UUID, metadata MD) *OpMove[MD, T] {
 	childIsAnc, _ := tr.state.tree.IsAncestor(newP, id)
-	if id == tr.state.tree.Root() || !tr.state.tree.Contains(newP) || childIsAnc {
+	if id == tr.state.tree.Root() || !tr.state.tree.Anywhere(newP) || childIsAnc {
 		return nil
 	}
 	return NewOpMove(tr.clock.Tick(), newP, id, metadata)
