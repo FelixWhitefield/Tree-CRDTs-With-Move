@@ -18,4 +18,4 @@ The source code is available in the `src` directory. It is written in Go.
 
 ## Project Mark
 
-The project has not yet been marked.
+The project recieved 86%, and was prizeworthy.
